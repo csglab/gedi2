@@ -31,12 +31,10 @@ LinkingTo:
     Rcpp,
     RcppEigen
 Suggests:
-    testthat (>= 3.0.0),
     Seurat,
     SingleCellExperiment
 SystemRequirements: C++14, GNU make, Eigen3 (>= 3.3.0)
 Encoding: UTF-8
 RoxygenNote: 7.3.3
 Roxygen: list(markdown = TRUE)
-Config/testthat/edition: 3
 NeedsCompilation: yes
