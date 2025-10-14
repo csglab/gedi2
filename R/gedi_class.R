@@ -131,7 +131,15 @@ GEDI <- R6Class(
       if (N != length(Samples)) {
         private$.logger$error("Number of cells doesn't match Samples length")
       }
-      
+
+      # Validate K
+      if (!is.numeric(K) || length(K) != 1 || K < 1) {
+        private$.logger$error("K must be a positive integer")
+      }
+      if (K > min(J, N)) {
+        private$.logger$error(sprintf("K (%d) must be less than min(n_genes=%d, n_cells=%d)", K, J, N))
+      }
+
       # ===================================================================
       # STEP 3: Process prior matrix C (gene-level)
       # ===================================================================

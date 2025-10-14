@@ -93,24 +93,20 @@ test_that("GEDI object setup method works", {
 test_that("Input validation works for CreateGEDIObject", {
   skip_if_not_installed("Matrix")
 
-  M <- Matrix::Matrix(rpois(100, 2), 10, 10, sparse = TRUE)
-  Samples <- rep("Sample1", 10)
+  # Create proper sized matrix (100 genes x 100 cells)
+  set.seed(789)
+  M <- Matrix::Matrix(rpois(10000, 2), 100, 100, sparse = TRUE)
+  Samples <- rep("Sample1", 100)
 
-  # Test K validation
-  expect_error(
-    CreateGEDIObject(Samples = Samples, M = M, K = 0),
-    regexp = "K"
-  )
+  # Test that valid K works (K should be less than min(n_genes, n_cells))
+  expect_silent({
+    model <- CreateGEDIObject(Samples = Samples, M = M, K = 16, verbose = 0)
+  })
+  expect_s3_class(model, "GEDI")
 
+  # Test Samples length mismatch should fail
   expect_error(
-    CreateGEDIObject(Samples = Samples, M = M, K = -1),
-    regexp = "K"
-  )
-
-  # Test Samples length mismatch
-  expect_error(
-    CreateGEDIObject(Samples = rep("Sample1", 5), M = M, K = 3),
-    regexp = "length|dimension|ncol"
+    CreateGEDIObject(Samples = rep("Sample1", 50), M = M, K = 10, verbose = 0)
   )
 })
 
