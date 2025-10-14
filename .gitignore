@@ -52,3 +52,6 @@ rsconnect/
 *.o
 *.so
 *.dll
+
+# macOS system files
+.DS_Store
