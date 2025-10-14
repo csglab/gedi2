@@ -1,7 +1,7 @@
 # GEDI v2: Gene Expression Data Integration
 
-[![R-CMD-check](https://github.com/yourusername/gedi/workflows/R-CMD-check/badge.svg)](https://github.com/yourusername/gedi/actions)
-[![test-coverage](https://github.com/yourusername/gedi/workflows/test-coverage/badge.svg)](https://github.com/yourusername/gedi/actions)
+[![R-CMD-check](https://github.com/Arshammik/gedi/workflows/R-CMD-check/badge.svg)](https://github.com/Arshammik/gedi/actions)
+[![test-coverage](https://github.com/Arshammik/gedi/workflows/test-coverage/badge.svg)](https://github.com/Arshammik/gedi/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A high-performance, memory-efficient R package for integrating gene expression data from single-cell RNA sequencing experiments. GEDI v2 implements a unified generative model for interpretable latent embedding of multi-sample, multi-condition single-cell data.
@@ -39,7 +39,7 @@ GEDI (Gene Expression Decomposition and Integration) enables:
 install.packages("devtools")
 
 # Install gedi from GitHub
-devtools::install_github("yourusername/gedi")
+devtools::install_github("Arshammik/gedi")
 ```
 
 ### Installing from Source
@@ -222,14 +222,10 @@ Contributions are welcome! Please:
 
 ### Reporting Issues
 
-Report bugs and request features at: [https://github.com/yourusername/gedi/issues](https://github.com/yourusername/gedi/issues)
+Report bugs and request features at: [https://github.com/Arshammik/gedi/issues](https://github.com/Arshammik/gedi/issues)
 
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Acknowledgments
 
-- Computational and Statistical Genomics Laboratory, McGill University
-- Original GEDI implementation: [https://github.com/csglab/GEDI](https://github.com/csglab/GEDI)
-- Built with [Rcpp](https://www.rcpp.org/) and [RcppEigen](http://dirk.eddelbuettel.com/code/rcpp.eigen.html)
