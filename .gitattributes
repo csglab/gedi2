@@ -1,0 +1,7 @@
+# Mark all .R files as R language
+*.R linguist-language=R
+# Mark all .cpp files as C++
+*.cpp linguist-language=C++
+# For any C++ object files (e.g., .o), mark them as binary to avoid misclassification
+*.o linguist-language=binary
+
