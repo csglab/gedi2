@@ -1580,26 +1580,191 @@ private:
 // Rcpp Exports
 // ============================================================================
 
+//' Create New GEDI Model Object (Internal)
+//'
+//' Constructs the C++ GEDI model object and returns an external pointer.
+//' This function is called internally by the R6 GEDI class during model setup
+//' and should not be called directly by users.
+//'
+//' @param params List containing initialized parameter matrices:
+//'   \itemize{
+//'     \item Bi: List of cell projection matrices (K x Ni) for each sample
+//'     \item Qi: List of sample-specific metagene matrices (J x K)
+//'     \item si, oi: Cell and sample-specific offset vectors
+//'     \item o: Global gene offset vector (length J)
+//'     \item Z: Shared metagene matrix (J x K)
+//'     \item U, S, D: SVD components and scaling factors
+//'     \item sigma2: Initial variance estimate
+//'     \item A: Pathway-latent factor connection matrix (if C provided)
+//'     \item Rk, Ro: Sample covariate effect matrices (if H provided)
+//'   }
+//' @param aux List containing auxiliary variables and dimensions:
+//'   \itemize{
+//'     \item J, N, K, P, L: Dimensions (genes, cells, factors, pathways, covariates)
+//'     \item numSamples: Number of samples
+//'     \item obs.type: Observation type ("M", "M_paired", "Y", or "X")
+//'     \item mode: Normalization mode ("Bl2" or "Bsphere")
+//'     \item orthoZ, adjustD, is_si_fixed: Boolean flags
+//'     \item C, H: Prior matrices (gene pathways, sample covariates)
+//'     \item diag_K, J_vec, Ni_vec, Ni: Dimension vectors
+//'     \item ZDBi, QiDBi: Precomputed product matrices
+//'   }
+//' @param target List containing target data matrices:
+//'   \itemize{
+//'     \item Yi: Log-transformed expression by sample (computed by C++ if empty)
+//'     \item Mi: Raw count matrix by sample (for obs.type = "M")
+//'     \item M1i, M2i: Paired count matrices (for obs.type = "M_paired")
+//'     \item Xi: Binary indicator matrix (for obs.type = "X")
+//'   }
+//' @param hyperparams List containing hyperparameters for regularization:
+//'   \itemize{
+//'     \item S_Qi, S_oi, S_Z, S_A, S_R: Shrinkage parameters
+//'     \item S_Qi_mean, S_oi_mean, S_si, S_o: Mean shrinkage parameters
+//'     \item o_0, si_0: Prior mean values
+//'     \item O: Random matrix for rSVD initialization
+//'   }
+//' @param verbose Integer verbosity level (0=silent, 1=info, 2=debug, 4=timing)
+//' @param num_threads Number of OpenMP threads (0=auto, uses all available)
+//'
+//' @return External pointer (SEXP) to C++ GEDI object
+//'
+//' @details
+//' This function creates a stateful C++ GEDI object that stores all model parameters
+//' and data. The C++ object performs all heavy computation, while the R6 wrapper
+//' remains lightweight (~1 KB). Memory-efficient design: if Yi is not provided,
+//' C++ computes it from raw counts M, eliminating duplicate storage in R.
+//'
+//' The returned external pointer is managed by R's garbage collector and will
+//' automatically free the C++ object when no longer referenced.
+//'
+//' @keywords internal
+//' @noRd
 // [[Rcpp::export]]
-SEXP GEDI_new(List params, List aux, List target, List hyperparams, 
+SEXP GEDI_new(List params, List aux, List target, List hyperparams,
               int verbose = 1, int num_threads = 0) {
   GEDI* model = new GEDI(params, aux, target, hyperparams, verbose, num_threads);
   XPtr<GEDI> ptr(model, true);
   return ptr;
 }
 
+//' Initialize Latent Variables (Internal)
+//'
+//' Initializes latent variables Z, Qi, and Bi using randomized SVD on residual
+//' expression data. This is the first step in GEDI model fitting and must be
+//' called before optimization.
+//'
+//' @param model_ptr External pointer to C++ GEDI object (from GEDI_new)
+//' @param multimodal Logical, if TRUE skips normalization steps for multi-modal
+//'   integration (used internally when combining multiple data modalities)
+//'
+//' @return List containing initialized model state:
+//'   \itemize{
+//'     \item params: Updated parameter matrices (Z, Qi, Bi, etc.)
+//'     \item aux: Auxiliary variables and dimensions
+//'     \item hyperparams: Hyperparameters
+//'   }
+//'
+//' @details
+//' Initialization procedure:
+//' \enumerate{
+//'   \item Solve for initial oi (sample-specific offsets)
+//'   \item Compute residual Yp after removing o, oi, si effects
+//'   \item Perform randomized SVD on Yp to obtain initial Z
+//'   \item Initialize Qi = Z for all samples
+//'   \item Solve for initial Bi given Z and Qi
+//'   \item Normalize B matrices and update auxiliary products (ZDBi, QiDBi)
+//' }
+//'
+//' Uses randomized SVD (rSVD) for computational efficiency with large matrices.
+//' The multimodal flag is used internally for advanced integration workflows.
+//'
+//' @keywords internal
+//' @noRd
 // [[Rcpp::export]]
 List GEDI_initialize(SEXP model_ptr, bool multimodal = false) {
   XPtr<GEDI> ptr(model_ptr);
   return ptr->initialize(multimodal);
 }
 
+//' Optimize GEDI Model via Block Coordinate Descent (Internal)
+//'
+//' Performs block coordinate descent optimization to fit the GEDI model.
+//' Iteratively updates all model parameters (Bi, Z, Qi, oi, si, o, sigma2)
+//' until convergence or maximum iterations reached.
+//'
+//' @param model_ptr External pointer to initialized C++ GEDI object
+//' @param iterations Integer, number of optimization iterations to perform
+//' @param track_interval Integer, interval for tracking convergence metrics
+//'   (e.g., track_interval=5 tracks every 5th iteration; track_interval=1 tracks all)
+//'
+//' @return List containing optimized model results:
+//'   \itemize{
+//'     \item params: Optimized parameter matrices (Z, Bi, Qi, sigma2, etc.)
+//'     \item aux: Auxiliary variables and dimensions
+//'     \item hyperparams: Updated hyperparameters (o_0, S_o, S_si)
+//'     \item tracking: Convergence metrics (dZ, dBi, dQi, sigma2 trajectory)
+//'     \item convergence: Summary statistics (iterations, total_time_ms, final_sigma2)
+//'   }
+//'
+//' @details
+//' Block coordinate descent iteration:
+//' \enumerate{
+//'   \item Solve Bi for all samples (parallelized with OpenMP)
+//'   \item Normalize B matrices
+//'   \item Solve Z (orthogonal or regular, depending on orthoZ flag)
+//'   \item Solve Qi for all samples (parallelized)
+//'   \item Solve oi, si, o (offset parameters)
+//'   \item Update Yi from raw counts M (for count data)
+//'   \item Solve sigma2 (variance parameter)
+//'   \item Update hyperpriors (o_0, S_o, S_si)
+//'   \item Solve A, Rk, Ro (if priors C or H are provided)
+//'   \item Track convergence metrics at specified intervals
+//' }
+//'
+//' OpenMP parallelization is automatically enabled if available. Progress and
+//' timing information printed based on verbosity level.
+//'
+//' @keywords internal
+//' @noRd
 // [[Rcpp::export]]
 List GEDI_optimize(SEXP model_ptr, int iterations, int track_interval = 5) {
   XPtr<GEDI> ptr(model_ptr);
   return ptr->optimize(iterations, track_interval);
 }
 
+//' Train GEDI Model (Initialize + Optimize) (Internal)
+//'
+//' Convenience function that performs both initialization and optimization in a
+//' single call. Equivalent to calling GEDI_initialize() followed by GEDI_optimize().
+//'
+//' @param model_ptr External pointer to C++ GEDI object (from GEDI_new)
+//' @param iterations Integer, number of optimization iterations to perform
+//' @param track_interval Integer, interval for tracking convergence metrics
+//' @param multimodal Logical, if TRUE skips normalization during initialization
+//'   (for multi-modal integration workflows)
+//'
+//' @return List containing trained model results (same format as GEDI_optimize):
+//'   \itemize{
+//'     \item params: Optimized parameter matrices
+//'     \item aux: Auxiliary variables
+//'     \item hyperparams: Updated hyperparameters
+//'     \item tracking: Convergence metrics
+//'     \item convergence: Summary statistics
+//'   }
+//'
+//' @details
+//' This is the recommended way to fit a GEDI model in a single step. Internally:
+//' \enumerate{
+//'   \item Calls initialize() to set up latent variables via rSVD
+//'   \item Calls optimize() to perform block coordinate descent
+//'   \item Returns the final optimized model state
+//' }
+//'
+//' For more control over the fitting process, use GEDI_initialize() and
+//' GEDI_optimize() separately. The multimodal parameter is for advanced use cases.
+//'
+//' @keywords internal
+//' @noRd
 // [[Rcpp::export]]
 List GEDI_train(SEXP model_ptr, int iterations, int track_interval = 5, bool multimodal = false) {
   XPtr<GEDI> ptr(model_ptr);
