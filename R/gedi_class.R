@@ -1,11 +1,7 @@
 # ==============================================================================
-# GEDI v2: Gene Expression Data Integration  
+# GEDI v2: Gene Expression Data Integration
 # Memory-efficient R6 wrapper around C++ core
-# OPTION 2: C++ computes Yi from M (zero Yi copies in R)
 # ==============================================================================
-
-library(R6)
-library(Matrix)
 
 newLogger <- function(name, level = 1) {
   structure(
