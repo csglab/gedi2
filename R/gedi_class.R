@@ -536,39 +536,39 @@ GEDI <- R6Class(
       if (!private$.isInitialized) {
         stop("Model not initialized. Call $initialize_lvs() first.", call. = FALSE)
       }
-      
+
       private$.logger$info(sprintf("Running optimization (%d iterations)...", iterations))
-      
+
       private$.lastResult <- GEDI_optimize(
         model_ptr = private$.cppPtr,
         iterations = iterations,
         track_interval = track_interval
       )
-      
+
       private$.logger$info("Optimization complete.")
-      
-      return(private$.lastResult)
+
+      invisible(self)
     },
     
     train = function(iterations = 50, track_interval = 5, multimodal = FALSE) {
       if (is.null(private$.cppPtr)) {
         stop("Model not setup. Call CreateGEDIObject() first.", call. = FALSE)
       }
-      
+
       private$.logger$info("Training GEDI model...")
-      
+
       private$.lastResult <- GEDI_train(
         model_ptr = private$.cppPtr,
         iterations = iterations,
         track_interval = track_interval,
         multimodal = multimodal
       )
-      
+
       private$.isInitialized <- TRUE
-      
+
       private$.logger$info("Training complete.")
-      
-      return(private$.lastResult)
+
+      invisible(self)
     },
     
     print = function() {
@@ -701,13 +701,14 @@ GEDI <- R6Class(
 #'   K = 15,
 #'   num_threads = 32
 #' )
-#' 
-#' # Train the model
-#' result <- model$train(iterations = 50)
-#' 
-#' # Access results
+#'
+#' # Train the model (no assignment needed)
+#' model$train(iterations = 50)
+#'
+#' # Access results via active bindings
 #' Z <- model$Z
 #' params <- model$params
+#' tracking <- model$tracking
 #' }
 #' 
 #' @export
