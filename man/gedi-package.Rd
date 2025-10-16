@@ -90,14 +90,13 @@ Add your publication reference here when available.
 \seealso{
 Useful links:
 \itemize{
-  \item \url{https://github.com/yourusername/gedi}
-  \item Report bugs at \url{https://github.com/yourusername/gedi/issues}
+  \item \url{https://github.com/Arshammik/gedi}
+  \item Report bugs at \url{https://github.com/Arshammik/gedi/issues}
 }
 
 
 \itemize{
 \item \code{\link{CreateGEDIObject}}: Create a GEDI model
-\item \code{\link{GEDI}}: R6 class documentation
 }
 }
 \author{

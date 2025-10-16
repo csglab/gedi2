@@ -163,8 +163,8 @@ public:
        const List& hyperparams,
        int verbose_ = 1,
        int num_threads_ = 0) :
-    verbose(verbose_),
     num_threads(num_threads_),
+    verbose(verbose_),
     is_initialized(false),
     total_iterations(0) {
     

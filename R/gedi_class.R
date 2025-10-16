@@ -581,7 +581,7 @@ GEDI <- R6Class(
       
       if (!is.null(private$.lastResult)) {
         aux <- private$.lastResult$aux
-        cat(sprintf("Dimensions: %d genes × %d cells\n", aux$J, aux$N))
+        cat(sprintf("Dimensions: %d genes \u00d7 %d cells\n", aux$J, aux$N))
         cat(sprintf("Samples: %d (%s)\n", 
                     aux$numSamples, 
                     paste(private$.sampleNames, collapse = ", ")))
@@ -675,8 +675,8 @@ GEDI <- R6Class(
 #' @param Y Log-transformed expression matrix (optional if M provided)
 #' @param X Binary indicator matrix (optional if M or Y provided)
 #' @param colData Optional data.frame with cell metadata
-#' @param C Gene-level prior matrix (genes × pathways)
-#' @param H Sample-level covariate matrix (covariates × samples)
+#' @param C Gene-level prior matrix (genes \u00d7 pathways)
+#' @param H Sample-level covariate matrix (covariates \u00d7 samples)
 #' @param K Number of latent factors (default: 10)
 #' @param mode Normalization mode: "Bl2" or "Bsphere" (default: "Bl2")
 #' @param adjustD Whether to adjust D based on B row norms (default: TRUE)

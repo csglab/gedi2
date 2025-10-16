@@ -16,8 +16,8 @@ Description: A memory-efficient implementation for integrating gene expression d
     with block coordinate descent optimization for dimensionality reduction and
     batch effect correction.
 License: MIT + file LICENSE
-URL: https://github.com/yourusername/gedi
-BugReports: https://github.com/yourusername/gedi/issues
+URL: https://github.com/Arshammik/gedi
+BugReports: https://github.com/Arshammik/gedi/issues
 Depends:
     R (>= 4.0.0)
 Imports:
