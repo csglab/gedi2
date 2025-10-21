@@ -42,9 +42,9 @@ C++ will compute Yi = log(M+1) internally - no Yi copy stored in R!}
 
 \item{colData}{Optional data.frame with cell metadata}
 
-\item{C}{Gene-level prior matrix (genes × pathways)}
+\item{C}{Gene-level prior matrix (genes \u00d7 pathways)}
 
-\item{H}{Sample-level covariate matrix (covariates × samples)}
+\item{H}{Sample-level covariate matrix (covariates \u00d7 samples)}
 
 \item{K}{Number of latent factors (default: 10)}
 
@@ -85,12 +85,13 @@ model <- CreateGEDIObject(
   num_threads = 32
 )
 
-# Train the model
-result <- model$train(iterations = 50)
+# Train the model (no assignment needed)
+model$train(iterations = 50)
 
-# Access results
+# Access results via active bindings
 Z <- model$Z
 params <- model$params
+tracking <- model$tracking
 }
 
 }

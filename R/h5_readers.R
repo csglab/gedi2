@@ -245,6 +245,7 @@ read_h5ad <- function(file_path,
 
 #' Set dimension names for H5AD matrix
 #' @keywords internal
+#' @noRd
 .set_h5ad_dimnames <- function(expr_matrix, obs, var, verbose) {
   # Set row names (genes)
   if (!is.null(var) && nrow(var) == nrow(expr_matrix)) {
@@ -272,6 +273,7 @@ read_h5ad <- function(file_path,
 
 #' Read expression matrix from H5AD file
 #' @keywords internal
+#' @noRd
 .read_h5ad_matrix <- function(h5file, matrix_path, verbose = TRUE) {
 
   matrix_group <- h5file[[matrix_path]]
@@ -356,6 +358,7 @@ read_h5ad <- function(file_path,
 
 #' Read data frame from H5AD file
 #' @keywords internal
+#' @noRd
 .read_h5ad_dataframe <- function(h5file, df_path, verbose = TRUE) {
 
   if (!h5file$exists(df_path)) {
@@ -540,6 +543,7 @@ read_h5 <- function(file_path,
 
 #' Auto-detect gene and cell names paths in 10X H5 file
 #' @keywords internal
+#' @noRd
 .detect_h5_paths <- function(h5file, verbose = FALSE) {
 
   # Common paths for gene names in 10X files
@@ -591,6 +595,7 @@ read_h5 <- function(file_path,
 
 #' Read matrix from H5 file
 #' @keywords internal
+#' @noRd
 .read_h5_matrix <- function(h5file, matrix_path, as_sparse = TRUE, verbose = TRUE) {
 
   matrix_group <- h5file[[matrix_path]]

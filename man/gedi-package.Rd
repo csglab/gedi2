@@ -6,7 +6,7 @@
 \alias{gedi-package}
 \title{gedi: Gene Expression Data Integration}
 \description{
-A memory-efficient implementation for integrating gene expression data from single-cell RNA sequencing experiments. GEDI v2 uses a C++ backend with thin R wrappers to enable analysis of large-scale single-cell datasets. The package supports multiple data modalities including count matrices, paired data (CITE-seq), and binary indicators. It implements a latent variable model with block coordinate descent optimization for dimensionality reduction and batch effect correction.
+A memory-efficient implementation for integrating gene expression data from single-cell RNA sequencing experiments. GEDI v2 uses a C++ backend with thin R wrappers to enable analysis of large-scale single-cell datasets. The package supports multiple data modalities including count matrices, paired data (Splicing, Velocyto, CITE-seq), and binary indicators. It implements a latent variable model with block coordinate descent optimization for dimensionality reduction and batch effect correction.
 
 A memory-efficient implementation for integrating gene expression data from
 single-cell RNA sequencing experiments. GEDI v2 uses a high-performance C++
@@ -97,14 +97,15 @@ Useful links:
 
 \itemize{
 \item \code{\link{CreateGEDIObject}}: Create a GEDI model
+\item \code{\link{GEDI}}: R6 class documentation
 }
 }
 \author{
-\strong{Maintainer}: Your Name \email{your.email@example.com}
+\strong{Maintainer}: Arsham Mikaeili Namini \email{arsham.mikaeilinamini@mail.mcgill.ca}
 
-Other contributors:
+Authors:
 \itemize{
-  \item Computational and Statistical Genomics Laboratory [copyright holder]
+  \item Hamed S.Najafabadi \email{hamed.najafabadi@mcgill.ca}
 }
 
 
