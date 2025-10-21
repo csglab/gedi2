@@ -31,6 +31,7 @@ LinkingTo:
     Rcpp,
     RcppEigen
 Suggests:
+    hdf5r,
     Seurat,
     SingleCellExperiment
 SystemRequirements: C++14, GNU make, Eigen3 (>= 3.3.0)
