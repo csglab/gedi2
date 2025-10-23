@@ -66,6 +66,119 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// getDiffO_cpp
+Eigen::VectorXd getDiffO_cpp(const Eigen::Map<Eigen::MatrixXd>& Ro, const Eigen::Map<Eigen::MatrixXd>& H_rotation, const Eigen::Map<Eigen::VectorXd>& contrast, int verbose);
+RcppExport SEXP _gedi_getDiffO_cpp(SEXP RoSEXP, SEXP H_rotationSEXP, SEXP contrastSEXP, SEXP verboseSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::MatrixXd>& >::type Ro(RoSEXP);
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::MatrixXd>& >::type H_rotation(H_rotationSEXP);
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd>& >::type contrast(contrastSEXP);
+    Rcpp::traits::input_parameter< int >::type verbose(verboseSEXP);
+    rcpp_result_gen = Rcpp::wrap(getDiffO_cpp(Ro, H_rotation, contrast, verbose));
+    return rcpp_result_gen;
+END_RCPP
+}
+// getDiffQ_cpp
+Eigen::MatrixXd getDiffQ_cpp(const Rcpp::List& Rk_list, const Eigen::Map<Eigen::MatrixXd>& H_rotation, const Eigen::Map<Eigen::VectorXd>& contrast, int verbose);
+RcppExport SEXP _gedi_getDiffQ_cpp(SEXP Rk_listSEXP, SEXP H_rotationSEXP, SEXP contrastSEXP, SEXP verboseSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type Rk_list(Rk_listSEXP);
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::MatrixXd>& >::type H_rotation(H_rotationSEXP);
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd>& >::type contrast(contrastSEXP);
+    Rcpp::traits::input_parameter< int >::type verbose(verboseSEXP);
+    rcpp_result_gen = Rcpp::wrap(getDiffQ_cpp(Rk_list, H_rotation, contrast, verbose));
+    return rcpp_result_gen;
+END_RCPP
+}
+// getDiffExp_cpp
+Eigen::MatrixXd getDiffExp_cpp(const Rcpp::List& Rk_list, const Eigen::Map<Eigen::MatrixXd>& H_rotation, const Eigen::Map<Eigen::VectorXd>& contrast, const Eigen::Map<Eigen::VectorXd>& D, const Rcpp::List& Bi_list, int verbose);
+RcppExport SEXP _gedi_getDiffExp_cpp(SEXP Rk_listSEXP, SEXP H_rotationSEXP, SEXP contrastSEXP, SEXP DSEXP, SEXP Bi_listSEXP, SEXP verboseSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type Rk_list(Rk_listSEXP);
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::MatrixXd>& >::type H_rotation(H_rotationSEXP);
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd>& >::type contrast(contrastSEXP);
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd>& >::type D(DSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type Bi_list(Bi_listSEXP);
+    Rcpp::traits::input_parameter< int >::type verbose(verboseSEXP);
+    rcpp_result_gen = Rcpp::wrap(getDiffExp_cpp(Rk_list, H_rotation, contrast, D, Bi_list, verbose));
+    return rcpp_result_gen;
+END_RCPP
+}
+// compute_svd_factorized_cpp
+Rcpp::List compute_svd_factorized_cpp(const Eigen::Map<Eigen::MatrixXd>& Z, const Eigen::Map<Eigen::VectorXd>& D, const Rcpp::List& Bi_list, int verbose);
+RcppExport SEXP _gedi_compute_svd_factorized_cpp(SEXP ZSEXP, SEXP DSEXP, SEXP Bi_listSEXP, SEXP verboseSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::MatrixXd>& >::type Z(ZSEXP);
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd>& >::type D(DSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type Bi_list(Bi_listSEXP);
+    Rcpp::traits::input_parameter< int >::type verbose(verboseSEXP);
+    rcpp_result_gen = Rcpp::wrap(compute_svd_factorized_cpp(Z, D, Bi_list, verbose));
+    return rcpp_result_gen;
+END_RCPP
+}
+// run_factorized_svd_cpp
+Rcpp::List run_factorized_svd_cpp(const Eigen::Map<Eigen::MatrixXd>& Z, const Eigen::Map<Eigen::MatrixXd>& projDB, int verbose);
+RcppExport SEXP _gedi_run_factorized_svd_cpp(SEXP ZSEXP, SEXP projDBSEXP, SEXP verboseSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::MatrixXd>& >::type Z(ZSEXP);
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::MatrixXd>& >::type projDB(projDBSEXP);
+    Rcpp::traits::input_parameter< int >::type verbose(verboseSEXP);
+    rcpp_result_gen = Rcpp::wrap(run_factorized_svd_cpp(Z, projDB, verbose));
+    return rcpp_result_gen;
+END_RCPP
+}
+// compute_ZDB_cpp
+Eigen::MatrixXd compute_ZDB_cpp(const Eigen::Map<Eigen::MatrixXd>& Z, const Eigen::Map<Eigen::VectorXd>& D, const Rcpp::List& Bi_list, int verbose);
+RcppExport SEXP _gedi_compute_ZDB_cpp(SEXP ZSEXP, SEXP DSEXP, SEXP Bi_listSEXP, SEXP verboseSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::MatrixXd>& >::type Z(ZSEXP);
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd>& >::type D(DSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type Bi_list(Bi_listSEXP);
+    Rcpp::traits::input_parameter< int >::type verbose(verboseSEXP);
+    rcpp_result_gen = Rcpp::wrap(compute_ZDB_cpp(Z, D, Bi_list, verbose));
+    return rcpp_result_gen;
+END_RCPP
+}
+// compute_DB_cpp
+Eigen::MatrixXd compute_DB_cpp(const Eigen::Map<Eigen::VectorXd>& D, const Rcpp::List& Bi_list, int verbose);
+RcppExport SEXP _gedi_compute_DB_cpp(SEXP DSEXP, SEXP Bi_listSEXP, SEXP verboseSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd>& >::type D(DSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type Bi_list(Bi_listSEXP);
+    Rcpp::traits::input_parameter< int >::type verbose(verboseSEXP);
+    rcpp_result_gen = Rcpp::wrap(compute_DB_cpp(D, Bi_list, verbose));
+    return rcpp_result_gen;
+END_RCPP
+}
+// compute_ADB_cpp
+Eigen::MatrixXd compute_ADB_cpp(const Eigen::Map<Eigen::MatrixXd>& C_rotation, const Eigen::Map<Eigen::MatrixXd>& A, const Eigen::Map<Eigen::VectorXd>& D, const Rcpp::List& Bi_list, int verbose);
+RcppExport SEXP _gedi_compute_ADB_cpp(SEXP C_rotationSEXP, SEXP ASEXP, SEXP DSEXP, SEXP Bi_listSEXP, SEXP verboseSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::MatrixXd>& >::type C_rotation(C_rotationSEXP);
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::MatrixXd>& >::type A(ASEXP);
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd>& >::type D(DSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type Bi_list(Bi_listSEXP);
+    Rcpp::traits::input_parameter< int >::type verbose(verboseSEXP);
+    rcpp_result_gen = Rcpp::wrap(compute_ADB_cpp(C_rotation, A, D, Bi_list, verbose));
+    return rcpp_result_gen;
+END_RCPP
+}
 // compute_s_0_dense
 Eigen::VectorXd compute_s_0_dense(const Eigen::Map<Eigen::VectorXd>& J_vec, const Eigen::Map<Eigen::MatrixXd>& Y, double J);
 RcppExport SEXP _gedi_compute_s_0_dense(SEXP J_vecSEXP, SEXP YSEXP, SEXP JSEXP) {
@@ -199,6 +312,14 @@ static const R_CallMethodDef CallEntries[] = {
     {"_gedi_GEDI_initialize", (DL_FUNC) &_gedi_GEDI_initialize, 2},
     {"_gedi_GEDI_optimize", (DL_FUNC) &_gedi_GEDI_optimize, 3},
     {"_gedi_GEDI_train", (DL_FUNC) &_gedi_GEDI_train, 4},
+    {"_gedi_getDiffO_cpp", (DL_FUNC) &_gedi_getDiffO_cpp, 4},
+    {"_gedi_getDiffQ_cpp", (DL_FUNC) &_gedi_getDiffQ_cpp, 4},
+    {"_gedi_getDiffExp_cpp", (DL_FUNC) &_gedi_getDiffExp_cpp, 6},
+    {"_gedi_compute_svd_factorized_cpp", (DL_FUNC) &_gedi_compute_svd_factorized_cpp, 4},
+    {"_gedi_run_factorized_svd_cpp", (DL_FUNC) &_gedi_run_factorized_svd_cpp, 3},
+    {"_gedi_compute_ZDB_cpp", (DL_FUNC) &_gedi_compute_ZDB_cpp, 4},
+    {"_gedi_compute_DB_cpp", (DL_FUNC) &_gedi_compute_DB_cpp, 3},
+    {"_gedi_compute_ADB_cpp", (DL_FUNC) &_gedi_compute_ADB_cpp, 5},
     {"_gedi_compute_s_0_dense", (DL_FUNC) &_gedi_compute_s_0_dense, 3},
     {"_gedi_compute_Yp", (DL_FUNC) &_gedi_compute_Yp, 3},
     {"_gedi_compute_o_0_dense", (DL_FUNC) &_gedi_compute_o_0_dense, 3},
