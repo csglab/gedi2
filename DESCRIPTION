@@ -1,7 +1,7 @@
 Package: gedi
 Type: Package
 Title: Gene Expression Data Integration
-Version: 2.0.3
+Version: 2.0.11
 Date: 2025-10-13
 Authors@R: c(
     person("Arsham", "Mikaeili Namini", email = "arsham.mikaeilinamini@mail.mcgill.ca", role = c("aut", "cre")),
@@ -18,24 +18,16 @@ Description: A memory-efficient implementation for integrating gene expression d
 License: MIT + file LICENSE
 URL: https://github.com/Arshammik/gedi
 BugReports: https://github.com/Arshammik/gedi/issues
-Depends:
-    R (>= 4.0.0)
-Imports:
-    Rcpp (>= 1.0.0),
-    R6 (>= 2.5.0),
-    Matrix (>= 1.3.0),
-    hdf5r,
-    methods,
-    stats,
-    utils
-LinkingTo:
-    Rcpp,
-    RcppEigen
-Suggests:
-    Seurat,
-    SingleCellExperiment
+Depends: R (>= 4.0.0)
+Imports: Rcpp (>= 1.0.0), R6 (>= 2.5.0), Matrix (>= 1.3.0), hdf5r,
+        methods, stats, utils
+LinkingTo: Rcpp, RcppEigen
+Suggests: Seurat, SingleCellExperiment
 SystemRequirements: C++14, GNU make, Eigen3 (>= 3.3.0)
 Encoding: UTF-8
 RoxygenNote: 7.3.3
 Roxygen: list(markdown = TRUE)
 NeedsCompilation: yes
+Packaged: 2025-10-22 18:58:46 UTC; arshammikaeili
+Author: Arsham Mikaeili Namini [aut, cre],
+  Hamed S.Najafabadi [aut]
