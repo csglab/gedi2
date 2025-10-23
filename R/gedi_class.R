@@ -1,7 +1,10 @@
 # ==============================================================================
 # GEDI v2: Gene Expression Data Integration
-# Memory-efficient R6 wrapper around C++ core
+# Memory-efficient R6 wrapper around C++ core with projection support
 # ==============================================================================
+
+# Source projection functions
+# These will be in the same package, so we don't need explicit sourcing
 
 newLogger <- function(name, level = 1) {
   structure(
@@ -53,9 +56,16 @@ GEDI <- R6Class(
     .logger = NULL,
     .isInitialized = FALSE,
     
+    # Metadata
     .geneIDs = NULL,
     .cellIDs = NULL,
     .sampleNames = NULL,
+    
+    # Static auxiliary data (rotation matrices, priors)
+    .aux_static = NULL,
+    
+    # Projection cache
+    .cache = NULL,
     
     prepareData = function(
       Samples, Y, X, M, colData, C, H, K, mode, adjustD, orthoZ,
@@ -160,7 +170,13 @@ GEDI <- R6Class(
         P <- sum(cumsum(rev(svdC$d^2)) > minCL2 * 0.1)
         
         C_matrix <- svdC$u[, 1:P, drop = FALSE]
-        C_rotation <- svdC$v[, 1:P, drop = FALSE] %*% diag(1 / svdC$d[1:P], nrow = P)
+        
+        # Handle P = 1 edge case where diag() doesn't work as expected
+        if (P == 1) {
+          C_rotation <- svdC$v[, 1, drop = FALSE] / svdC$d[1]
+        } else {
+          C_rotation <- svdC$v[, 1:P, drop = FALSE] %*% diag(1 / svdC$d[1:P], nrow = P)
+        }
         
         if (private$.verbose >= 1) {
           private$.logger$info(sprintf("C matrix: %d pathways -> %d components", 
@@ -366,6 +382,18 @@ GEDI <- R6Class(
       )
       
       # ===================================================================
+      # STEP 10.5: Store static auxiliary data for projections
+      # ===================================================================
+      
+      private$.aux_static <- list(
+        C.rotation = C_rotation,
+        H.rotation = H_rotation,
+        inputC = inputC,
+        inputH = inputH,
+        colData = colData
+      )
+      
+      # ===================================================================
       # STEP 11: Prepare target matrices
       # OPTION 2: Don't compute Yi in R - C++ will compute it from M!
       # ===================================================================
@@ -414,7 +442,7 @@ GEDI <- R6Class(
       invisible(gc())
       
       # ===================================================================
-      # STEP 12: Create hyperparams list (CORRECTED - no sigma2_0!)
+      # STEP 12: Create hyperparams list
       # ===================================================================
       
       hyperparams <- list(
@@ -430,7 +458,6 @@ GEDI <- R6Class(
         o_0 = o_0,
         si_0 = si_0,
         O = O_matrix
-        # NO sigma2_0! It goes in params$sigma2
       )
       
       return(list(
@@ -546,6 +573,10 @@ GEDI <- R6Class(
       )
 
       private$.logger$info("Optimization complete.")
+      
+      # Clear projection cache after optimization
+      clear_projection_cache(private)
+      clear_dimred_cache(private)
 
       invisible(self)
     },
@@ -567,9 +598,103 @@ GEDI <- R6Class(
       private$.isInitialized <- TRUE
 
       private$.logger$info("Training complete.")
+      
+      # Clear projection cache after training
+      clear_projection_cache(private)
+      clear_dimred_cache(private)
 
       invisible(self)
     },
+    
+    # =========================================================================
+    # Cache Management Methods
+    # =========================================================================
+    
+    clear_cache = function(what = NULL) {
+      # Clear projection cache
+      clear_projection_cache(private, what)
+      
+      # Clear dimred cache if "svd" or "pca" specified, or if clearing all
+      if (is.null(what) || any(what %in% c("svd", "pca"))) {
+        dimred_what <- if (is.null(what)) NULL else intersect(what, c("svd", "pca"))
+        clear_dimred_cache(private, dimred_what)
+      }
+      
+      invisible(self)
+    },
+    
+    cache_status = function() {
+      proj_status <- get_cache_status(private)
+      dimred_status <- get_dimred_cache_status(private)
+      c(proj_status, dimred_status)
+    },
+    
+    cache_memory = function() {
+      proj_memory <- get_cache_memory(private)
+      dimred_memory <- get_dimred_cache_memory(private)
+      
+      # Combine and recalculate total
+      all_memory <- c(proj_memory[names(proj_memory) != "Total"],
+                      dimred_memory[names(dimred_memory) != "Total"])
+      all_memory["Total"] <- sum(all_memory)
+      
+      return(all_memory)
+    },
+
+    set_verbose = function(level = 1) {
+      if (!level %in% c(0, 1, 2)) {
+        stop("verbose must be 0 (silent), 1 (normal), or 2 (debug)", call. = FALSE)
+      }
+      private$.verbose <- level
+      if (!is.null(private$.logger)) {
+        private$.logger$level <- level
+      }
+      invisible(self)
+    },
+    
+    # =========================================================================
+    # Differential Expression Methods
+    # =========================================================================
+    
+    diffQ = function(contrast, include_O = FALSE) {
+      compute_diffQ(self, private, contrast, include_O)
+    },
+    
+    diffO = function(contrast) {
+      compute_diffO(self, private, contrast)
+    },
+    
+    diffExp = function(contrast, include_O = FALSE) {
+      compute_diffExp(self, private, contrast, include_O)
+    },
+    
+    # =========================================================================
+    # Dimensionality Reduction Methods
+    # =========================================================================
+    
+    get_svd = function() {
+      compute_svd_factorized(self, private)
+    },
+    
+    get_pca = function() {
+      compute_pca(self, private)
+    },
+    
+    get_umap = function(input = "pca", 
+                        n_neighbors = 15,
+                        min_dist = 0.1,
+                        n_components = 2,
+                        metric = "euclidean",
+                        n_threads = 0,
+                        ...) {
+      compute_umap(self, private, input, n_neighbors, 
+                   min_dist, n_components, metric, n_threads, ...)
+    },
+
+
+    # =========================================================================
+    # Print Method
+    # =========================================================================
     
     print = function() {
       cat("<GEDI Model>\n")
@@ -581,15 +706,25 @@ GEDI <- R6Class(
       
       if (!is.null(private$.lastResult)) {
         aux <- private$.lastResult$aux
-        cat(sprintf("Dimensions: %d genes \u00d7 %d cells\n", aux$J, aux$N))
+        cat(sprintf("Dimensions: %d genes Ã— %d cells\n", aux$J, aux$N))
         cat(sprintf("Samples: %d (%s)\n", 
                     aux$numSamples, 
-                    paste(private$.sampleNames, collapse = ", ")))
+                    paste(head(private$.sampleNames, 3), collapse = ", ")))
+        if (aux$numSamples > 3) cat("           ...\n")
         cat(sprintf("Latent factors: K = %d\n", aux$K))
         cat(sprintf("Mode: %s (orthoZ = %s)\n", aux$mode, aux$orthoZ))
         
         if (aux$P > 0) cat(sprintf("Prior C: %d pathways\n", aux$P))
         if (aux$L > 0) cat(sprintf("Prior H: %d covariates\n", aux$L))
+        
+        # Cache info
+        proj_cache <- get_cache_status(private)
+        dimred_cache <- get_dimred_cache_status(private)
+        all_cached <- c(proj_cache, dimred_cache)
+        if (any(all_cached)) {
+          cached_names <- names(all_cached)[all_cached]
+          cat(sprintf("Cached: %s\n", paste(cached_names, collapse = ", ")))
+        }
       }
       
       if (private$.isInitialized) {
@@ -618,7 +753,11 @@ GEDI <- R6Class(
       if (is.null(private$.lastResult)) {
         stop("No results yet. Run $initialize_lvs() or $train() first.", call. = FALSE)
       }
-      private$.lastResult$aux
+      # Merge with geneIDs/cellIDs for backward compatibility
+      c(private$.lastResult$aux, list(
+        geneIDs = private$.geneIDs,
+        cellIDs = private$.cellIDs
+      ))
     },
     
     hyperparams = function(value) {
@@ -645,20 +784,102 @@ GEDI <- R6Class(
       private$.lastResult$params$Z
     },
     
-    geneIDs = function(value) {
-      if (!missing(value)) stop("geneIDs is read-only", call. = FALSE)
-      private$.geneIDs
+    # =========================================================================
+    # Metadata Accessor
+    # =========================================================================
+    
+    metadata = function(value) {
+      if (!missing(value)) stop("metadata is read-only", call. = FALSE)
+      if (is.null(private$.geneIDs)) {
+        stop("Model not setup. Call CreateGEDIObject() first.", call. = FALSE)
+      }
+      
+      list(
+        geneIDs = private$.geneIDs,
+        cellIDs = private$.cellIDs,
+        sampleIDs = private$.sampleNames,
+        colData = if (!is.null(private$.aux_static)) private$.aux_static$colData else NULL,
+        n_genes = if (!is.null(private$.lastResult)) private$.lastResult$aux$J else NULL,
+        n_cells = if (!is.null(private$.lastResult)) private$.lastResult$aux$N else NULL,
+        n_samples = if (!is.null(private$.lastResult)) private$.lastResult$aux$numSamples else NULL
+      )
     },
     
-    cellIDs = function(value) {
-      if (!missing(value)) stop("cellIDs is read-only", call. = FALSE)
-      private$.cellIDs
+    # =========================================================================
+    # Priors Accessor
+    # =========================================================================
+    
+    priors = function(value) {
+      if (!missing(value)) stop("priors is read-only", call. = FALSE)
+      if (is.null(private$.aux_static)) {
+        stop("Model not setup. Call CreateGEDIObject() first.", call. = FALSE)
+      }
+      
+      list(
+        inputC = private$.aux_static$inputC,
+        C.rotation = private$.aux_static$C.rotation,
+        inputH = private$.aux_static$inputH,
+        H.rotation = private$.aux_static$H.rotation
+      )
     },
     
-    sampleNames = function(value) {
-      if (!missing(value)) stop("sampleNames is read-only", call. = FALSE)
-      private$.sampleNames
+    # =========================================================================
+    # Projections Accessor (Lazy Computation)
+    # =========================================================================
+    
+    projections = function(value) {
+      if (!missing(value)) stop("projections is read-only", call. = FALSE)
+      if (is.null(private$.lastResult)) {
+        stop("No results yet. Run $initialize_lvs() or $train() first.", call. = FALSE)
+      }
+      
+      # Return a list-like object that computes on access
+      structure(
+        list(
+          ZDB = compute_ZDB(self, private),
+          DB = compute_DB(self, private),
+          ADB = if (self$aux$P > 0) compute_ADB(self, private) else NULL
+        ),
+        class = "gedi_projections"
+      )
+    },
+
+
+    # =========================================================================
+    # Embeddings Accessor (Lazy Computation)
+    # =========================================================================
+
+    embeddings = function(value) {
+      if (!missing(value)) stop("embeddings is read-only", call. = FALSE)
+      if (is.null(private$.lastResult)) {
+        stop("No results yet. Run $initialize_lvs() or $train() first.", call. = FALSE)
+      }
+      
+      # Return a list-like object that computes on access
+      structure(
+        list(
+          svd = compute_svd_factorized(self, private),
+          pca = compute_pca(self, private),
+          umap = function(...) compute_umap(self, private, ...)
+        ),
+        class = "gedi_embeddings"
+      )
+    },
+    
+    # =========================================================================
+    # Pathway Associations Accessor
+    # =========================================================================
+    
+    pathway_associations = function(value) {
+      if (!missing(value)) stop("pathway_associations is read-only", call. = FALSE)
+      if (is.null(private$.lastResult)) {
+        stop("No results yet. Run $initialize_lvs() or $train() first.", call. = FALSE)
+      }
+      
+      # Return accessor object with dense() and sparse() methods
+      create_pathway_associations_accessor(self, private)
     }
+
   )
 )
 
@@ -675,8 +896,8 @@ GEDI <- R6Class(
 #' @param Y Log-transformed expression matrix (optional if M provided)
 #' @param X Binary indicator matrix (optional if M or Y provided)
 #' @param colData Optional data.frame with cell metadata
-#' @param C Gene-level prior matrix (genes \u00d7 pathways)
-#' @param H Sample-level covariate matrix (covariates \u00d7 samples)
+#' @param C Gene-level prior matrix (genes Ã— pathways)
+#' @param H Sample-level covariate matrix (covariates Ã— samples)
 #' @param K Number of latent factors (default: 10)
 #' @param mode Normalization mode: "Bl2" or "Bsphere" (default: "Bl2")
 #' @param adjustD Whether to adjust D based on B row norms (default: TRUE)
@@ -702,13 +923,16 @@ GEDI <- R6Class(
 #'   num_threads = 32
 #' )
 #'
-#' # Train the model (no assignment needed)
+#' # Train the model
 #' model$train(iterations = 50)
 #'
 #' # Access results via active bindings
 #' Z <- model$Z
 #' params <- model$params
-#' tracking <- model$tracking
+#'
+#' # Access projections (computed on demand, cached)
+#' zdb <- model$projections$ZDB
+#' db <- model$projections$DB
 #' }
 #' 
 #' @export
