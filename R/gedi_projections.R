@@ -171,22 +171,18 @@ compute_ADB <- function(self, private, force_recompute = FALSE) {
 }
 
 
-#' Compute Differential Q Projection
+#' Compute Differential Expression (Cell-Space JxN)
 #'
 #' @description
-#' Computes the differential effect of sample-level variables on metagene
-#' expression for each cell: diffQ = sum_k (Rk * H.rotation * contrast)_k * DB_k.
-#' Only available when sample-level prior matrix H was provided.
+#' Computes the cell-specific differential expression effect (J x N).
+#' This is the R wrapper for the C++ function getDiffExp_cpp().
 #'
 #' @param self Reference to GEDI R6 object
 #' @param private Reference to private environment
-#' @param contrast Numeric vector of length L specifying the contrast of interest
-#'   (e.g., c(1, -1) for treatment vs. control if L=2)
-#' @param include_O Logical, if TRUE adds the global offset effect (diffO) to
-#'   the result (default: FALSE)
+#' @param contrast Numeric vector of length L specifying the contrast
+#' @param include_O Logical, if TRUE adds the global offset effect (diffO)
 #'
-#' @return Dense matrix (J × N) representing the predicted differential
-#'   expression for each gene in each cell under the specified contrast
+#' @return Dense matrix (J × N) of differential expression values
 #'
 #' @keywords internal
 #' @noRd
@@ -215,8 +211,8 @@ compute_diffQ <- function(self, private, contrast, include_O = FALSE) {
          call. = FALSE)
   }
   
-  # Call C++ function
-  diffQ <- compute_diffQ_cpp(
+  # Call C++ function (renamed to match old getDiffExp.gedi logic)
+  diffExp <- getDiffExp_cpp(
     Rk_list = self$params$Rk,
     H_rotation = private$.aux_static$H.rotation,
     contrast = contrast,
@@ -227,38 +223,31 @@ compute_diffQ <- function(self, private, contrast, include_O = FALSE) {
   
   # Add diffO if requested
   if (include_O) {
-    diffO_vec <- compute_diffO_cpp(
-      Ro = self$params$Ro,
-      H_rotation = private$.aux_static$H.rotation,
-      contrast = contrast,
-      verbose = 0  # Silent for diffO when called from diffQ
-    )
+    diffO_vec <- compute_diffO(self, private, contrast) # Calls the wrapper below
     
     # Add diffO to each column (broadcast)
-    diffQ <- sweep(diffQ, 1, diffO_vec, "+")
+    diffExp <- sweep(diffExp, 1, diffO_vec, "+")
   }
   
   # Add row/column names
-  rownames(diffQ) <- private$.geneIDs
-  colnames(diffQ) <- private$.cellIDs
+  rownames(diffExp) <- private$.geneIDs
+  colnames(diffExp) <- private$.cellIDs
   
-  return(diffQ)
+  return(diffExp)
 }
 
 
 #' Compute Differential O (Global Offset) Effect
 #'
 #' @description
-#' Computes the differential effect of sample-level variables on gene-specific
-#' offsets: diffO = Ro * H.rotation * contrast. This captures global gene
-#' expression changes constant across all cells in a sample.
+#' Computes the global differential effect on gene-specific offsets (J x 1).
+#' This is the R wrapper for the C++ function getDiffO_cpp().
 #'
 #' @param self Reference to GEDI R6 object
 #' @param private Reference to private environment
 #' @param contrast Numeric vector of length L specifying the contrast
 #'
-#' @return Numeric vector of length J representing the differential offset
-#'   effect for each gene
+#' @return Numeric vector of length J
 #'
 #' @keywords internal
 #' @noRd
@@ -288,7 +277,7 @@ compute_diffO <- function(self, private, contrast) {
   }
   
   # Call C++ function
-  diffO <- compute_diffO_cpp(
+  diffO <- getDiffO_cpp(
     Ro = self$params$Ro,
     H_rotation = private$.aux_static$H.rotation,
     contrast = contrast,
@@ -302,18 +291,10 @@ compute_diffO <- function(self, private, contrast) {
 }
 
 
-#' Compute Differential Expression (Convenience Function)
+#' Compute Differential Expression (Alias)
 #'
 #' @description
-#' Computes cell-specific differential expression effects for a given contrast.
-#' This is equivalent to compute_diffQ with the option to include global offsets.
-#'
-#' @param self Reference to GEDI R6 object
-#' @param private Reference to private environment
-#' @param contrast Numeric vector of length L specifying the contrast
-#' @param include_O Logical, whether to include global offset effects (default: FALSE)
-#'
-#' @return Dense matrix (J × N) of differential expression values
+#' Convenience alias for compute_diffQ.
 #'
 #' @keywords internal
 #' @noRd
@@ -326,14 +307,7 @@ compute_diffExp <- function(self, private, contrast, include_O = FALSE) {
 #' Clear Projection Cache
 #'
 #' @description
-#' Clears cached projection results, forcing recomputation on next access.
-#' Useful after model parameters have been updated.
-#'
-#' @param private Reference to private environment
-#' @param what Character vector specifying which cache entries to clear.
-#'   Options: "ZDB", "DB", "ADB", or NULL to clear all (default: NULL)
-#'
-#' @return NULL (invisible)
+#' Clears cached projection results.
 #'
 #' @keywords internal
 #' @noRd
@@ -374,10 +348,6 @@ clear_projection_cache <- function(private, what = NULL) {
 #' @description
 #' Returns information about which projections are currently cached.
 #'
-#' @param private Reference to private environment
-#'
-#' @return Named logical vector indicating which projections are cached
-#'
 #' @keywords internal
 #' @noRd
 get_cache_status <- function(private) {
@@ -400,10 +370,6 @@ get_cache_status <- function(private) {
 #'
 #' @description
 #' Estimates memory usage of cached projections in MB.
-#'
-#' @param private Reference to private environment
-#'
-#' @return Named numeric vector with memory usage in MB for each cached projection
 #'
 #' @keywords internal
 #' @noRd
