@@ -1,0 +1,635 @@
+// [[Rcpp::depends(RcppEigen)]]
+#include <Rcpp.h>
+#include <RcppEigen.h>
+
+#ifdef _OPENMP
+#include <omp.h>
+// [[Rcpp::plugins(openmp)]]
+#endif
+
+using namespace Rcpp;
+using namespace Eigen;
+
+// ============================================================================
+// GEDI Projection Functions
+// Stateless auxiliary functions for computing manifold projections
+// ============================================================================
+
+//' Compute ZDB Projection (Internal)
+//'
+//' Computes the shared manifold projection ZDB = Z * diag(D) * B, where B is
+//' the concatenation of all sample-specific Bi matrices. This is the main
+//' integrated representation of cells in the GEDI latent space.
+//'
+//' @param Z Shared metagene matrix (J Ã— K), where J = genes, K = latent factors
+//' @param D Scaling vector (length K) representing the importance of each factor
+//' @param Bi_list List of sample-specific cell projection matrices, where each
+//'   Bi is a K Ã— Ni matrix (Ni = number of cells in sample i)
+//' @param verbose Integer verbosity level:
+//'   \itemize{
+//'     \item 0: Silent (no output)
+//'     \item 1: Progress bar and summary statistics
+//'     \item 2: Detailed per-sample information
+//'   }
+//'
+//' @return Dense matrix ZDB of dimensions J Ã— N, where N = sum(Ni) is the total
+//'   number of cells across all samples. Each column represents a cell in the
+//'   integrated latent space.
+//'
+//' @details
+//' The ZDB projection represents each cell as a linear combination of shared
+//' metagenes (Z), weighted by latent factors and scaled by their importance (D).
+//' 
+//' Computational strategy:
+//' \enumerate{
+//'   \item Pre-compute ZD = Z * diag(D) once (saves KÃ—JÃ—numSamples operations)
+//'   \item For each sample i: compute ZD * Bi and concatenate
+//'   \item Use Eigen block operations for efficient memory access
+//' }
+//'
+//' Memory: Allocates one J Ã— N dense matrix. For large datasets (e.g., 20k genes,
+//' 50k cells), this requires ~8 GB RAM. Consider computing projections on demand
+//' or working with subsets if memory is limited.
+//'
+//' Performance: OpenMP parallelization available if enabled during compilation.
+//' Typical speed: ~100-200ms for 20k Ã— 5k dataset on modern CPU.
+//'
+//' @keywords internal
+//' @noRd
+// [[Rcpp::export]]
+Eigen::MatrixXd compute_ZDB_cpp(
+    const Eigen::Map<Eigen::MatrixXd>& Z,
+    const Eigen::Map<Eigen::VectorXd>& D,
+    const Rcpp::List& Bi_list,
+    int verbose = 0
+) {
+  
+  // Dimension validation and setup  
+  int J = Z.rows();
+  int K = Z.cols();
+  int numSamples = Bi_list.size();
+  
+  if (D.size() != K) {
+    stop("Dimension mismatch: D must have length K");
+  }
+  
+  if (numSamples == 0) {
+    stop("Bi_list cannot be empty");
+  }
+  
+  // Count total cells across all samples
+  int N = 0;
+  std::vector<int> Ni(numSamples);
+  
+  for (int i = 0; i < numSamples; ++i) {
+    Eigen::MatrixXd Bi = as<Eigen::MatrixXd>(Bi_list[i]);
+    
+    if (Bi.rows() != K) {
+      stop("Dimension mismatch: Bi[%d] must have K rows", i + 1);
+    }
+    
+    Ni[i] = Bi.cols();
+    N += Ni[i];
+  }
+  
+  if (verbose >= 1) {
+    Rcout << "Computing ZDB projection: " << J << " genes Ã— " << N << " cells" << std::endl;
+    if (verbose >= 2) {
+      Rcout << "  Samples: " << numSamples << ", Factors: " << K << std::endl;
+    }
+  }
+  
+  // Pre-compute ZD = Z * diag(D) for efficiency  
+  MatrixXd ZD = Z * D.asDiagonal();
+  
+  if (verbose >= 2) {
+    Rcout << "  Pre-computed Z * D (" << J << " Ã— " << K << ")" << std::endl;
+  }
+  
+  // Allocate output matrix
+  MatrixXd ZDB(J, N);
+  
+  // Compute ZD * Bi for each sample and concatenate  
+  int col_offset = 0;
+  
+  // Progress tracking
+  int progress_step = std::max(1, numSamples / 10);
+  
+#ifdef _OPENMP
+  // Note: Parallelizing over samples here may not be beneficial due to 
+  // memory bandwidth limitations. Profile before enabling.
+  // #pragma omp parallel for schedule(dynamic) if(numSamples > 4)
+#endif
+  
+  for (int i = 0; i < numSamples; ++i) {
+    // Progress bar
+    if (verbose >= 1 && numSamples > 1) {
+      if (i % progress_step == 0 || i == numSamples - 1) {
+        double pct = 100.0 * (i + 1) / numSamples;
+        Rcout << "\r  Progress: " 
+              << std::string(static_cast<int>(pct / 5), '=')
+              << std::string(20 - static_cast<int>(pct / 5), ' ')
+              << " " << static_cast<int>(pct) << "%";
+        Rcout.flush();
+      }
+    }
+    
+    // Extract Bi for this sample
+    Eigen::MatrixXd Bi = as<Eigen::MatrixXd>(Bi_list[i]);
+    int Ni_current = Bi.cols();
+    
+    // Compute ZD * Bi and store in appropriate block
+    ZDB.block(0, col_offset, J, Ni_current) = ZD * Bi;
+    
+    if (verbose >= 2) {
+      Rcout << "\n  Sample " << (i + 1) << "/" << numSamples 
+            << ": " << Ni_current << " cells" << std::endl;
+    }
+    
+    col_offset += Ni_current;
+  }
+  
+  if (verbose >= 1 && numSamples > 1) {
+    Rcout << std::endl;
+  }
+  
+  // Summary statistics (optional)  
+  if (verbose >= 1) {
+    double mean_val = ZDB.mean();
+    double std_val = std::sqrt((ZDB.array() - mean_val).square().mean());
+    Rcout << "ZDB computed: mean = " << mean_val 
+          << ", std = " << std_val << std::endl;
+  }
+  
+  return ZDB;
+}
+
+
+//' Compute DB Projection (Internal)
+//'
+//' Computes the latent factor embedding DB = diag(D) * B, where B is the
+//' concatenation of all sample-specific Bi matrices. This represents cells
+//' in the K-dimensional latent factor space.
+//'
+//' @param D Scaling vector (length K) representing factor importance
+//' @param Bi_list List of sample-specific cell projection matrices, where each
+//'   Bi is a K Ã— Ni matrix
+//' @param verbose Integer verbosity level (0 = silent, 1 = progress, 2 = detailed)
+//'
+//' @return Dense matrix DB of dimensions K Ã— N, where N = sum(Ni). Each column
+//'   represents a cell's coordinates in the latent factor space.
+//'
+//' @details
+//' The DB projection is simpler than ZDB as it operates directly in the K-dimensional
+//' latent space without projecting through the gene space. This is useful for:
+//' \itemize{
+//'   \item Visualization (when K is small, e.g., K=2 or K=3)
+//'   \item Downstream clustering or classification
+//'   \item Understanding factor contributions per cell
+//' }
+//'
+//' Computational strategy:
+//' \enumerate{
+//'   \item Concatenate all Bi matrices horizontally
+//'   \item Apply diagonal scaling: diag(D) * B
+//' }
+//'
+//' Memory: Much smaller than ZDB (K Ã— N vs. J Ã— N). For K=10 and N=50k cells,
+//' requires only ~4 MB vs. ~8 GB for ZDB when J=20k.
+//'
+//' Performance: Very fast (~10-50ms) since K << J typically.
+//'
+//' @keywords internal
+//' @noRd
+// [[Rcpp::export]]
+Eigen::MatrixXd compute_DB_cpp(
+    const Eigen::Map<Eigen::VectorXd>& D,
+    const Rcpp::List& Bi_list,
+    int verbose = 0
+) {
+
+  // Dimension validation and setup  
+  int K = D.size();
+  int numSamples = Bi_list.size();
+  
+  if (numSamples == 0) {
+    stop("Bi_list cannot be empty");
+  }
+  
+  // Count total cells
+  int N = 0;
+  std::vector<int> Ni(numSamples);
+  
+  for (int i = 0; i < numSamples; ++i) {
+    Eigen::MatrixXd Bi = as<Eigen::MatrixXd>(Bi_list[i]);
+    
+    if (Bi.rows() != K) {
+      stop("Dimension mismatch: Bi[%d] must have K rows", i + 1);
+    }
+    
+    Ni[i] = Bi.cols();
+    N += Ni[i];
+  }
+  
+  if (verbose >= 1) {
+    Rcout << "Computing DB projection: " << K << " factors Ã— " << N << " cells" << std::endl;
+  }
+  
+  // Concatenate all Bi matrices
+  MatrixXd B(K, N);
+  int col_offset = 0;
+  
+  for (int i = 0; i < numSamples; ++i) {
+    Eigen::MatrixXd Bi = as<Eigen::MatrixXd>(Bi_list[i]);
+    int Ni_current = Bi.cols();
+    
+    B.block(0, col_offset, K, Ni_current) = Bi;
+    
+    if (verbose >= 2) {
+      Rcout << "  Sample " << (i + 1) << "/" << numSamples 
+            << ": " << Ni_current << " cells" << std::endl;
+    }
+    
+    col_offset += Ni_current;
+  }
+  
+  // Apply diagonal scaling: DB = diag(D) * B
+  MatrixXd DB = D.asDiagonal() * B;
+  
+  if (verbose >= 1) {
+    double mean_val = DB.mean();
+    double std_val = std::sqrt((DB.array() - mean_val).square().mean());
+    Rcout << "DB computed: mean = " << mean_val 
+          << ", std = " << std_val << std::endl;
+  }
+  
+  return DB;
+}
+
+
+//' Compute ADB Projection (Internal)
+//'
+//' Computes the pathway activity projection ADB = C.rotation * A * diag(D) * B.
+//' This represents cells in terms of their pathway/gene set activities rather
+//' than individual gene expression.
+//'
+//' @param C_rotation Rotation matrix (num_pathways x P) that maps from the P-dimensional
+//'   reduced SVD space back to the original pathway space
+//' @param A Pathway-factor connection matrix (P x K) learned during training, where
+//'   P is the number of reduced components and K is the number of latent factors
+//' @param D Scaling vector (length K) representing factor importance
+//' @param Bi_list List of sample-specific cell projection matrices (K x Ni each)
+//' @param verbose Integer verbosity level (0 = silent, 1 = progress, 2 = detailed)
+//'
+//' @return Dense matrix ADB of dimensions num_pathways x N, where num_pathways is the
+//'   number of original pathways and N = total cells. Each column represents a cell's
+//'   pathway activities.
+//'
+//' @details
+//' The ADB projection is only available when a gene-level prior matrix C was
+//' provided during model setup. It enables:
+//' \itemize{
+//'   \item Pathway-level interpretation of cell states
+//'   \item Identifying enriched pathways per cell type
+//'   \item Biological interpretation in original pathway space
+//' }
+//'
+//' Mathematical formulation:
+//' \deqn{ADB = C.rotation \times A \times diag(D) \times B}
+//'
+//' where:
+//' \itemize{
+//'   \item C.rotation (num_pathways x P) maps from reduced space to original pathways
+//'   \item A (P x K) captures pathway-factor associations in reduced space
+//'   \item D (K) scales the importance of each latent factor
+//'   \item B (K x N) contains cell projections in latent space
+//' }
+//'
+//' Computational strategy:
+//' \enumerate{
+//'   \item Concatenate B from all Bi matrices
+//'   \item Compute (C.rotation x A) x (diag(D) x B) efficiently
+//'   \item Return in original pathway space for interpretation
+//' }
+//'
+//' Memory: num_pathways x N matrix. For 100 original pathways and N=50k cells, ~40 MB.
+//'
+//' Performance: Fast due to small P and K dimensions (~50-100ms typical).
+//'
+//' @keywords internal
+//' @noRd
+// [[Rcpp::export]]
+Eigen::MatrixXd compute_ADB_cpp(
+    const Eigen::Map<Eigen::MatrixXd>& C_rotation,
+    const Eigen::Map<Eigen::MatrixXd>& A,
+    const Eigen::Map<Eigen::VectorXd>& D,
+    const Rcpp::List& Bi_list,
+    int verbose = 0
+) {
+
+  // Dimension extraction - C_rotation is num_pathways x P, A is P x K
+  int num_pathways = C_rotation.rows();  // Original number of pathways
+  int P = C_rotation.cols();             // Number of reduced SVD components
+  int K = A.cols();                      // Number of latent factors
+  int numSamples = Bi_list.size();
+  
+  // Dimension validation
+  if (A.rows() != P) {
+    stop("Dimension mismatch: A must have P rows (got %d, expected %d)", A.rows(), P);
+  }
+  
+  if (D.size() != K) {
+    stop("Dimension mismatch: D must have length K (got %d, expected %d)", D.size(), K);
+  }
+  
+  if (numSamples == 0) {
+    stop("Bi_list cannot be empty");
+  }
+  
+  if (P == 0) {
+    stop("Cannot compute ADB: no gene-level prior (C) was provided");
+  }
+  
+  // Count total cells and validate Bi dimensions
+  int N = 0;
+  std::vector<int> Ni(numSamples);
+  
+  for (int i = 0; i < numSamples; ++i) {
+    Eigen::MatrixXd Bi = as<Eigen::MatrixXd>(Bi_list[i]);
+    
+    if (Bi.rows() != K) {
+      stop("Dimension mismatch: Bi[%d] must have K rows (got %d, expected %d)", 
+           i + 1, Bi.rows(), K);
+    }
+    
+    Ni[i] = Bi.cols();
+    N += Ni[i];
+  }
+  
+  if (verbose >= 1) {
+    Rcout << "Computing ADB projection: " << num_pathways << " pathways x " << N << " cells" << std::endl;
+    if (verbose >= 2) {
+      Rcout << "  Reduced dimensions (P): " << P << ", Factors (K): " << K << std::endl;
+    }
+  }
+  // Concatenate all Bi matrices into B  
+  MatrixXd B(K, N);
+  int col_offset = 0;
+  
+  int progress_step = std::max(1, numSamples / 10);
+  
+  for (int i = 0; i < numSamples; ++i) {
+    // Progress bar
+    if (verbose >= 1 && numSamples > 1) {
+      if (i % progress_step == 0 || i == numSamples - 1) {
+        double pct = 100.0 * (i + 1) / numSamples;
+        Rcout << "\r  Progress: " 
+              << std::string(static_cast<int>(pct / 5), '=')
+              << std::string(20 - static_cast<int>(pct / 5), ' ')
+              << " " << static_cast<int>(pct) << "%";
+        Rcout.flush();
+      }
+    }
+    
+    Eigen::MatrixXd Bi = as<Eigen::MatrixXd>(Bi_list[i]);
+    int Ni_current = Bi.cols();
+    
+    B.block(0, col_offset, K, Ni_current) = Bi;
+    
+    if (verbose >= 2) {
+      Rcout << "\n  Sample " << (i + 1) << "/" << numSamples 
+            << ": " << Ni_current << " cells" << std::endl;
+    }
+    
+    col_offset += Ni_current;
+  }
+  
+  if (verbose >= 1 && numSamples > 1) {
+    Rcout << std::endl;
+  }
+  
+  // Compute ADB = C.rotation * A * diag(D) * B  
+  if (verbose >= 2) {
+    Rcout << "  Computing matrix product: C.rotation * A * D * B" << std::endl;
+  }
+  
+  // Efficient computation order: (C.rotation * A) * (diag(D) * B)
+  // This minimizes intermediate matrix sizes
+  MatrixXd CA = C_rotation * A;        // P Ã— K
+  MatrixXd DB = D.asDiagonal() * B;    // K Ã— N
+  MatrixXd ADB = CA * DB;              // P Ã— N
+  
+  if (verbose >= 1) {
+    double mean_val = ADB.mean();
+    double std_val = std::sqrt((ADB.array() - mean_val).square().mean());
+    Rcout << "ADB computed: mean = " << mean_val 
+          << ", std = " << std_val << std::endl;
+  }
+  
+  return ADB;
+}
+
+
+//' Compute Differential Q Projection (Internal)
+//'
+//' Computes the differential effect of sample-level variables on metagene
+//' expression: diffQ = sum_k (Rk * H.rotation * contrast)_k * DB_k, where
+//' the sum is over all K latent factors.
+//'
+//' @param Rk_list List of K matrices (each J Ã— L), representing the effect of
+//'   sample-level variables on each latent factor k
+//' @param H_rotation Rotation matrix (L Ã— numSamples) mapping sample variables
+//'   back to original sample space
+//' @param contrast Vector of length L specifying the contrast of interest
+//'   (e.g., disease vs. control)
+//' @param D Scaling vector (length K)
+//' @param Bi_list List of sample-specific cell projection matrices (K Ã— Ni each)
+//' @param verbose Integer verbosity level (0 = silent, 1 = progress, 2 = detailed)
+//'
+//' @return Dense matrix diffQ of dimensions J Ã— N representing the predicted
+//'   differential expression effect for each gene in each cell under the
+//'   specified contrast.
+//'
+//' @details
+//' This function enables cluster-free differential expression analysis by
+//' computing how sample-level variables (e.g., disease status, treatment)
+//' affect gene expression in each individual cell.
+//'
+//' Only available when sample-level covariate matrix H was provided during
+//' model setup (i.e., L > 0).
+//'
+//' @keywords internal
+//' @noRd
+// [[Rcpp::export]]
+Eigen::MatrixXd compute_diffQ_cpp(
+    const Rcpp::List& Rk_list,
+    const Eigen::Map<Eigen::MatrixXd>& H_rotation,
+    const Eigen::Map<Eigen::VectorXd>& contrast,
+    const Eigen::Map<Eigen::VectorXd>& D,
+    const Rcpp::List& Bi_list,
+    int verbose = 0
+) {
+
+  // Dimension validation  
+  int K = Rk_list.size();
+  int L = H_rotation.rows();
+  int J = -1;  // Will be determined from first Rk
+  int numSamples = Bi_list.size();
+  
+  if (contrast.size() != L) {
+    stop("Dimension mismatch: contrast must have length L");
+  }
+  
+  if (D.size() != K) {
+    stop("Dimension mismatch: D must have length K");
+  }
+  
+  if (K == 0 || L == 0) {
+    stop("Cannot compute diffQ: no sample-level prior (H) was provided");
+  }
+  
+  // Validate Rk dimensions and get J
+  for (int k = 0; k < K; ++k) {
+    Eigen::MatrixXd Rk = as<Eigen::MatrixXd>(Rk_list[k]);
+    
+    if (Rk.cols() != L) {
+      stop("Dimension mismatch: Rk[%d] must have L columns", k + 1);
+    }
+    
+    if (J == -1) {
+      J = Rk.rows();
+    } else if (Rk.rows() != J) {
+      stop("Dimension mismatch: all Rk must have same number of rows (J)");
+    }
+  }
+  
+  // Count total cells and validate Bi
+  int N = 0;
+  for (int i = 0; i < numSamples; ++i) {
+    Eigen::MatrixXd Bi = as<Eigen::MatrixXd>(Bi_list[i]);
+    
+    if (Bi.rows() != K) {
+      stop("Dimension mismatch: Bi[%d] must have K rows", i + 1);
+    }
+    
+    N += Bi.cols();
+  }
+  
+  if (verbose >= 1) {
+    Rcout << "Computing diffQ projection: " << J << " genes Ã— " << N << " cells" << std::endl;
+    if (verbose >= 2) {
+      Rcout << "  Contrast dimension: " << L << ", Factors: " << K << std::endl;
+    }
+  }
+  
+  // Concatenate B and compute DB
+  MatrixXd B(K, N);
+  int col_offset = 0;
+  
+  for (int i = 0; i < numSamples; ++i) {
+    Eigen::MatrixXd Bi = as<Eigen::MatrixXd>(Bi_list[i]);
+    int Ni_current = Bi.cols();
+    B.block(0, col_offset, K, Ni_current) = Bi;
+    col_offset += Ni_current;
+  }
+  
+  MatrixXd DB = D.asDiagonal() * B;  // K Ã— N
+  
+  // Compute: diffQ = sum_k (Rk * H.rotation * contrast) * DB[k, :]  
+  if (verbose >= 2) {
+    Rcout << "  Computing Rk * H.rotation * contrast for each factor" << std::endl;
+  }
+  
+  // Pre-compute H.rotation * contrast (length numSamples vector)
+  VectorXd H_contrast = H_rotation * contrast;  // numSamples Ã— 1
+  
+  MatrixXd diffQ = MatrixXd::Zero(J, N);
+  
+  for (int k = 0; k < K; ++k) {
+    if (verbose >= 2 && K <= 20) {
+      Rcout << "    Factor " << (k + 1) << "/" << K << std::endl;
+    }
+    
+    Eigen::MatrixXd Rk = as<Eigen::MatrixXd>(Rk_list[k]);  // J Ã— L
+    
+    // Compute effect for this factor: Rk * H_contrast (J Ã— 1)
+    VectorXd effect_k = Rk * H_contrast;
+    
+    // Add effect_k * DB[k, :] to diffQ
+    // This is an outer product: effect_k (JÃ—1) with DB.row(k) (1Ã—N)
+    diffQ += effect_k * DB.row(k);
+  }
+  
+  if (verbose >= 1) {
+    double mean_val = diffQ.mean();
+    double std_val = std::sqrt((diffQ.array() - mean_val).square().mean());
+    Rcout << "diffQ computed: mean = " << mean_val 
+          << ", std = " << std_val << std::endl;
+  }
+  
+  return diffQ;
+}
+
+
+//' Compute Differential O (Gene Offset) Effect (Internal)
+//'
+//' Computes the differential effect of sample-level variables on gene-specific
+//' offsets: diffO = Ro * H.rotation * contrast.
+//'
+//' @param Ro Matrix (J Ã— L) representing effect of sample variables on gene offsets
+//' @param H_rotation Rotation matrix (L Ã— numSamples)
+//' @param contrast Vector of length L specifying the contrast
+//' @param verbose Integer verbosity level
+//'
+//' @return Vector of length J representing the differential offset effect
+//'   for each gene under the specified contrast.
+//'
+//' @details
+//' The diffO effect captures global gene expression changes that are constant
+//' across all cells in a sample, complementing the cell-specific effects in diffQ.
+//'
+//' Only available when H was provided (L > 0).
+//'
+//' @keywords internal
+//' @noRd
+// [[Rcpp::export]]
+Eigen::VectorXd compute_diffO_cpp(
+    const Eigen::Map<Eigen::MatrixXd>& Ro,
+    const Eigen::Map<Eigen::MatrixXd>& H_rotation,
+    const Eigen::Map<Eigen::VectorXd>& contrast,
+    int verbose = 0
+) {
+
+  // Dimension validation
+  int J = Ro.rows();
+  int L = Ro.cols();
+  
+  if (H_rotation.rows() != L) {
+    stop("Dimension mismatch: H_rotation must have L rows");
+  }
+  
+  if (contrast.size() != L) {
+    stop("Dimension mismatch: contrast must have length L");
+  }
+  
+  if (L == 0) {
+    stop("Cannot compute diffO: no sample-level prior (H) was provided");
+  }
+  
+  if (verbose >= 1) {
+    Rcout << "Computing diffO: " << J << " genes" << std::endl;
+  }
+  
+  // Compute: diffO = Ro * H.rotation * contrast
+  VectorXd H_contrast = H_rotation * contrast;
+  VectorXd diffO = Ro * H_contrast;
+  
+  if (verbose >= 1) {
+    double mean_val = diffO.mean();
+    double std_val = std::sqrt((diffO.array() - mean_val).square().mean());
+    Rcout << "diffO computed: mean = " << mean_val 
+          << ", std = " << std_val << std::endl;
+  }
+  
+  return diffO;
+}
