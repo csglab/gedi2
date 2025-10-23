@@ -878,6 +878,20 @@ GEDI <- R6Class(
       
       # Return accessor object with dense() and sparse() methods
       create_pathway_associations_accessor(self, private)
+    },
+    
+    # =========================================================================
+    # Dynamics Analysis Accessor
+    # =========================================================================
+    
+    dynamics = function(value) {
+      if (!missing(value)) stop("dynamics is read-only", call. = FALSE)
+      if (is.null(private$.lastResult)) {
+        stop("No results yet. Run $initialize_lvs() or $train() first.", call. = FALSE)
+      }
+      
+      # Return accessor object for vector field and gradient analysis
+      create_dynamics_accessor(self, private)
     }
 
   )
