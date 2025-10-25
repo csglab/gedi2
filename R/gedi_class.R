@@ -60,12 +60,20 @@ GEDI <- R6Class(
     .geneIDs = NULL,
     .cellIDs = NULL,
     .sampleNames = NULL,
+    .samples = NULL,
     
     # Static auxiliary data (rotation matrices, priors)
     .aux_static = NULL,
     
+    # M fingerprint for validation
+    .M_fingerprint = NULL,
+    .validation_mode = "standard",
+    
     # Projection cache
     .cache = NULL,
+    
+    # Imputation cache
+    .imputation_cache = NULL,
     
     prepareData = function(
       Samples, Y, X, M, colData, C, H, K, mode, adjustD, orthoZ,
@@ -496,12 +504,17 @@ GEDI <- R6Class(
       fixed_si = NA,
       rsvd_p = 10,
       rsvd_sdist = "normal",
+      validation_mode = c("standard", "strict"),
       verbose = 1,
       num_threads = 0
     ) {
       
       private$.verbose <- verbose
       private$.logger <- newLogger("GEDI", level = verbose)
+      
+      # Validate and store validation mode
+      validation_mode <- match.arg(validation_mode)
+      private$.validation_mode <- validation_mode
       
       private$.logger$info("Setting up GEDI model...")
       
@@ -519,6 +532,22 @@ GEDI <- R6Class(
       private$.geneIDs <- data$geneIDs
       private$.cellIDs <- data$cellIDs
       private$.sampleNames <- data$sampleNames
+      
+      # Store Samples vector (in original order)
+      private$.samples <- Samples
+      
+      # Compute and store M fingerprint (simplified - no gene/cell IDs)
+      if (!is.null(M)) {
+        private$.M_fingerprint <- compute_M_fingerprint(
+          M = M,
+          obs_type = data$aux$obs.type,
+          mode = validation_mode
+        )
+        
+        if (private$.verbose >= 1) {
+          private$.logger$info(sprintf("M fingerprint computed (%s validation)", validation_mode))
+        }
+      }
       
       # Create C++ object (C++ will compute Yi from M)
       private$.cppPtr <- GEDI_new(
@@ -574,9 +603,10 @@ GEDI <- R6Class(
 
       private$.logger$info("Optimization complete.")
       
-      # Clear projection cache after optimization
+      # Clear caches after optimization
       clear_projection_cache(private)
       clear_dimred_cache(private)
+      clear_imputation_cache(private)
 
       invisible(self)
     },
@@ -599,9 +629,10 @@ GEDI <- R6Class(
 
       private$.logger$info("Training complete.")
       
-      # Clear projection cache after training
+      # Clear caches after training
       clear_projection_cache(private)
       clear_dimred_cache(private)
+      clear_imputation_cache(private)
 
       invisible(self)
     },
@@ -620,22 +651,31 @@ GEDI <- R6Class(
         clear_dimred_cache(private, dimred_what)
       }
       
+      # Clear imputation cache if specified, or if clearing all
+      if (is.null(what) || any(what %in% c("Y_fitted", "Y_imputed", "Y_var"))) {
+        imputation_what <- if (is.null(what)) NULL else intersect(what, c("Y_fitted", "Y_imputed", "Y_var"))
+        clear_imputation_cache(private, imputation_what)
+      }
+      
       invisible(self)
     },
     
     cache_status = function() {
       proj_status <- get_cache_status(private)
       dimred_status <- get_dimred_cache_status(private)
-      c(proj_status, dimred_status)
+      imputation_status <- get_imputation_cache_status(private)
+      c(proj_status, dimred_status, imputation_status)
     },
     
     cache_memory = function() {
       proj_memory <- get_cache_memory(private)
       dimred_memory <- get_dimred_cache_memory(private)
+      imputation_memory <- get_imputation_cache_memory(private)
       
       # Combine and recalculate total
       all_memory <- c(proj_memory[names(proj_memory) != "Total"],
-                      dimred_memory[names(dimred_memory) != "Total"])
+                      dimred_memory[names(dimred_memory) != "Total"],
+                      imputation_memory[names(imputation_memory) != "Total"])
       all_memory["Total"] <- sum(all_memory)
       
       return(all_memory)
@@ -706,7 +746,7 @@ GEDI <- R6Class(
       
       if (!is.null(private$.lastResult)) {
         aux <- private$.lastResult$aux
-        cat(sprintf("Dimensions: %d genes Ã— %d cells\n", aux$J, aux$N))
+        cat(sprintf("Dimensions: %d genes × %d cells\n", aux$J, aux$N))
         cat(sprintf("Samples: %d (%s)\n", 
                     aux$numSamples, 
                     paste(head(private$.sampleNames, 3), collapse = ", ")))
@@ -720,7 +760,8 @@ GEDI <- R6Class(
         # Cache info
         proj_cache <- get_cache_status(private)
         dimred_cache <- get_dimred_cache_status(private)
-        all_cached <- c(proj_cache, dimred_cache)
+        imputation_cache <- get_imputation_cache_status(private)
+        all_cached <- c(proj_cache, dimred_cache, imputation_cache)
         if (any(all_cached)) {
           cached_names <- names(all_cached)[all_cached]
           cat(sprintf("Cached: %s\n", paste(cached_names, collapse = ", ")))
@@ -798,10 +839,12 @@ GEDI <- R6Class(
         geneIDs = private$.geneIDs,
         cellIDs = private$.cellIDs,
         sampleIDs = private$.sampleNames,
+        Samples = private$.samples,
         colData = if (!is.null(private$.aux_static)) private$.aux_static$colData else NULL,
         n_genes = if (!is.null(private$.lastResult)) private$.lastResult$aux$J else NULL,
         n_cells = if (!is.null(private$.lastResult)) private$.lastResult$aux$N else NULL,
-        n_samples = if (!is.null(private$.lastResult)) private$.lastResult$aux$numSamples else NULL
+        n_samples = if (!is.null(private$.lastResult)) private$.lastResult$aux$numSamples else NULL,
+        validation_mode = private$.validation_mode
       )
     },
     
@@ -892,6 +935,20 @@ GEDI <- R6Class(
       
       # Return accessor object for vector field and gradient analysis
       create_dynamics_accessor(self, private)
+    },
+    
+    # =========================================================================
+    # Imputation Accessor
+    # =========================================================================
+    
+    imputed = function(value) {
+      if (!missing(value)) stop("imputed is read-only", call. = FALSE)
+      if (is.null(private$.lastResult)) {
+        stop("No results yet. Run $initialize_lvs() or $train() first.", call. = FALSE)
+      }
+      
+      # Return accessor object for imputation analysis
+      create_imputation_accessor(self, private)
     }
 
   )
@@ -910,8 +967,8 @@ GEDI <- R6Class(
 #' @param Y Log-transformed expression matrix (optional if M provided)
 #' @param X Binary indicator matrix (optional if M or Y provided)
 #' @param colData Optional data.frame with cell metadata
-#' @param C Gene-level prior matrix (genes Ã— pathways)
-#' @param H Sample-level covariate matrix (covariates Ã— samples)
+#' @param C Gene-level prior matrix (genes × pathways)
+#' @param H Sample-level covariate matrix (covariates × samples)
 #' @param K Number of latent factors (default: 10)
 #' @param mode Normalization mode: "Bl2" or "Bsphere" (default: "Bl2")
 #' @param adjustD Whether to adjust D based on B row norms (default: TRUE)
@@ -922,6 +979,8 @@ GEDI <- R6Class(
 #' @param rsvd_p Oversampling parameter for randomized SVD (default: 10)
 #' @param rsvd_sdist Random distribution for rSVD: "normal", "unif", or "rademacher" 
 #'   (default: "normal")
+#' @param validation_mode Validation mode for M matrix: "standard" (fast, Levels 1+2+4) 
+#'   or "strict" (adds cryptographic hash, Level 5) (default: "standard")
 #' @param verbose Verbosity level: 0 (silent), 1 (info), 2 (debug) (default: 1)
 #' @param num_threads Number of OpenMP threads (default: 0 = auto)
 #'
@@ -947,6 +1006,10 @@ GEDI <- R6Class(
 #' # Access projections (computed on demand, cached)
 #' zdb <- model$projections$ZDB
 #' db <- model$projections$DB
+#' 
+#' # Access imputed expression
+#' Y_imputed <- model$imputed$Y()  # No M needed!
+#' Y_var <- model$imputed$variance(M)  # M required
 #' }
 #' 
 #' @export
@@ -972,6 +1035,7 @@ CreateGEDIObject <- function(
   fixed_si = NA,
   rsvd_p = 10,
   rsvd_sdist = "normal",
+  validation_mode = c("standard", "strict"),
   verbose = 1,
   num_threads = 0
 ) {
@@ -997,6 +1061,7 @@ CreateGEDIObject <- function(
     fixed_si = fixed_si,
     rsvd_p = rsvd_p,
     rsvd_sdist = rsvd_sdist,
+    validation_mode = validation_mode,
     verbose = verbose,
     num_threads = num_threads
   )
