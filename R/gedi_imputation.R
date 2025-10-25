@@ -577,32 +577,34 @@ clear_imputation_cache <- function(private, what = NULL) {
   
   if (is.null(what)) {
     # Clear all imputation cache
-    private$.imputation_cache <- list(
-      Y_fitted = NULL,
-      Y_imputed = NULL,
-      Y_var = NULL,
-      last_M_hash = NULL,
-      cache_valid = FALSE
-    )
+    private$.imputation_cache <- list()
     if (private$.verbose > 0) {
       message("Imputation cache cleared")
     }
   } else {
     # Clear specific entries
-    valid_entries <- c("Y_fitted", "Y_imputed", "Y_var")
-    invalid <- setdiff(what, valid_entries)
-    if (length(invalid) > 0) {
-      warning("Invalid cache entries: ", paste(invalid, collapse = ", "))
-    }
-    
-    for (entry in intersect(what, valid_entries)) {
-      private$.imputation_cache[[entry]] <- NULL
+    if ("Y_imputed" %in% what) {
+      # Clear ALL Y_imputed variants
+      y_imputed_keys <- grep("^Y_imputed_", names(private$.imputation_cache), value = TRUE)
+      for (key in y_imputed_keys) {
+        private$.imputation_cache[[key]] <- NULL
+      }
       if (private$.verbose > 0) {
-        message(sprintf("Cache cleared: %s", entry))
+        message("Cache cleared: Y_imputed (all variants)")
       }
     }
     
-    private$.imputation_cache$cache_valid <- FALSE
+    if ("Y_var" %in% what) {
+      private$.imputation_cache$Y_var <- NULL
+      if (private$.verbose > 0) {
+        message("Cache cleared: Y_var")
+      }
+    }
+    
+    invalid <- setdiff(what, c("Y_imputed", "Y_var"))
+    if (length(invalid) > 0) {
+      warning("Invalid cache entries: ", paste(invalid, collapse = ", "))
+    }
   }
   
   invisible(NULL)
@@ -623,12 +625,14 @@ clear_imputation_cache <- function(private, what = NULL) {
 get_imputation_cache_status <- function(private) {
   
   if (is.null(private$.imputation_cache)) {
-    return(c(Y_fitted = FALSE, Y_imputed = FALSE, Y_var = FALSE))
+    return(c(Y_imputed = FALSE, Y_var = FALSE))
   }
   
+  # Check for any Y_imputed variant (different logScale/rowCentre combinations)
+  has_Y_imputed <- any(grepl("^Y_imputed_", names(private$.imputation_cache)))
+  
   status <- c(
-    Y_fitted = !is.null(private$.imputation_cache$Y_fitted),
-    Y_imputed = !is.null(private$.imputation_cache$Y_imputed),
+    Y_imputed = has_Y_imputed,
     Y_var = !is.null(private$.imputation_cache$Y_var)
   )
   
@@ -650,16 +654,21 @@ get_imputation_cache_status <- function(private) {
 get_imputation_cache_memory <- function(private) {
   
   if (is.null(private$.imputation_cache)) {
-    return(c(Y_fitted = 0, Y_imputed = 0, Y_var = 0, Total = 0))
+    return(c(Y_imputed = 0, Y_var = 0, Total = 0))
   }
   
+  # Sum all Y_imputed variants
+  y_imputed_keys <- grep("^Y_imputed_", names(private$.imputation_cache), value = TRUE)
+  y_imputed_size <- sum(vapply(y_imputed_keys, function(key) {
+    if (!is.null(private$.imputation_cache[[key]])) {
+      as.numeric(object.size(private$.imputation_cache[[key]]) / 1024^2)
+    } else {
+      0
+    }
+  }, numeric(1)))
+  
   memory_mb <- c(
-    Y_fitted = if (!is.null(private$.imputation_cache$Y_fitted)) {
-      object.size(private$.imputation_cache$Y_fitted) / 1024^2
-    } else 0,
-    Y_imputed = if (!is.null(private$.imputation_cache$Y_imputed)) {
-      object.size(private$.imputation_cache$Y_imputed) / 1024^2
-    } else 0,
+    Y_imputed = y_imputed_size,
     Y_var = if (!is.null(private$.imputation_cache$Y_var)) {
       object.size(private$.imputation_cache$Y_var) / 1024^2
     } else 0
