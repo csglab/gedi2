@@ -3,6 +3,50 @@
 # Lazy-computed embedding methods with caching
 # ==============================================================================
 
+# ==============================================================================
+# Embeddings Accessor R6 Class (for lazy evaluation)
+# ==============================================================================
+
+EmbeddingsAccessor <- R6Class(
+  "EmbeddingsAccessor",
+  public = list(
+    initialize = function(gedi_self, gedi_private) {
+      private$.gedi_self <- gedi_self
+      private$.gedi_private <- gedi_private
+    },
+    
+    umap = function(...) {
+      compute_umap(private$.gedi_self, private$.gedi_private, ...)
+    },
+    
+    print = function() {
+      cat("<GEDI Embeddings Accessor>\n")
+      cat("\nAvailable embeddings (lazy-computed):\n")
+      cat("  $svd   - Factorized SVD\n")
+      cat("  $pca   - PCA coordinates\n")
+      cat("  $umap(...) - UMAP embedding (function)\n")
+      cat("\nAccess with: model$embeddings$pca\n")
+      invisible(self)
+    }
+  ),
+  private = list(
+    .gedi_self = NULL,
+    .gedi_private = NULL
+  ),
+  active = list(
+    svd = function(value) {
+      if (!missing(value)) stop("svd is read-only", call. = FALSE)
+      compute_svd_factorized(private$.gedi_self, private$.gedi_private)
+    },
+    
+    pca = function(value) {
+      if (!missing(value)) stop("pca is read-only", call. = FALSE)
+      compute_pca(private$.gedi_self, private$.gedi_private)
+    }
+  )
+)
+
+
 #' Compute Factorized SVD with Caching
 #'
 #' @description
