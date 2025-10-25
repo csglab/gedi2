@@ -3,6 +3,57 @@
 # Lazy-computed projection methods with caching
 # ==============================================================================
 
+
+# Projections Accessor R6 Class (for lazy evaluation)
+# ==============================================================================
+
+ProjectionsAccessor <- R6Class(
+  "ProjectionsAccessor",
+  public = list(
+    initialize = function(gedi_self, gedi_private) {
+      private$.gedi_self <- gedi_self
+      private$.gedi_private <- gedi_private
+    },
+    
+    print = function() {
+      cat("<GEDI Projections Accessor>\n")
+      cat("\nAvailable projections (lazy-computed):\n")
+      cat("  $ZDB  - Shared manifold projection (J × N)\n")
+      cat("  $DB   - Latent factor embedding (K × N)\n")
+      if (private$.gedi_self$aux$P > 0) {
+        cat("  $ADB  - Pathway activity projection (P × N)\n")
+      }
+      cat("\nAccess with: model$projections$ZDB\n")
+      invisible(self)
+    }
+  ),
+  private = list(
+    .gedi_self = NULL,
+    .gedi_private = NULL
+  ),
+  active = list(
+    ZDB = function(value) {
+      if (!missing(value)) stop("ZDB is read-only", call. = FALSE)
+      compute_ZDB(private$.gedi_self, private$.gedi_private)
+    },
+    
+    DB = function(value) {
+      if (!missing(value)) stop("DB is read-only", call. = FALSE)
+      compute_DB(private$.gedi_self, private$.gedi_private)
+    },
+    
+    ADB = function(value) {
+      if (!missing(value)) stop("ADB is read-only", call. = FALSE)
+      if (private$.gedi_self$aux$P > 0) {
+        compute_ADB(private$.gedi_self, private$.gedi_private)
+      } else {
+        NULL
+      }
+    }
+  )
+)
+
+
 #' Compute ZDB Projection with Caching
 #'
 #' @description
