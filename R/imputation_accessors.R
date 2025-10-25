@@ -37,11 +37,11 @@ create_imputation_accessor <- function(self, private) {
 }
 
 
-#' Get Imputed Y Expression
+#' Get Imputed Y Expression (with caching)
 #'
 #' @description
 #' Returns imputed gene expression with sample-specific effects removed.
-#' This is the main user-facing function for getting denoised expression values.
+#' Results are cached for faster repeated access.
 #'
 #' @param self Reference to GEDI R6 object
 #' @param private Reference to private environment
@@ -61,6 +61,18 @@ get_imputed_Y <- function(self, private, M = NULL, logScale = TRUE, rowCentre = 
   }
   
   obs_type <- self$aux$obs.type
+  
+  # Create cache key
+  cache_key <- paste0("Y_imputed_", logScale, "_", rowCentre)
+  
+  # Check if cached
+  if (!is.null(private$.imputation_cache) && 
+      !is.null(private$.imputation_cache[[cache_key]])) {
+    if (private$.verbose > 0) {
+      cat("✓ Using cached imputed Y\n")
+    }
+    return(private$.imputation_cache[[cache_key]])
+  }
   
   # For non-log scale output, need M for proper transformation
   if (!logScale && is.null(M)) {
@@ -108,23 +120,24 @@ get_imputed_Y <- function(self, private, M = NULL, logScale = TRUE, rowCentre = 
   # Transform to non-log scale if requested
   if (!logScale) {
     if (obs_type == "M") {
-      # Y_imputed is log(M+1), so exp(Y_imputed) gives M+1, subtract 1
-      # But actually we want just exp for counts
       Y_imputed <- exp(Y_imputed)
       
     } else if (obs_type == "M_paired") {
-      # Y_imputed is log((M1+1)/(M2+1)), so transform to probability
-      # p = 1 / (1 + exp(-Y_imputed))
       Y_imputed <- 1 / (1 + exp(-Y_imputed))
       
     } else if (obs_type == "Y") {
-      # Already in correct scale, just exponentiate
       Y_imputed <- exp(Y_imputed)
       
     } else {
       stop("Unrecognized observation type: ", obs_type, call. = FALSE)
     }
   }
+  
+  # Cache result
+  if (is.null(private$.imputation_cache)) {
+    private$.imputation_cache <- list()
+  }
+  private$.imputation_cache[[cache_key]] <- Y_imputed
   
   if (private$.verbose >= 1) {
     cat("✓ Imputed Y computed: ", nrow(Y_imputed), " genes × ", 
@@ -136,10 +149,10 @@ get_imputed_Y <- function(self, private, M = NULL, logScale = TRUE, rowCentre = 
 }
 
 
-#' Get Y Variance
+#' Get Y Variance (with caching)
 #'
 #' @description
-#' Returns posterior variance of imputed Y. Requires the original M matrix.
+#' Returns posterior variance of imputed Y. Results are cached.
 #'
 #' @param self Reference to GEDI R6 object
 #' @param private Reference to private environment
@@ -161,12 +174,29 @@ get_Y_variance <- function(self, private, M) {
     stop("M must be provided for variance calculation", call. = FALSE)
   }
   
+  # Check cache
+  if (!is.null(private$.imputation_cache) && 
+      !is.null(private$.imputation_cache$Y_var)) {
+    if (private$.verbose > 0) {
+      cat("✓ Using cached Y variance\n")
+    }
+    return(private$.imputation_cache$Y_var)
+  }
+  
   # Call core computation function
   Y_var <- compute_Y_variance(self, private, M)
   
-  if (!is.null(Y_var) && private$.verbose >= 1) {
-    cat("✓ Y variance computed: ", nrow(Y_var), " genes × ", 
-        ncol(Y_var), " cells\n", sep = "")
+  # Cache result
+  if (!is.null(Y_var)) {
+    if (is.null(private$.imputation_cache)) {
+      private$.imputation_cache <- list()
+    }
+    private$.imputation_cache$Y_var <- Y_var
+    
+    if (private$.verbose >= 1) {
+      cat("✓ Y variance computed: ", nrow(Y_var), " genes × ", 
+          ncol(Y_var), " cells\n", sep = "")
+    }
   }
   
   return(Y_var)
