@@ -137,6 +137,94 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// Yi_resZ
+SEXP Yi_resZ(Eigen::MatrixXd Yi, Eigen::MatrixXd QiDBi, Eigen::VectorXd si, Eigen::VectorXd o, Eigen::VectorXd oi);
+RcppExport SEXP _gedi_Yi_resZ(SEXP YiSEXP, SEXP QiDBiSEXP, SEXP siSEXP, SEXP oSEXP, SEXP oiSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type Yi(YiSEXP);
+    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type QiDBi(QiDBiSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type si(siSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type o(oSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type oi(oiSEXP);
+    rcpp_result_gen = Rcpp::wrap(Yi_resZ(Yi, QiDBi, si, o, oi));
+    return rcpp_result_gen;
+END_RCPP
+}
+// predict_Yhat
+SEXP predict_Yhat(Eigen::MatrixXd ZDBi, Eigen::MatrixXd QiDBi, Eigen::VectorXd si, Eigen::VectorXd o, Eigen::VectorXd oi);
+RcppExport SEXP _gedi_predict_Yhat(SEXP ZDBiSEXP, SEXP QiDBiSEXP, SEXP siSEXP, SEXP oSEXP, SEXP oiSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type ZDBi(ZDBiSEXP);
+    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type QiDBi(QiDBiSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type si(siSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type o(oSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type oi(oiSEXP);
+    rcpp_result_gen = Rcpp::wrap(predict_Yhat(ZDBi, QiDBi, si, o, oi));
+    return rcpp_result_gen;
+END_RCPP
+}
+// Yi_var_M
+SEXP Yi_var_M(Eigen::MatrixXd Yi, double sigma2);
+RcppExport SEXP _gedi_Yi_var_M(SEXP YiSEXP, SEXP sigma2SEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type Yi(YiSEXP);
+    Rcpp::traits::input_parameter< double >::type sigma2(sigma2SEXP);
+    rcpp_result_gen = Rcpp::wrap(Yi_var_M(Yi, sigma2));
+    return rcpp_result_gen;
+END_RCPP
+}
+// Yi_var_M_paired
+SEXP Yi_var_M_paired(Eigen::MatrixXd Yi, Eigen::SparseMatrix<double> M1i, Eigen::SparseMatrix<double> M2i, double sigma2);
+RcppExport SEXP _gedi_Yi_var_M_paired(SEXP YiSEXP, SEXP M1iSEXP, SEXP M2iSEXP, SEXP sigma2SEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type Yi(YiSEXP);
+    Rcpp::traits::input_parameter< Eigen::SparseMatrix<double> >::type M1i(M1iSEXP);
+    Rcpp::traits::input_parameter< Eigen::SparseMatrix<double> >::type M2i(M2iSEXP);
+    Rcpp::traits::input_parameter< double >::type sigma2(sigma2SEXP);
+    rcpp_result_gen = Rcpp::wrap(Yi_var_M_paired(Yi, M1i, M2i, sigma2));
+    return rcpp_result_gen;
+END_RCPP
+}
+// compute_dispersion_sparse
+List compute_dispersion_sparse(Eigen::MatrixXd Yi_fitted, Eigen::SparseMatrix<double> Mi, int subsample);
+RcppExport SEXP _gedi_compute_dispersion_sparse(SEXP Yi_fittedSEXP, SEXP MiSEXP, SEXP subsampleSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type Yi_fitted(Yi_fittedSEXP);
+    Rcpp::traits::input_parameter< Eigen::SparseMatrix<double> >::type Mi(MiSEXP);
+    Rcpp::traits::input_parameter< int >::type subsample(subsampleSEXP);
+    rcpp_result_gen = Rcpp::wrap(compute_dispersion_sparse(Yi_fitted, Mi, subsample));
+    return rcpp_result_gen;
+END_RCPP
+}
+// Yi_SSE_M_paired
+double Yi_SSE_M_paired(Eigen::MatrixXd Yi, Eigen::SparseMatrix<double> M1i, Eigen::SparseMatrix<double> M2i, Eigen::MatrixXd ZDBi, Eigen::MatrixXd QiDBi, Eigen::VectorXd si, Eigen::VectorXd o, Eigen::VectorXd oi, double sigma2);
+RcppExport SEXP _gedi_Yi_SSE_M_paired(SEXP YiSEXP, SEXP M1iSEXP, SEXP M2iSEXP, SEXP ZDBiSEXP, SEXP QiDBiSEXP, SEXP siSEXP, SEXP oSEXP, SEXP oiSEXP, SEXP sigma2SEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type Yi(YiSEXP);
+    Rcpp::traits::input_parameter< Eigen::SparseMatrix<double> >::type M1i(M1iSEXP);
+    Rcpp::traits::input_parameter< Eigen::SparseMatrix<double> >::type M2i(M2iSEXP);
+    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type ZDBi(ZDBiSEXP);
+    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type QiDBi(QiDBiSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type si(siSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type o(oSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type oi(oiSEXP);
+    Rcpp::traits::input_parameter< double >::type sigma2(sigma2SEXP);
+    rcpp_result_gen = Rcpp::wrap(Yi_SSE_M_paired(Yi, M1i, M2i, ZDBi, QiDBi, si, o, oi, sigma2));
+    return rcpp_result_gen;
+END_RCPP
+}
 // compute_ZDB_cpp
 Eigen::MatrixXd compute_ZDB_cpp(const Eigen::Map<Eigen::MatrixXd>& Z, const Eigen::Map<Eigen::VectorXd>& D, const Rcpp::List& Bi_list, int verbose);
 RcppExport SEXP _gedi_compute_ZDB_cpp(SEXP ZSEXP, SEXP DSEXP, SEXP Bi_listSEXP, SEXP verboseSEXP) {
@@ -317,6 +405,12 @@ static const R_CallMethodDef CallEntries[] = {
     {"_gedi_getDiffExp_cpp", (DL_FUNC) &_gedi_getDiffExp_cpp, 6},
     {"_gedi_compute_svd_factorized_cpp", (DL_FUNC) &_gedi_compute_svd_factorized_cpp, 4},
     {"_gedi_run_factorized_svd_cpp", (DL_FUNC) &_gedi_run_factorized_svd_cpp, 3},
+    {"_gedi_Yi_resZ", (DL_FUNC) &_gedi_Yi_resZ, 5},
+    {"_gedi_predict_Yhat", (DL_FUNC) &_gedi_predict_Yhat, 5},
+    {"_gedi_Yi_var_M", (DL_FUNC) &_gedi_Yi_var_M, 2},
+    {"_gedi_Yi_var_M_paired", (DL_FUNC) &_gedi_Yi_var_M_paired, 4},
+    {"_gedi_compute_dispersion_sparse", (DL_FUNC) &_gedi_compute_dispersion_sparse, 3},
+    {"_gedi_Yi_SSE_M_paired", (DL_FUNC) &_gedi_Yi_SSE_M_paired, 9},
     {"_gedi_compute_ZDB_cpp", (DL_FUNC) &_gedi_compute_ZDB_cpp, 4},
     {"_gedi_compute_DB_cpp", (DL_FUNC) &_gedi_compute_DB_cpp, 3},
     {"_gedi_compute_ADB_cpp", (DL_FUNC) &_gedi_compute_ADB_cpp, 5},
