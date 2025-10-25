@@ -1,0 +1,253 @@
+# ==============================================================================
+# GEDI Imputation Accessors - R6 Methods
+# User-facing interface for imputation, variance, and dispersion analysis
+# ==============================================================================
+
+#' Create Imputation Accessor Object
+#'
+#' @description
+#' Creates accessor object for imputation analysis with Y, variance, and
+#' dispersion methods. This provides a clean user interface: model$imputed$Y(M)
+#'
+#' @param self Reference to GEDI R6 object
+#' @param private Reference to private environment
+#'
+#' @return S3 object of class "gedi_imputation"
+#'
+#' @keywords internal
+#' @noRd
+create_imputation_accessor <- function(self, private) {
+  
+  structure(
+    list(
+      Y = function(M = NULL, logScale = TRUE, rowCentre = TRUE) {
+        get_imputed_Y(self, private, M, logScale, rowCentre)
+      },
+      
+      variance = function(M) {
+        get_Y_variance(self, private, M)
+      },
+      
+      dispersion = function(M, subsample = 1e6) {
+        get_dispersion(self, private, M, subsample)
+      }
+    ),
+    class = "gedi_imputation"
+  )
+}
+
+
+#' Get Imputed Y Expression
+#'
+#' @description
+#' Returns imputed gene expression with sample-specific effects removed.
+#' This is the main user-facing function for getting denoised expression values.
+#'
+#' @param self Reference to GEDI R6 object
+#' @param private Reference to private environment
+#' @param M Count matrix (optional - only needed for non-log scale output)
+#' @param logScale Logical, if TRUE returns log-scale values (default)
+#' @param rowCentre Logical, if TRUE removes global gene offset o (default)
+#'
+#' @return Dense matrix (J × N) with imputed expression values
+#'
+#' @keywords internal
+#' @noRd
+get_imputed_Y <- function(self, private, M = NULL, logScale = TRUE, rowCentre = TRUE) {
+  
+  # Validate model state
+  if (is.null(private$.lastResult)) {
+    stop("No results yet. Run $train() first.", call. = FALSE)
+  }
+  
+  obs_type <- self$aux$obs.type
+  
+  # For non-log scale output, need M for proper transformation
+  if (!logScale && is.null(M)) {
+    if (obs_type %in% c("M", "M_paired")) {
+      stop("M must be provided when logScale = FALSE for observation type '", 
+           obs_type, "'", call. = FALSE)
+    }
+  }
+  
+  # Validate M if provided
+  if (!is.null(M)) {
+    validate_M_identity(M, private$.M_fingerprint)
+  }
+  
+  # Split by sample
+  numSamples <- self$aux$numSamples
+  Samples <- private$.samples
+  sampleNames <- private$.sampleNames
+  
+  cells_by_sample <- split(seq_along(Samples), Samples)[sampleNames]
+  
+  # Compute imputed Y for each sample
+  Y_imputed_list <- vector("list", numSamples)
+  
+  for (i in 1:numSamples) {
+    # Reconstruct Yi_fitted from parameters (NO M needed!)
+    Yi_fitted <- compute_Y_fitted(self, private, i)
+    
+    # Remove sample effects
+    Y_imputed_list[[i]] <- compute_Y_imputed(
+      Yi_fitted = Yi_fitted,
+      params = self$params,
+      sample_idx = i,
+      rowCentre = rowCentre
+    )
+  }
+  
+  # Concatenate all samples
+  Y_imputed <- do.call(cbind, Y_imputed_list)
+  
+  # Add dimension names
+  rownames(Y_imputed) <- private$.geneIDs
+  colnames(Y_imputed) <- private$.cellIDs
+  
+  # Transform to non-log scale if requested
+  if (!logScale) {
+    if (obs_type == "M") {
+      # Y_imputed is log(M+1), so exp(Y_imputed) gives M+1, subtract 1
+      # But actually we want just exp for counts
+      Y_imputed <- exp(Y_imputed)
+      
+    } else if (obs_type == "M_paired") {
+      # Y_imputed is log((M1+1)/(M2+1)), so transform to probability
+      # p = 1 / (1 + exp(-Y_imputed))
+      Y_imputed <- 1 / (1 + exp(-Y_imputed))
+      
+    } else if (obs_type == "Y") {
+      # Already in correct scale, just exponentiate
+      Y_imputed <- exp(Y_imputed)
+      
+    } else {
+      stop("Unrecognized observation type: ", obs_type, call. = FALSE)
+    }
+  }
+  
+  if (private$.verbose >= 1) {
+    cat("✓ Imputed Y computed: ", nrow(Y_imputed), " genes × ", 
+        ncol(Y_imputed), " cells\n", sep = "")
+    cat("  logScale = ", logScale, ", rowCentre = ", rowCentre, "\n", sep = "")
+  }
+  
+  return(Y_imputed)
+}
+
+
+#' Get Y Variance
+#'
+#' @description
+#' Returns posterior variance of imputed Y. Requires the original M matrix.
+#'
+#' @param self Reference to GEDI R6 object
+#' @param private Reference to private environment
+#' @param M Count matrix (required - must match original)
+#'
+#' @return Dense matrix (J × N) with variance values, or NULL if not applicable
+#'
+#' @keywords internal
+#' @noRd
+get_Y_variance <- function(self, private, M) {
+  
+  # Validate model state
+  if (is.null(private$.lastResult)) {
+    stop("No results yet. Run $train() first.", call. = FALSE)
+  }
+  
+  # Check if M provided
+  if (missing(M) || is.null(M)) {
+    stop("M must be provided for variance calculation", call. = FALSE)
+  }
+  
+  # Call core computation function
+  Y_var <- compute_Y_variance(self, private, M)
+  
+  if (!is.null(Y_var) && private$.verbose >= 1) {
+    cat("✓ Y variance computed: ", nrow(Y_var), " genes × ", 
+        ncol(Y_var), " cells\n", sep = "")
+  }
+  
+  return(Y_var)
+}
+
+
+#' Get Dispersion Analysis
+#'
+#' @description
+#' Analyzes dispersion (variance vs mean relationship) for count data.
+#'
+#' @param self Reference to GEDI R6 object
+#' @param private Reference to private environment
+#' @param M Count matrix (required - must match original)
+#' @param subsample Integer, maximum number of nonzero positions to sample
+#'
+#' @return Data frame with dispersion statistics
+#'
+#' @keywords internal
+#' @noRd
+get_dispersion <- function(self, private, M, subsample = 1e6) {
+  
+  # Validate model state
+  if (is.null(private$.lastResult)) {
+    stop("No results yet. Run $train() first.", call. = FALSE)
+  }
+  
+  # Check if M provided
+  if (missing(M) || is.null(M)) {
+    stop("M must be provided for dispersion analysis", call. = FALSE)
+  }
+  
+  # Call core computation function
+  dispersion_df <- compute_dispersion(self, private, M, subsample)
+  
+  if (private$.verbose >= 1) {
+    cat("✓ Dispersion analysis complete: ", nrow(dispersion_df), " bins across ",
+        self$aux$numSamples, " samples\n", sep = "")
+  }
+  
+  return(dispersion_df)
+}
+
+
+#' Print Method for Imputation Accessor
+#'
+#' @param x Object of class gedi_imputation
+#' @param ... Additional arguments (ignored)
+#'
+#' @keywords internal
+#' @export
+print.gedi_imputation <- function(x, ...) {
+  cat("<GEDI Imputation Interface>\n")
+  cat("\nAvailable methods:\n\n")
+  
+  cat("Imputed Expression:\n")
+  cat("  $Y(M = NULL, logScale = TRUE, rowCentre = TRUE)\n")
+  cat("    Get imputed gene expression with sample effects removed\n")
+  cat("    - M: Optional count matrix (needed for non-log scale)\n")
+  cat("    - logScale: Return log-transformed values (default: TRUE)\n")
+  cat("    - rowCentre: Remove global gene offset (default: TRUE)\n\n")
+  
+  cat("Variance Analysis:\n")
+  cat("  $variance(M)\n")
+  cat("    Get posterior variance of imputed Y\n")
+  cat("    - M: Count matrix (required, must match original)\n\n")
+  
+  cat("Dispersion Analysis:\n")
+  cat("  $dispersion(M, subsample = 1e6)\n")
+  cat("    Analyze variance vs mean relationship\n")
+  cat("    - M: Count matrix (required, must match original)\n")
+  cat("    - subsample: Max nonzero positions to sample per sample\n\n")
+  
+  cat("Example usage:\n")
+  cat("  # Get imputed expression (no M needed!)\n")
+  cat("  Y_imputed <- model$imputed$Y()\n")
+  cat("  Y_raw_scale <- model$imputed$Y(M, logScale = FALSE)\n\n")
+  
+  cat("  # Variance and dispersion (M required)\n")
+  cat("  Y_var <- model$imputed$variance(M)\n")
+  cat("  disp <- model$imputed$dispersion(M)\n")
+  
+  invisible(x)
+}
