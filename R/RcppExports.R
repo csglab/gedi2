@@ -202,6 +202,159 @@ run_factorized_svd_cpp <- function(Z, projDB, verbose = 0L) {
     .Call(`_gedi_run_factorized_svd_cpp`, Z, projDB, verbose)
 }
 
+#' Compute Residual After Removing Sample Effects (Internal)
+#'
+#' Removes sample-specific effects (QiDBi, si, oi) and global offset (o) from Yi.
+#' Used to extract the shared biological signal (ZDBi component).
+#'
+#' @param Yi Dense matrix (J x Ni) - fitted log-expression for sample i
+#' @param QiDBi Dense matrix (J x Ni) - sample-specific metagene projections
+#' @param si Vector (Ni) - cell-specific library size offsets for sample i
+#' @param o Vector (J) - global gene-specific offsets
+#' @param oi Vector (J) - sample-specific gene offsets
+#'
+#' @return Dense matrix (J x Ni) - residual Yi after removing sample effects
+#'
+#' @details
+#' Computes: Yi - QiDBi - (si ⊗ 1ᵀ) - (o + oi) ⊗ 1ᵀ
+#' This leaves only the ZDBi component (shared biological signal).
+#'
+#' @keywords internal
+#' @noRd
+Yi_resZ <- function(Yi, QiDBi, si, o, oi) {
+    .Call(`_gedi_Yi_resZ`, Yi, QiDBi, si, o, oi)
+}
+
+#' Predict Yi from Model Parameters (Internal)
+#'
+#' Reconstructs the model's prediction of Yi (log-expression) from all components.
+#'
+#' @param ZDBi Dense matrix (J x Ni) - shared metagene projections
+#' @param QiDBi Dense matrix (J x Ni) - sample-specific metagene projections
+#' @param si Vector (Ni) - cell-specific library size offsets
+#' @param o Vector (J) - global gene-specific offsets
+#' @param oi Vector (J) - sample-specific gene offsets
+#'
+#' @return Dense matrix (J x Ni) - predicted Yi
+#'
+#' @details
+#' Computes: Ŷi = ZDBi + QiDBi + (si ⊗ 1ᵀ) + (o + oi) ⊗ 1ᵀ
+#' This is the full model prediction for log-expression.
+#'
+#' @keywords internal
+#' @noRd
+predict_Yhat <- function(ZDBi, QiDBi, si, o, oi) {
+    .Call(`_gedi_predict_Yhat`, ZDBi, QiDBi, si, o, oi)
+}
+
+#' Variance of Yi for Single Count Matrix (Internal)
+#'
+#' Computes posterior variance of Yi given the fitted values and model variance.
+#' For observation type "M" (single count matrix).
+#'
+#' @param Yi Dense matrix (J x Ni) - fitted log-expression
+#' @param sigma2 Scalar - model variance parameter
+#'
+#' @return Dense matrix (J x Ni) - posterior variance at each position
+#'
+#' @details
+#' Variance formula: Var(Yi | Mi, model) = 1 / (exp(Yi) + 1/sigma2)
+#'
+#' This comes from the Poisson-lognormal model where:
+#' - Mi ~ Poisson(exp(Yi))
+#' - Yi ~ N(Ŷi, sigma2)
+#'
+#' The posterior variance decreases where:
+#' - Counts are high (exp(Yi) large)
+#' - Model uncertainty is low (sigma2 small)
+#'
+#' @keywords internal
+#' @noRd
+Yi_var_M <- function(Yi, sigma2) {
+    .Call(`_gedi_Yi_var_M`, Yi, sigma2)
+}
+
+#' Variance of Yi for Paired Count Matrices (Internal)
+#'
+#' Computes posterior variance of Yi for paired count data (e.g., CITE-seq, ATAC+RNA).
+#' For observation type "M_paired".
+#'
+#' @param Yi Dense matrix (J x Ni) - fitted log-ratio: log((M1+1)/(M2+1))
+#' @param M1i Sparse matrix (J x Ni) - first count matrix (e.g., RNA)
+#' @param M2i Sparse matrix (J x Ni) - second count matrix (e.g., protein)
+#' @param sigma2 Scalar - model variance parameter
+#'
+#' @return Dense matrix (J x Ni) - posterior variance at each position
+#'
+#' @details
+#' Variance formula: Var(Yi | M1i, M2i, model) = 1 / (M * exp(-|Yi|) / (1+exp(-|Yi|))^2 + 1/sigma2)
+#' where M = M1i + M2i
+#'
+#' This comes from the binomial-logistic-normal model where:
+#' - M1i ~ Binomial(M1i + M2i, p)
+#' - logit(p) = Yi ~ N(Ŷi, sigma2)
+#'
+#' The variance depends on:
+#' - Total counts M (more counts = less variance)
+#' - Yi magnitude (variance minimized at Yi = 0, i.e., p = 0.5)
+#' - Model uncertainty sigma2
+#'
+#' @keywords internal
+#' @noRd
+Yi_var_M_paired <- function(Yi, M1i, M2i, sigma2) {
+    .Call(`_gedi_Yi_var_M_paired`, Yi, M1i, M2i, sigma2)
+}
+
+#' Compute Dispersion Statistics (Sparse-Optimized) (Internal)
+#'
+#' Analyzes the relationship between predicted and observed variance for count data.
+#' Only samples nonzero positions from the sparse count matrix for memory efficiency.
+#'
+#' @param Yi_fitted Dense matrix (J x Ni) - model prediction of log-expression
+#' @param Mi Sparse matrix (J x Ni) - observed count matrix
+#' @param subsample Integer - maximum number of nonzero positions to sample
+#'
+#' @return List containing:
+#'   - predicted: Vector of predicted counts (lambda = exp(Yi_fitted))
+#'   - observed: Vector of observed counts from Mi
+#'
+#' @details
+#' For Poisson model: Mi ~ Poisson(lambda), expected variance = lambda.
+#' This function samples nonzero positions and returns predicted vs observed values
+#' for downstream dispersion analysis (binning and aggregation done in R).
+#'
+#' Memory optimization: Works only on sparse nonzero positions (typically 5-10% of matrix).
+#' For 30K genes × 10K cells with 5% nonzero: samples from ~15M positions instead of 300M.
+#'
+#' @keywords internal
+#' @noRd
+compute_dispersion_sparse <- function(Yi_fitted, Mi, subsample) {
+    .Call(`_gedi_compute_dispersion_sparse`, Yi_fitted, Mi, subsample)
+}
+
+#' Sum of Squared Errors for Paired Data (Internal)
+#'
+#' Computes the SSE term used in sigma2 optimization for M_paired observation type.
+#' This is included for completeness but is called during optimization, not imputation.
+#'
+#' @param Yi Dense matrix (J x Ni) - fitted log-ratio
+#' @param M1i Sparse matrix (J x Ni) - first count matrix
+#' @param M2i Sparse matrix (J x Ni) - second count matrix
+#' @param ZDBi Dense matrix (J x Ni) - shared metagene projections
+#' @param QiDBi Dense matrix (J x Ni) - sample-specific metagene projections
+#' @param si Vector (Ni) - cell-specific offsets
+#' @param o Vector (J) - global gene offsets
+#' @param oi Vector (J) - sample-specific gene offsets
+#' @param sigma2 Scalar - current variance estimate
+#'
+#' @return Scalar - SSE contribution from sample i
+#'
+#' @keywords internal
+#' @noRd
+Yi_SSE_M_paired <- function(Yi, M1i, M2i, ZDBi, QiDBi, si, o, oi, sigma2) {
+    .Call(`_gedi_Yi_SSE_M_paired`, Yi, M1i, M2i, ZDBi, QiDBi, si, o, oi, sigma2)
+}
+
 #' Compute ZDB Projection (Internal)
 #'
 #' Computes the shared manifold projection ZDB = Z * diag(D) * B, where B is
