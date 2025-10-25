@@ -875,18 +875,10 @@ GEDI <- R6Class(
       if (is.null(private$.lastResult)) {
         stop("No results yet. Run $initialize_lvs() or $train() first.", call. = FALSE)
       }
-      
-      # Return a list-like object that computes on access
-      structure(
-        list(
-          ZDB = compute_ZDB(self, private),
-          DB = compute_DB(self, private),
-          ADB = if (self$aux$P > 0) compute_ADB(self, private) else NULL
-        ),
-        class = "gedi_projections"
-      )
-    },
 
+      # Return R6 accessor with lazy active bindings
+      ProjectionsAccessor$new(self, private)
+    },
 
     # =========================================================================
     # Embeddings Accessor (Lazy Computation)
@@ -898,15 +890,8 @@ GEDI <- R6Class(
         stop("No results yet. Run $initialize_lvs() or $train() first.", call. = FALSE)
       }
       
-      # Return a list-like object that computes on access
-      structure(
-        list(
-          svd = compute_svd_factorized(self, private),
-          pca = compute_pca(self, private),
-          umap = function(...) compute_umap(self, private, ...)
-        ),
-        class = "gedi_embeddings"
-      )
+      # Return R6 accessor with lazy active bindings
+      EmbeddingsAccessor$new(self, private)
     },
     
     # =========================================================================
