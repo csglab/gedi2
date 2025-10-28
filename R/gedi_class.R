@@ -720,15 +720,38 @@ GEDI <- R6Class(
       compute_pca(self, private)
     },
     
-    get_umap = function(input = "pca", 
+    get_umap = function(input = "pca",
                         n_neighbors = 15,
                         min_dist = 0.1,
                         n_components = 2,
                         metric = "euclidean",
                         n_threads = 0,
                         ...) {
-      compute_umap(self, private, input, n_neighbors, 
+      compute_umap(self, private, input, n_neighbors,
                    min_dist, n_components, metric, n_threads, ...)
+    },
+
+    # =========================================================================
+    # Export Methods
+    # =========================================================================
+
+    save_h5ad = function(file_path,
+                         X_slot = c("imputed", "projection", "original"),
+                         M = NULL,
+                         include_embeddings = TRUE,
+                         include_raw = FALSE,
+                         compression = 6,
+                         verbose = TRUE) {
+      write_h5ad(
+        model = self,
+        file_path = file_path,
+        X_slot = X_slot,
+        M = M,
+        include_embeddings = include_embeddings,
+        include_raw = include_raw,
+        compression = compression,
+        verbose = verbose
+      )
     },
 
 
