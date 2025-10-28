@@ -1,6 +1,6 @@
 # R/gedi_plot_embedding.R
 
-#' Plot 2D Embedding
+#' Plot 2D Embedding (Base Function)
 #'
 #' Base function for plotting 2D embeddings with customizable coloring.
 #' Supports both continuous and discrete color variables.
@@ -25,11 +25,11 @@
 #' \dontrun{
 #' umap_coords <- model$embeddings$umap()
 #' feature_values <- model$projections$ZDB[1, ]  # First gene
-#' plot_embedding(umap_coords, color = feature_values)
+#' .plot_embedding_base(umap_coords, color = feature_values)
 #' }
 #'
-#' @export
-plot_embedding <- function(embedding,
+#' @keywords internal
+.plot_embedding_base <- function(embedding,
                           color = NULL,
                           color_limits = NULL,
                           palette = c("blue", "lightgrey", "red"),
@@ -425,7 +425,7 @@ plot_feature_ratio <- function(model,
     title <- paste("Feature Comparison:", gene1_name, "vs", gene2_name)
   }
   
-  p <- plot_embedding(
+  p <- .plot_embedding_base(
     embedding = emb_mat,
     color = ratio_values,
     color_limits = color_limits,
