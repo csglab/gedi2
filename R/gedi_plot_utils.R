@@ -16,11 +16,11 @@ theme_gedi <- function(base_size = 11) {
       legend.margin = ggplot2::margin(t = 5, b = 5),
       
       # Title
-      plot.title = ggplot2::element_text(size = base_size * 1.2, face = "bold", hjust = 0),
+      plot.title = ggplot2::element_text(size = base_size * 1.2, face = "plain", hjust = 0),
       plot.subtitle = ggplot2::element_text(size = base_size * 0.95, hjust = 0),
-      
+
       # Facets
-      strip.text = ggplot2::element_text(size = base_size * 0.95, face = "bold"),
+      strip.text = ggplot2::element_text(size = base_size * 0.95, face = "plain"),
       strip.background = ggplot2::element_rect(fill = "gray90", color = "black", linewidth = 0.3)
     )
 }
@@ -77,9 +77,19 @@ scale_fill_gedi_diverging <- function(limits = NULL, name = "Value", ...) {
 #' Discrete Color Palette for GEDI
 #' @keywords internal
 scale_color_gedi_discrete <- function(name = "Group", ...) {
+  # Extended palette with 24 distinct colors
+  # First 9 are from Set1, followed by additional colorblind-friendly colors
+  palette_24 <- c(
+    "#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00",  # Set1 base
+    "#FFFF33", "#A65628", "#F781BF", "#999999",            # Set1 complete
+    "#66C2A5", "#FC8D62", "#8DA0CB", "#E78AC3", "#A6D854",  # Set2
+    "#FFD92F", "#E5C494", "#B3B3B3",                        # Set2 complete
+    "#8DD3C7", "#FFFFB3", "#BEBADA", "#FB8072", "#80B1D3",  # Set3
+    "#FDB462", "#B3DE69", "#FCCDE5"                         # Set3 partial
+  )
+
   ggplot2::scale_color_manual(
-    values = c("#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00", 
-               "#FFFF33", "#A65628", "#F781BF", "#999999"),
+    values = palette_24,
     name = name,
     ...
   )
