@@ -355,6 +355,65 @@ Yi_SSE_M_paired <- function(Yi, M1i, M2i, ZDBi, QiDBi, si, o, oi, sigma2) {
     .Call(`_gedi_Yi_SSE_M_paired`, Yi, M1i, M2i, ZDBi, QiDBi, si, o, oi, sigma2)
 }
 
+#' Compute Single Feature Projection (Internal)
+#'
+#' Projects a single feature (gene) through the GEDI model to get cell-level values.
+#' Computes: (feature_weights * D) %*% B, avoiding full ZDB computation.
+#'
+#' @param feature_weights Vector of length K (factor loadings for this feature)
+#' @param D Scaling vector of length K
+#' @param Bi_list List of sample-specific cell projection matrices (K × Ni each)
+#' @param verbose Integer verbosity level
+#'
+#' @return Vector of length N (total cells) with projected values
+#'
+#' @keywords internal
+#' @noRd
+compute_feature_projection <- function(feature_weights, D, Bi_list, verbose = 0L) {
+    .Call(`_gedi_compute_feature_projection`, feature_weights, D, Bi_list, verbose)
+}
+
+#' Compute Multi-Feature Projection (Internal)
+#'
+#' Projects multiple features through the GEDI model simultaneously.
+#' Computes: (feature_weights * D) %*% B for F features.
+#'
+#' @param feature_weights Matrix K × F (factor loadings for F features)
+#' @param D Scaling vector of length K
+#' @param Bi_list List of sample-specific cell projection matrices (K × Ni each)
+#' @param verbose Integer verbosity level
+#'
+#' @return Matrix N × F with projected values for each feature
+#'
+#' @keywords internal
+#' @noRd
+compute_multi_feature_projection <- function(feature_weights, D, Bi_list, verbose = 0L) {
+    .Call(`_gedi_compute_multi_feature_projection`, feature_weights, D, Bi_list, verbose)
+}
+
+#' Aggregate Vector Field into Bins (Internal)
+#'
+#' Bins vector field data into a grid and computes mean vectors per bin.
+#' Used for cleaner arrow plots without overplotting.
+#'
+#' @param Dim1 Start x-coordinates (length N)
+#' @param Dim2 Start y-coordinates (length N)
+#' @param To1 End x-coordinates (length N)
+#' @param To2 End y-coordinates (length N)
+#' @param color Color values (length N), can be numeric or will be converted
+#' @param alpha Alpha values (length N)
+#' @param n_bins Number of bins per dimension
+#' @param min_per_bin Minimum observations required per bin
+#'
+#' @return Data frame with columns: Dim1, Dim2, To1, To2, deltaDim1, deltaDim2,
+#'   Color, Alpha, n (observations per bin)
+#'
+#' @keywords internal
+#' @noRd
+aggregate_vectors <- function(Dim1, Dim2, To1, To2, color, alpha, n_bins, min_per_bin) {
+    .Call(`_gedi_aggregate_vectors`, Dim1, Dim2, To1, To2, color, alpha, n_bins, min_per_bin)
+}
+
 #' Compute ZDB Projection (Internal)
 #'
 #' Computes the shared manifold projection ZDB = Z * diag(D) * B, where B is
