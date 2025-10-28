@@ -9,7 +9,7 @@
 \arguments{
 \item{model}{GEDI model object}
 
-\item{embedding_type}{Character: "umap", "pca", "gedi", or a custom N×2 matrix}
+\item{embedding_type}{Character: "umap", "pca", or a custom N×2 matrix}
 
 \item{dims}{Integer vector of length 2 for which dimensions to use (default c(1,2))}
 
