@@ -100,7 +100,7 @@ params <- model$params
 zdb <- model$projections$ZDB
 db <- model$projections$DB
 
-# Access imputed expression (NEW!)
+# Access imputed expression
 Y_imputed <- model$imputed$Y()  # No M needed!
 Y_var <- model$imputed$variance(M)  # M required
 }
