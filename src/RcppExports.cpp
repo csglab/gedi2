@@ -225,6 +225,52 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// compute_feature_projection
+Eigen::VectorXd compute_feature_projection(const Eigen::Map<Eigen::VectorXd>& feature_weights, const Eigen::Map<Eigen::VectorXd>& D, const Rcpp::List& Bi_list, int verbose);
+RcppExport SEXP _gedi_compute_feature_projection(SEXP feature_weightsSEXP, SEXP DSEXP, SEXP Bi_listSEXP, SEXP verboseSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd>& >::type feature_weights(feature_weightsSEXP);
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd>& >::type D(DSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type Bi_list(Bi_listSEXP);
+    Rcpp::traits::input_parameter< int >::type verbose(verboseSEXP);
+    rcpp_result_gen = Rcpp::wrap(compute_feature_projection(feature_weights, D, Bi_list, verbose));
+    return rcpp_result_gen;
+END_RCPP
+}
+// compute_multi_feature_projection
+Eigen::MatrixXd compute_multi_feature_projection(const Eigen::Map<Eigen::MatrixXd>& feature_weights, const Eigen::Map<Eigen::VectorXd>& D, const Rcpp::List& Bi_list, int verbose);
+RcppExport SEXP _gedi_compute_multi_feature_projection(SEXP feature_weightsSEXP, SEXP DSEXP, SEXP Bi_listSEXP, SEXP verboseSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::MatrixXd>& >::type feature_weights(feature_weightsSEXP);
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd>& >::type D(DSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type Bi_list(Bi_listSEXP);
+    Rcpp::traits::input_parameter< int >::type verbose(verboseSEXP);
+    rcpp_result_gen = Rcpp::wrap(compute_multi_feature_projection(feature_weights, D, Bi_list, verbose));
+    return rcpp_result_gen;
+END_RCPP
+}
+// aggregate_vectors
+DataFrame aggregate_vectors(const Eigen::Map<Eigen::VectorXd>& Dim1, const Eigen::Map<Eigen::VectorXd>& Dim2, const Eigen::Map<Eigen::VectorXd>& To1, const Eigen::Map<Eigen::VectorXd>& To2, const Eigen::Map<Eigen::VectorXd>& color, const Eigen::Map<Eigen::VectorXd>& alpha, int n_bins, int min_per_bin);
+RcppExport SEXP _gedi_aggregate_vectors(SEXP Dim1SEXP, SEXP Dim2SEXP, SEXP To1SEXP, SEXP To2SEXP, SEXP colorSEXP, SEXP alphaSEXP, SEXP n_binsSEXP, SEXP min_per_binSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd>& >::type Dim1(Dim1SEXP);
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd>& >::type Dim2(Dim2SEXP);
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd>& >::type To1(To1SEXP);
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd>& >::type To2(To2SEXP);
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd>& >::type color(colorSEXP);
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd>& >::type alpha(alphaSEXP);
+    Rcpp::traits::input_parameter< int >::type n_bins(n_binsSEXP);
+    Rcpp::traits::input_parameter< int >::type min_per_bin(min_per_binSEXP);
+    rcpp_result_gen = Rcpp::wrap(aggregate_vectors(Dim1, Dim2, To1, To2, color, alpha, n_bins, min_per_bin));
+    return rcpp_result_gen;
+END_RCPP
+}
 // compute_ZDB_cpp
 Eigen::MatrixXd compute_ZDB_cpp(const Eigen::Map<Eigen::MatrixXd>& Z, const Eigen::Map<Eigen::VectorXd>& D, const Rcpp::List& Bi_list, int verbose);
 RcppExport SEXP _gedi_compute_ZDB_cpp(SEXP ZSEXP, SEXP DSEXP, SEXP Bi_listSEXP, SEXP verboseSEXP) {
@@ -411,6 +457,9 @@ static const R_CallMethodDef CallEntries[] = {
     {"_gedi_Yi_var_M_paired", (DL_FUNC) &_gedi_Yi_var_M_paired, 4},
     {"_gedi_compute_dispersion_sparse", (DL_FUNC) &_gedi_compute_dispersion_sparse, 3},
     {"_gedi_Yi_SSE_M_paired", (DL_FUNC) &_gedi_Yi_SSE_M_paired, 9},
+    {"_gedi_compute_feature_projection", (DL_FUNC) &_gedi_compute_feature_projection, 4},
+    {"_gedi_compute_multi_feature_projection", (DL_FUNC) &_gedi_compute_multi_feature_projection, 4},
+    {"_gedi_aggregate_vectors", (DL_FUNC) &_gedi_aggregate_vectors, 8},
     {"_gedi_compute_ZDB_cpp", (DL_FUNC) &_gedi_compute_ZDB_cpp, 4},
     {"_gedi_compute_DB_cpp", (DL_FUNC) &_gedi_compute_DB_cpp, 3},
     {"_gedi_compute_ADB_cpp", (DL_FUNC) &_gedi_compute_ADB_cpp, 5},

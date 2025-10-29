@@ -26,7 +26,6 @@ CreateGEDIObject(
   fixed_si = NA,
   rsvd_p = 10,
   rsvd_sdist = "normal",
-  validation_mode = c("standard", "strict"),
   verbose = 1,
   num_threads = 0
 )
@@ -64,9 +63,6 @@ C++ will compute Yi = log(M+1) internally - no Yi copy stored in R!}
 \item{rsvd_sdist}{Random distribution for rSVD: "normal", "unif", or "rademacher"
 (default: "normal")}
 
-\item{validation_mode}{Validation mode for M matrix: "standard" (fast, Levels 1+2+4)
-or "strict" (adds cryptographic hash, Level 5) (default: "standard")}
-
 \item{verbose}{Verbosity level: 0 (silent), 1 (info), 2 (debug) (default: 1)}
 
 \item{num_threads}{Number of OpenMP threads (default: 0 = auto)}
@@ -100,7 +96,7 @@ params <- model$params
 zdb <- model$projections$ZDB
 db <- model$projections$DB
 
-# Access imputed expression (NEW!)
+# Access imputed expression
 Y_imputed <- model$imputed$Y()  # No M needed!
 Y_var <- model$imputed$variance(M)  # M required
 }

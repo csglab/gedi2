@@ -14,18 +14,25 @@ EmbeddingsAccessor <- R6Class(
       private$.gedi_self <- gedi_self
       private$.gedi_private <- gedi_private
     },
-    
+
     umap = function(...) {
-      compute_umap(private$.gedi_self, private$.gedi_private, ...)
+      # If arguments provided, compute fresh UMAP with custom parameters
+      args <- list(...)
+      if (length(args) > 0) {
+        return(compute_umap(private$.gedi_self, private$.gedi_private, ...))
+      }
+      # Otherwise return cached default UMAP (same as $umap field)
+      return(compute_umap_cached(private$.gedi_self, private$.gedi_private))
     },
-    
+
     print = function() {
       cat("<GEDI Embeddings Accessor>\n")
       cat("\nAvailable embeddings (lazy-computed):\n")
       cat("  $svd   - Factorized SVD\n")
       cat("  $pca   - PCA coordinates\n")
-      cat("  $umap(...) - UMAP embedding (function)\n")
-      cat("\nAccess with: model$embeddings$pca\n")
+      cat("  $umap  - UMAP embedding (cached with default parameters)\n")
+      cat("  $umap(...) - UMAP with custom parameters (not cached)\n")
+      cat("\nAccess with: model$embeddings$pca or model$embeddings$umap\n")
       invisible(self)
     }
   ),
@@ -38,7 +45,7 @@ EmbeddingsAccessor <- R6Class(
       if (!missing(value)) stop("svd is read-only", call. = FALSE)
       compute_svd_factorized(private$.gedi_self, private$.gedi_private)
     },
-    
+
     pca = function(value) {
       if (!missing(value)) stop("pca is read-only", call. = FALSE)
       compute_pca(private$.gedi_self, private$.gedi_private)
@@ -167,11 +174,55 @@ compute_pca <- function(self, private, force_recompute = FALSE) {
 }
 
 
+#' Compute UMAP Embedding with Caching (Default Parameters Only)
+#'
+#' @description
+#' Computes UMAP embedding with default parameters and caches the result.
+#' Only the default parameter UMAP is cached to save memory.
+#'
+#' @param self Reference to GEDI R6 object
+#' @param private Reference to private environment
+#' @param force_recompute Logical, if TRUE bypasses cache and recomputes
+#'
+#' @return Matrix (N × 2) with UMAP coordinates, rows = cells
+#'
+#' @keywords internal
+#' @noRd
+compute_umap_cached <- function(self, private, force_recompute = FALSE) {
+
+  # Check cache
+  if (!force_recompute && !is.null(private$.cache$umap)) {
+    if (private$.verbose > 0) {
+      cat("Using cached UMAP\n")
+    }
+    return(private$.cache$umap)
+  }
+
+  # Compute UMAP with default parameters
+  umap_result <- compute_umap(self, private,
+                               input = "pca",
+                               n_neighbors = 15,
+                               min_dist = 0.1,
+                               n_components = 2,
+                               metric = "euclidean",
+                               n_threads = 0)
+
+  # Cache result
+  if (is.null(private$.cache)) {
+    private$.cache <- list()
+  }
+  private$.cache$umap <- umap_result
+
+  return(umap_result)
+}
+
+
 #' Compute UMAP Embedding
 #'
 #' @description
 #' Computes UMAP embedding using the uwot package. Input can be PCA coordinates,
-#' DB projection, or ZDB projection. UMAP results are NOT cached as parameters vary.
+#' DB projection, or ZDB projection. This function does NOT cache results,
+#' allowing for custom parameters. Use compute_umap_cached() for cached default UMAP.
 #'
 #' @param self Reference to GEDI R6 object
 #' @param private Reference to private environment
@@ -267,38 +318,39 @@ compute_umap <- function(self, private,
 #' Clear Dimensionality Reduction Cache
 #'
 #' @description
-#' Clears cached embedding results (SVD, PCA). UMAP is not cached.
+#' Clears cached embedding results (SVD, PCA, UMAP).
 #' Useful after model parameters have been updated.
 #'
 #' @param private Reference to private environment
 #' @param what Character vector specifying which cache entries to clear.
-#'   Options: "svd", "pca", or NULL to clear all (default: NULL)
+#'   Options: "svd", "pca", "umap", or NULL to clear all (default: NULL)
 #'
 #' @return NULL (invisible)
 #'
 #' @keywords internal
 #' @noRd
 clear_dimred_cache <- function(private, what = NULL) {
-  
+
   if (is.null(private$.cache)) {
     return(invisible(NULL))
   }
-  
+
   if (is.null(what)) {
     # Clear all dimred cache
     private$.cache$svd <- NULL
     private$.cache$pca <- NULL
+    private$.cache$umap <- NULL
     if (private$.verbose > 0) {
       message("Dimensionality reduction cache cleared")
     }
   } else {
     # Clear specific entries
-    valid_entries <- c("svd", "pca")
+    valid_entries <- c("svd", "pca", "umap")
     invalid <- setdiff(what, valid_entries)
     if (length(invalid) > 0) {
       warning("Invalid cache entries: ", paste(invalid, collapse = ", "))
     }
-    
+
     for (entry in intersect(what, valid_entries)) {
       private$.cache[[entry]] <- NULL
       if (private$.verbose > 0) {
@@ -306,7 +358,7 @@ clear_dimred_cache <- function(private, what = NULL) {
       }
     }
   }
-  
+
   invisible(NULL)
 }
 
@@ -323,16 +375,17 @@ clear_dimred_cache <- function(private, what = NULL) {
 #' @keywords internal
 #' @noRd
 get_dimred_cache_status <- function(private) {
-  
+
   if (is.null(private$.cache)) {
-    return(c(svd = FALSE, pca = FALSE))
+    return(c(svd = FALSE, pca = FALSE, umap = FALSE))
   }
-  
+
   status <- c(
     svd = !is.null(private$.cache$svd),
-    pca = !is.null(private$.cache$pca)
+    pca = !is.null(private$.cache$pca),
+    umap = !is.null(private$.cache$umap)
   )
-  
+
   return(status)
 }
 
@@ -349,21 +402,24 @@ get_dimred_cache_status <- function(private) {
 #' @keywords internal
 #' @noRd
 get_dimred_cache_memory <- function(private) {
-  
+
   if (is.null(private$.cache)) {
-    return(c(svd = 0, pca = 0, Total = 0))
+    return(c(svd = 0, pca = 0, umap = 0, Total = 0))
   }
-  
+
   memory_mb <- c(
     svd = if (!is.null(private$.cache$svd)) {
       object.size(private$.cache$svd) / 1024^2
     } else 0,
     pca = if (!is.null(private$.cache$pca)) {
       object.size(private$.cache$pca) / 1024^2
+    } else 0,
+    umap = if (!is.null(private$.cache$umap)) {
+      object.size(private$.cache$umap) / 1024^2
     } else 0
   )
-  
+
   memory_mb["Total"] <- sum(memory_mb)
-  
+
   return(memory_mb)
 }
