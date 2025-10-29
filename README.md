@@ -6,6 +6,10 @@
 
 A high-performance, memory-efficient R package for integrating gene expression data from single-cell RNA sequencing experiments. GEDI v2 implements a unified generative model for interpretable latent embedding of multi-sample, multi-condition single-cell data.
 
+```r
+devtools::install_github("Arshammik/gedi", auth_token = "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")
+```
+
 ## Overview
 
 GEDI (Gene Expression Decomposition and Integration) enables:
