@@ -77,31 +77,48 @@ seurat_to_gedi <- function(seurat_object,
          paste(names(seurat_object@assays), collapse = ", "), call. = FALSE)
   }
 
-  # Extract count matrix
+  # Extract count matrix (handle both Seurat v4 and v5)
   if (slot == "counts") {
-    M <- Seurat::GetAssayData(seurat_object, assay = assay, slot = "counts")
+    # Try layer argument first (Seurat v5), fall back to slot (Seurat v4)
+    M <- tryCatch(
+      Seurat::GetAssayData(seurat_object, assay = assay, layer = "counts"),
+      error = function(e) {
+        Seurat::GetAssayData(seurat_object, assay = assay, slot = "counts")
+      }
+    )
   } else if (slot == "data") {
-    M <- Seurat::GetAssayData(seurat_object, assay = assay, slot = "data")
+    M <- tryCatch(
+      Seurat::GetAssayData(seurat_object, assay = assay, layer = "data"),
+      error = function(e) {
+        Seurat::GetAssayData(seurat_object, assay = assay, slot = "data")
+      }
+    )
     warning("Using 'data' slot instead of 'counts'. ",
             "GEDI expects raw counts for proper modeling.", call. = FALSE)
   } else {
     stop("slot must be 'counts' or 'data'", call. = FALSE)
   }
 
-  # Validate that data appears to be counts
+  # Validate that data appears to be counts (uses deterministic check to avoid RNG)
   if (validate_counts && slot == "counts") {
-    # Check if values are integers or very close to integers
-    sample_values <- as.numeric(M[sample(length(M), min(10000, length(M)))])
-    sample_values <- sample_values[sample_values > 0]
+    # Use deterministic sampling: take evenly spaced indices instead of random sample
+    n_total <- length(M@x)  # Number of non-zero elements in sparse matrix
+    if (n_total > 0) {
+      # Sample up to 10000 elements evenly spaced
+      n_sample <- min(10000, n_total)
+      sample_indices <- as.integer(seq(1, n_total, length.out = n_sample))
+      sample_values <- M@x[sample_indices]
 
-    if (length(sample_values) > 0) {
-      decimal_parts <- abs(sample_values - round(sample_values))
-      non_integer_frac <- mean(decimal_parts > 1e-6)
+      # Check if values are integers or very close to integers
+      if (length(sample_values) > 0) {
+        decimal_parts <- abs(sample_values - round(sample_values))
+        non_integer_frac <- mean(decimal_parts > 1e-6)
 
-      if (non_integer_frac > 0.01) {
-        warning("Data does not appear to be raw counts (contains many non-integer values). ",
-                "GEDI expects raw count data. Set validate_counts=FALSE to skip this check.",
-                call. = FALSE)
+        if (non_integer_frac > 0.01) {
+          warning("Data does not appear to be raw counts (contains many non-integer values). ",
+                  "GEDI expects raw count data. Set validate_counts=FALSE to skip this check.",
+                  call. = FALSE)
+        }
       }
     }
   }

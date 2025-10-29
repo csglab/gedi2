@@ -6,41 +6,38 @@
 #' Compute M Fingerprint for Validation
 #'
 #' @description
-#' Creates a fingerprint of the count matrix for strict identity validation.
-#' Only checks dimensions and statistical properties - NOT cell/gene name order.
+#' Creates a fast, dependency-free fingerprint of the count matrix for identity validation.
+#' Checks: dimensions, sparsity, value statistics, sparse indices, and dimnames.
 #'
 #' @param M Count matrix (sparse or dense), or list of two matrices for M_paired
 #' @param obs_type Character, observation type: "M", "M_paired", "Y", or "X"
-#' @param mode Character, validation mode: "standard" or "strict"
 #'
 #' @return List with fingerprint components for validation
 #'
 #' @keywords internal
 #' @noRd
-compute_M_fingerprint <- function(M, obs_type, mode = "standard") {
-  
+compute_M_fingerprint <- function(M, obs_type) {
+
   if (obs_type == "M_paired") {
     if (!is.list(M) || length(M) != 2) {
       stop("M must be a list of two matrices for M_paired observation type", call. = FALSE)
     }
-    
+
     # Compute fingerprints for both matrices
-    fp1 <- compute_M_fingerprint_single(M[[1]], "M1", mode)
-    fp2 <- compute_M_fingerprint_single(M[[2]], "M2", mode)
-    
+    fp1 <- compute_M_fingerprint_single(M[[1]], "M1")
+    fp2 <- compute_M_fingerprint_single(M[[2]], "M2")
+
     return(list(
       M1 = fp1,
       M2 = fp2,
-      obs_type = obs_type,
-      mode = mode
+      obs_type = obs_type
     ))
-    
+
   } else {
     # Single matrix
     return(list(
-      M = compute_M_fingerprint_single(M, "M", mode),
-      obs_type = obs_type,
-      mode = mode
+      M = compute_M_fingerprint_single(M, "M"),
+      obs_type = obs_type
     ))
   }
 }
@@ -54,81 +51,75 @@ compute_M_fingerprint <- function(M, obs_type, mode = "standard") {
 #'
 #' @param M Count matrix (sparse or dense)
 #' @param label Character label for this matrix (e.g., "M", "M1", "M2")
-#' @param mode Character, validation mode: "standard" or "strict"
 #'
 #' @return List with fingerprint components
 #'
 #' @keywords internal
 #' @noRd
-compute_M_fingerprint_single <- function(M, label, mode) {
-  
-  # Level 1: Structural
+compute_M_fingerprint_single <- function(M, label) {
+
+  # Fast fingerprint with no dependencies - single validation mode
+  # Checks: dimensions, sparsity, values, indices, and dimnames
+
   dims <- dim(M)
   is_sparse <- inherits(M, "sparseMatrix")
-  mat_class <- class(M)[1]
-  
-  # Level 2: Statistical fingerprints (sparse-aware)
+
+  # Extract dimnames
+  row_names <- rownames(M)
+  col_names <- colnames(M)
+
+  # Compute fast checksums (sparse-aware)
   if (is_sparse) {
-    rowsums <- Matrix::rowSums(M)
-    colsums <- Matrix::colSums(M)
-    total_sum <- sum(M)
-    nnz <- length(M@x)  # Compatible with all Matrix versions
+    # Sparse matrix - use internal structure directly
+    values_sum <- sum(M@x)                    # sum of values
+    values_sq <- sum(M@x^2)                   # sum of squares
+    nnz <- length(M@x)                        # number of non-zeros
+    indices_check <- sum(M@i %% 1000)         # row index checksum (mod to prevent overflow)
+
   } else {
-    rowsums <- rowSums(M)
-    colsums <- colSums(M)
-    total_sum <- sum(M)
+    # Dense matrix
+    values_sum <- sum(M)
+    values_sq <- sum(M^2)
     nnz <- sum(M != 0)
+    indices_check <- 0  # Not applicable for dense
   }
-  
-  # Level 4: Random sampling (for sparse matrices)
-  sample_check <- NULL
-  if (is_sparse && nnz > 0) {
-    set.seed(42)  # Reproducible sampling
-    n_samples <- min(1000, length(M@x))
-    if (n_samples > 0) {
-      sample_idx <- sample.int(length(M@x), n_samples)
-      sample_check <- list(
-        indices = sample_idx,
-        values = M@x[sample_idx]
-      )
-    }
-  }
-  
-  # Level 5: Cryptographic hash (only if strict mode)
-  hash_val <- NULL
-  if (mode == "strict") {
-    if (requireNamespace("digest", quietly = TRUE)) {
-      hash_val <- digest::digest(M, algo = "xxhash64")
-    } else {
-      warning("digest package not available for strict validation. ",
-              "Install with: install.packages('digest')\n",
-              "Falling back to standard validation.",
-              call. = FALSE, immediate. = TRUE)
-    }
-  }
-  
+
+  # Dimnames fingerprint (fast hash using string length and first/last chars)
+  rownames_fp <- if (!is.null(row_names)) {
+    paste0(
+      length(row_names), "_",
+      if (length(row_names) > 0) substr(row_names[1], 1, 3) else "",
+      if (length(row_names) > 1) substr(row_names[length(row_names)], 1, 3) else "",
+      "_", sum(nchar(row_names))
+    )
+  } else { "NULL" }
+
+  colnames_fp <- if (!is.null(col_names)) {
+    paste0(
+      length(col_names), "_",
+      if (length(col_names) > 0) substr(col_names[1], 1, 3) else "",
+      if (length(col_names) > 1) substr(col_names[length(col_names)], 1, 3) else "",
+      "_", sum(nchar(col_names))
+    )
+  } else { "NULL" }
+
+  # Composite fingerprint string (all checks combined)
+  fingerprint_str <- paste0(
+    dims[1], "x", dims[2], "_",      # dimensions
+    values_sum, "_",                  # sum of values
+    values_sq, "_",                   # sum of squares
+    nnz, "_",                         # nnz count
+    indices_check, "_",               # index checksum
+    rownames_fp, "_",                 # rownames fingerprint
+    colnames_fp                       # colnames fingerprint
+  )
+
   return(list(
-    # Level 1
     nrow = dims[1],
     ncol = dims[2],
     is_sparse = is_sparse,
-    class = mat_class,
-    
-    # Level 2
-    rowsums = rowsums,
-    colsums = colsums,
-    total_sum = total_sum,
-    nnz = nnz,
-    
-    # Level 4
-    sample_check = sample_check,
-    
-    # Level 5
-    hash = hash_val,
-    
-    # Metadata
-    label = label,
-    mode = mode
+    fingerprint = fingerprint_str,
+    label = label
   ))
 }
 
@@ -181,76 +172,35 @@ validate_M_identity <- function(M, fingerprint) {
 #' @keywords internal
 #' @noRd
 validate_M_single <- function(M, fp, label) {
-  
-  # Level 1: Structural validation
+
+  # Quick dimension check first
   if (nrow(M) != fp$nrow) {
-    stop(label, " has wrong number of genes: expected ", fp$nrow, 
+    stop(label, " has wrong number of genes: expected ", fp$nrow,
          ", got ", nrow(M), call. = FALSE)
   }
   if (ncol(M) != fp$ncol) {
-    stop(label, " has wrong number of cells: expected ", fp$ncol, 
+    stop(label, " has wrong number of cells: expected ", fp$ncol,
          ", got ", ncol(M), call. = FALSE)
   }
-  
+
   # Check sparsity type
   is_sparse <- inherits(M, "sparseMatrix")
   if (is_sparse != fp$is_sparse) {
-    stop(label, " sparsity type changed: expected ", 
-         ifelse(fp$is_sparse, "sparse", "dense"), 
+    stop(label, " sparsity type changed: expected ",
+         ifelse(fp$is_sparse, "sparse", "dense"),
          ", got ", ifelse(is_sparse, "sparse", "dense"), call. = FALSE)
   }
-  
-  # Level 2: Statistical fingerprints
-  if (is_sparse) {
-    M_rowsums <- Matrix::rowSums(M)
-    M_colsums <- Matrix::colSums(M)
-    M_total <- sum(M)
-    M_nnz <- length(M@x)
-  } else {
-    M_rowsums <- rowSums(M)
-    M_colsums <- colSums(M)
-    M_total <- sum(M)
-    M_nnz <- sum(M != 0)
+
+  # Recompute fingerprint for current matrix
+  current_fp <- compute_M_fingerprint_single(M, label, "standard")
+
+  # Compare fingerprints
+  if (current_fp$fingerprint != fp$fingerprint) {
+    stop(label, " fingerprint mismatch - matrix was modified.\n",
+         "  Expected: ", fp$fingerprint, "\n",
+         "  Got: ", current_fp$fingerprint, call. = FALSE)
   }
-  
-  if (!isTRUE(all.equal(M_rowsums, fp$rowsums, tolerance = 1e-10))) {
-    stop(label, " row sums don't match - matrix was modified", call. = FALSE)
-  }
-  if (!isTRUE(all.equal(M_colsums, fp$colsums, tolerance = 1e-10))) {
-    stop(label, " column sums don't match - matrix was modified", call. = FALSE)
-  }
-  if (!isTRUE(all.equal(M_total, fp$total_sum, tolerance = 1e-10))) {
-    stop(label, " total sum doesn't match: expected ", fp$total_sum, 
-         ", got ", M_total, call. = FALSE)
-  }
-  if (M_nnz != fp$nnz) {
-    stop(label, " number of nonzeros doesn't match: expected ", fp$nnz, 
-         ", got ", M_nnz, call. = FALSE)
-  }
-  
-  # Level 4: Random sample check (if available)
-  if (!is.null(fp$sample_check) && is_sparse) {
-    actual_values <- M@x[fp$sample_check$indices]
-    if (!isTRUE(all.equal(actual_values, fp$sample_check$values, tolerance = 1e-10))) {
-      stop(label, " values at sampled positions don't match - matrix was modified", 
-           call. = FALSE)
-    }
-  }
-  
-  # Level 5: Hash check (if available)
-  if (!is.null(fp$hash)) {
-    if (!requireNamespace("digest", quietly = TRUE)) {
-      warning("digest package not available - skipping hash validation for ", label,
-              call. = FALSE, immediate. = TRUE)
-    } else {
-      M_hash <- digest::digest(M, algo = "xxhash64")
-      if (M_hash != fp$hash) {
-        stop(label, " cryptographic hash mismatch - matrix was definitely modified", 
-             call. = FALSE)
-      }
-    }
-  }
-  
+
   return(TRUE)
 }
 

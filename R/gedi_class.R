@@ -67,7 +67,6 @@ GEDI <- R6Class(
     
     # M fingerprint for validation
     .M_fingerprint = NULL,
-    .validation_mode = "standard",
     
     # Projection cache
     .cache = NULL,
@@ -504,18 +503,13 @@ GEDI <- R6Class(
       fixed_si = NA,
       rsvd_p = 10,
       rsvd_sdist = "normal",
-      validation_mode = c("standard", "strict"),
       verbose = 1,
       num_threads = 0
     ) {
-      
+
       private$.verbose <- verbose
       private$.logger <- newLogger("GEDI", level = verbose)
-      
-      # Validate and store validation mode
-      validation_mode <- match.arg(validation_mode)
-      private$.validation_mode <- validation_mode
-      
+
       private$.logger$info("Setting up GEDI model...")
       
       data <- private$prepareData(
@@ -536,16 +530,15 @@ GEDI <- R6Class(
       # Store Samples vector (in original order)
       private$.samples <- Samples
       
-      # Compute and store M fingerprint (simplified - no gene/cell IDs)
+      # Compute and store M fingerprint
       if (!is.null(M)) {
         private$.M_fingerprint <- compute_M_fingerprint(
           M = M,
-          obs_type = data$aux$obs.type,
-          mode = validation_mode
+          obs_type = data$aux$obs.type
         )
-        
+
         if (private$.verbose >= 1) {
-          private$.logger$info(sprintf("M fingerprint computed (%s validation)", validation_mode))
+          private$.logger$info("M fingerprint computed")
         }
       }
       
@@ -866,8 +859,7 @@ GEDI <- R6Class(
         colData = if (!is.null(private$.aux_static)) private$.aux_static$colData else NULL,
         n_genes = if (!is.null(private$.lastResult)) private$.lastResult$aux$J else NULL,
         n_cells = if (!is.null(private$.lastResult)) private$.lastResult$aux$N else NULL,
-        n_samples = if (!is.null(private$.lastResult)) private$.lastResult$aux$numSamples else NULL,
-        validation_mode = private$.validation_mode
+        n_samples = if (!is.null(private$.lastResult)) private$.lastResult$aux$numSamples else NULL
       )
     },
     
@@ -985,10 +977,8 @@ GEDI <- R6Class(
 #'   Regularization strengths (default: 1)
 #' @param fixed_si Fix cell library sizes at this value, or NA to optimize (default: NA)
 #' @param rsvd_p Oversampling parameter for randomized SVD (default: 10)
-#' @param rsvd_sdist Random distribution for rSVD: "normal", "unif", or "rademacher" 
+#' @param rsvd_sdist Random distribution for rSVD: "normal", "unif", or "rademacher"
 #'   (default: "normal")
-#' @param validation_mode Validation mode for M matrix: "standard" (fast, Levels 1+2+4) 
-#'   or "strict" (adds cryptographic hash, Level 5) (default: "standard")
 #' @param verbose Verbosity level: 0 (silent), 1 (info), 2 (debug) (default: 1)
 #' @param num_threads Number of OpenMP threads (default: 0 = auto)
 #'
@@ -1043,13 +1033,12 @@ CreateGEDIObject <- function(
   fixed_si = NA,
   rsvd_p = 10,
   rsvd_sdist = "normal",
-  validation_mode = c("standard", "strict"),
   verbose = 1,
   num_threads = 0
 ) {
-  
+
   model <- GEDI$new()
-  
+
   model$setup(
     Samples = Samples,
     M = M, Y = Y, X = X,
@@ -1069,7 +1058,6 @@ CreateGEDIObject <- function(
     fixed_si = fixed_si,
     rsvd_p = rsvd_p,
     rsvd_sdist = rsvd_sdist,
-    validation_mode = validation_mode,
     verbose = verbose,
     num_threads = num_threads
   )
