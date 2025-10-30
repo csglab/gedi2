@@ -92,73 +92,30 @@ Eigen::MatrixXd compute_ZDB_cpp(
     N += Ni[i];
   }
   
-  if (verbose >= 1) {
-    Rcout << "Computing ZDB projection: " << J << " genes Ã— " << N << " cells" << std::endl;
-    if (verbose >= 2) {
-      Rcout << "  Samples: " << numSamples << ", Factors: " << K << std::endl;
-    }
-  }
-  
-  // Pre-compute ZD = Z * diag(D) for efficiency  
+  // Pre-compute ZD = Z * diag(D) for efficiency
   MatrixXd ZD = Z * D.asDiagonal();
-  
-  if (verbose >= 2) {
-    Rcout << "  Pre-computed Z * D (" << J << " Ã— " << K << ")" << std::endl;
-  }
   
   // Allocate output matrix
   MatrixXd ZDB(J, N);
   
-  // Compute ZD * Bi for each sample and concatenate  
+  // Compute ZD * Bi for each sample and concatenate
   int col_offset = 0;
-  
-  // Progress tracking
-  int progress_step = std::max(1, numSamples / 10);
-  
+
 #ifdef _OPENMP
-  // Note: Parallelizing over samples here may not be beneficial due to 
+  // Note: Parallelizing over samples here may not be beneficial due to
   // memory bandwidth limitations. Profile before enabling.
   // #pragma omp parallel for schedule(dynamic) if(numSamples > 4)
 #endif
-  
+
   for (int i = 0; i < numSamples; ++i) {
-    // Progress bar
-    if (verbose >= 1 && numSamples > 1) {
-      if (i % progress_step == 0 || i == numSamples - 1) {
-        double pct = 100.0 * (i + 1) / numSamples;
-        Rcout << "\r  Progress: " 
-              << std::string(static_cast<int>(pct / 5), '=')
-              << std::string(20 - static_cast<int>(pct / 5), ' ')
-              << " " << static_cast<int>(pct) << "%";
-        Rcout.flush();
-      }
-    }
-    
     // Extract Bi for this sample
     Eigen::MatrixXd Bi = as<Eigen::MatrixXd>(Bi_list[i]);
     int Ni_current = Bi.cols();
-    
+
     // Compute ZD * Bi and store in appropriate block
     ZDB.block(0, col_offset, J, Ni_current) = ZD * Bi;
-    
-    if (verbose >= 2) {
-      Rcout << "\n  Sample " << (i + 1) << "/" << numSamples 
-            << ": " << Ni_current << " cells" << std::endl;
-    }
-    
+
     col_offset += Ni_current;
-  }
-  
-  if (verbose >= 1 && numSamples > 1) {
-    Rcout << std::endl;
-  }
-  
-  // Summary statistics (optional)  
-  if (verbose >= 1) {
-    double mean_val = ZDB.mean();
-    double std_val = std::sqrt((ZDB.array() - mean_val).square().mean());
-    Rcout << "ZDB computed: mean = " << mean_val 
-          << ", std = " << std_val << std::endl;
   }
   
   return ZDB;
@@ -231,37 +188,21 @@ Eigen::MatrixXd compute_DB_cpp(
     N += Ni[i];
   }
   
-  if (verbose >= 1) {
-    Rcout << "Computing DB projection: " << K << " factors Ã— " << N << " cells" << std::endl;
-  }
-  
   // Concatenate all Bi matrices
   MatrixXd B(K, N);
   int col_offset = 0;
-  
+
   for (int i = 0; i < numSamples; ++i) {
     Eigen::MatrixXd Bi = as<Eigen::MatrixXd>(Bi_list[i]);
     int Ni_current = Bi.cols();
-    
+
     B.block(0, col_offset, K, Ni_current) = Bi;
-    
-    if (verbose >= 2) {
-      Rcout << "  Sample " << (i + 1) << "/" << numSamples 
-            << ": " << Ni_current << " cells" << std::endl;
-    }
-    
+
     col_offset += Ni_current;
   }
-  
+
   // Apply diagonal scaling: DB = diag(D) * B
   MatrixXd DB = D.asDiagonal() * B;
-  
-  if (verbose >= 1) {
-    double mean_val = DB.mean();
-    double std_val = std::sqrt((DB.array() - mean_val).square().mean());
-    Rcout << "DB computed: mean = " << mean_val 
-          << ", std = " << std_val << std::endl;
-  }
   
   return DB;
 }
@@ -366,65 +307,25 @@ Eigen::MatrixXd compute_ADB_cpp(
     N += Ni[i];
   }
   
-  if (verbose >= 1) {
-    Rcout << "Computing ADB projection: " << num_pathways << " pathways x " << N << " cells" << std::endl;
-    if (verbose >= 2) {
-      Rcout << "  Reduced dimensions (P): " << P << ", Factors (K): " << K << std::endl;
-    }
-  }
-  // Concatenate all Bi matrices into B  
+  // Concatenate all Bi matrices into B
   MatrixXd B(K, N);
   int col_offset = 0;
-  
-  int progress_step = std::max(1, numSamples / 10);
-  
+
   for (int i = 0; i < numSamples; ++i) {
-    // Progress bar
-    if (verbose >= 1 && numSamples > 1) {
-      if (i % progress_step == 0 || i == numSamples - 1) {
-        double pct = 100.0 * (i + 1) / numSamples;
-        Rcout << "\r  Progress: " 
-              << std::string(static_cast<int>(pct / 5), '=')
-              << std::string(20 - static_cast<int>(pct / 5), ' ')
-              << " " << static_cast<int>(pct) << "%";
-        Rcout.flush();
-      }
-    }
-    
     Eigen::MatrixXd Bi = as<Eigen::MatrixXd>(Bi_list[i]);
     int Ni_current = Bi.cols();
-    
+
     B.block(0, col_offset, K, Ni_current) = Bi;
-    
-    if (verbose >= 2) {
-      Rcout << "\n  Sample " << (i + 1) << "/" << numSamples 
-            << ": " << Ni_current << " cells" << std::endl;
-    }
-    
+
     col_offset += Ni_current;
   }
-  
-  if (verbose >= 1 && numSamples > 1) {
-    Rcout << std::endl;
-  }
-  
-  // Compute ADB = C.rotation * A * diag(D) * B  
-  if (verbose >= 2) {
-    Rcout << "  Computing matrix product: C.rotation * A * D * B" << std::endl;
-  }
-  
+
+  // Compute ADB = C.rotation * A * diag(D) * B
   // Efficient computation order: (C.rotation * A) * (diag(D) * B)
   // This minimizes intermediate matrix sizes
-  MatrixXd CA = C_rotation * A;        // P Ã— K
-  MatrixXd DB = D.asDiagonal() * B;    // K Ã— N
-  MatrixXd ADB = CA * DB;              // P Ã— N
-  
-  if (verbose >= 1) {
-    double mean_val = ADB.mean();
-    double std_val = std::sqrt((ADB.array() - mean_val).square().mean());
-    Rcout << "ADB computed: mean = " << mean_val 
-          << ", std = " << std_val << std::endl;
-  }
+  MatrixXd CA = C_rotation * A;        // P x K
+  MatrixXd DB = D.asDiagonal() * B;    // K x N
+  MatrixXd ADB = CA * DB;              // P x N
   
   return ADB;
 }
