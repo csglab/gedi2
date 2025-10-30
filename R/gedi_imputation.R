@@ -192,7 +192,7 @@ validate_M_single <- function(M, fp, label) {
   }
 
   # Recompute fingerprint for current matrix
-  current_fp <- compute_M_fingerprint_single(M, label, "standard")
+  current_fp <- compute_M_fingerprint_single(M, label)
 
   # Compare fingerprints
   if (current_fp$fingerprint != fp$fingerprint) {
@@ -371,22 +371,55 @@ compute_Y_variance <- function(self, private, M) {
   
   # Compute variance for each sample
   Y_var_list <- vector("list", numSamples)
-  
-  for (i in 1:numSamples) {
-    idx <- cells_by_sample[[i]]
-    
-    # Get Yi_fitted for this sample (reconstruct from params)
-    Yi_fitted <- compute_Y_fitted(self, private, i)
-    
-    # Get Mi for this sample
-    if (obs_type == "M") {
-      Mi <- M[, idx, drop = FALSE]
-      Y_var_list[[i]] <- Yi_var_M(Yi_fitted, self$params$sigma2)
-      
-    } else if (obs_type == "M_paired") {
-      M1i <- M[[1]][, idx, drop = FALSE]
-      M2i <- M[[2]][, idx, drop = FALSE]
-      Y_var_list[[i]] <- Yi_var_M_paired(Yi_fitted, M1i, M2i, self$params$sigma2)
+
+  if (private$.verbose == 1) {
+    cat(sprintf("Computing Y variance (%d samples)\n", numSamples))
+    cat("|", rep(" ", 50), "| 0%\r", sep = "")
+    flush.console()
+
+    for (i in 1:numSamples) {
+      idx <- cells_by_sample[[i]]
+
+      # Get Yi_fitted for this sample (reconstruct from params)
+      Yi_fitted <- compute_Y_fitted(self, private, i)
+
+      # Get Mi for this sample
+      if (obs_type == "M") {
+        Mi <- M[, idx, drop = FALSE]
+        Y_var_list[[i]] <- Yi_var_M(Yi_fitted, self$params$sigma2)
+
+      } else if (obs_type == "M_paired") {
+        M1i <- M[[1]][, idx, drop = FALSE]
+        M2i <- M[[2]][, idx, drop = FALSE]
+        Y_var_list[[i]] <- Yi_var_M_paired(Yi_fitted, M1i, M2i, self$params$sigma2)
+      }
+
+      # Update progress bar
+      pct <- round(i / numSamples * 100)
+      n_filled <- round(50 * i / numSamples)
+      cat("|", rep("=", n_filled), rep(" ", 50 - n_filled), "| ", pct, "%\r", sep = "")
+      flush.console()
+    }
+    cat("\n")  # Final newline
+
+  } else {
+    # Silent or debug mode - no progress bar
+    for (i in 1:numSamples) {
+      idx <- cells_by_sample[[i]]
+
+      # Get Yi_fitted for this sample (reconstruct from params)
+      Yi_fitted <- compute_Y_fitted(self, private, i)
+
+      # Get Mi for this sample
+      if (obs_type == "M") {
+        Mi <- M[, idx, drop = FALSE]
+        Y_var_list[[i]] <- Yi_var_M(Yi_fitted, self$params$sigma2)
+
+      } else if (obs_type == "M_paired") {
+        M1i <- M[[1]][, idx, drop = FALSE]
+        M2i <- M[[2]][, idx, drop = FALSE]
+        Y_var_list[[i]] <- Yi_var_M_paired(Yi_fitted, M1i, M2i, self$params$sigma2)
+      }
     }
   }
   
@@ -448,51 +481,112 @@ compute_dispersion <- function(self, private, M, subsample = 1e6) {
   
   # Compute dispersion for each sample
   result_list <- vector("list", numSamples)
-  
-  for (i in 1:numSamples) {
-    idx <- cells_by_sample[[i]]
-    
-    # Get Yi_fitted for this sample
-    Yi_fitted <- compute_Y_fitted(self, private, i)
-    
-    # Get Mi for this sample
-    Mi <- M[, idx, drop = FALSE]
-    
-    # Call C++ dispersion function (sparse-optimized)
-    dispersion_data <- compute_dispersion_sparse(Yi_fitted, Mi, as.integer(subsample))
-    
-    predicted <- dispersion_data$predicted
-    observed <- dispersion_data$observed
-    
-    # Compute residual squared
-    res_sq <- (observed - predicted)^2
-    
-    # Bin by predicted values
-    n_bins <- floor(sqrt(length(predicted)))
-    bins <- cut(
-      predicted,
-      breaks = stats::quantile(predicted, seq(0, 1, length = n_bins + 1)),
-      include.lowest = TRUE
-    )
-    
-    # Aggregate by bin
-    xy <- stats::aggregate(
-      cbind(predicted, res_sq),
-      by = list(bin = bins),
-      FUN = mean
-    )
-    
-    colnames(xy) <- c("bin", "Expected_Var", "Observed_Var")
-    xy$Sample <- sampleNames[i]
-    
-    # Count observations per bin
-    xy$n <- stats::aggregate(
-      predicted,
-      by = list(bin = bins),
-      FUN = length
-    )$x
-    
-    result_list[[i]] <- xy
+
+  if (private$.verbose == 1) {
+    cat(sprintf("Computing dispersion (%d samples)\n", numSamples))
+    cat("|", rep(" ", 50), "| 0%\r", sep = "")
+    flush.console()
+
+    for (i in 1:numSamples) {
+      idx <- cells_by_sample[[i]]
+
+      # Get Yi_fitted for this sample
+      Yi_fitted <- compute_Y_fitted(self, private, i)
+
+      # Get Mi for this sample
+      Mi <- M[, idx, drop = FALSE]
+
+      # Call C++ dispersion function (sparse-optimized)
+      dispersion_data <- compute_dispersion_sparse(Yi_fitted, Mi, as.integer(subsample))
+
+      predicted <- dispersion_data$predicted
+      observed <- dispersion_data$observed
+
+      # Compute residual squared
+      res_sq <- (observed - predicted)^2
+
+      # Bin by predicted values
+      n_bins <- floor(sqrt(length(predicted)))
+      bins <- cut(
+        predicted,
+        breaks = stats::quantile(predicted, seq(0, 1, length = n_bins + 1)),
+        include.lowest = TRUE
+      )
+
+      # Aggregate by bin
+      xy <- stats::aggregate(
+        cbind(predicted, res_sq),
+        by = list(bin = bins),
+        FUN = mean
+      )
+
+      colnames(xy) <- c("bin", "Expected_Var", "Observed_Var")
+      xy$Sample <- sampleNames[i]
+
+      # Count observations per bin
+      xy$n <- stats::aggregate(
+        predicted,
+        by = list(bin = bins),
+        FUN = length
+      )$x
+
+      result_list[[i]] <- xy
+
+      # Update progress bar
+      pct <- round(i / numSamples * 100)
+      n_filled <- round(50 * i / numSamples)
+      cat("|", rep("=", n_filled), rep(" ", 50 - n_filled), "| ", pct, "%\r", sep = "")
+      flush.console()
+    }
+    cat("\n")  # Final newline
+
+  } else {
+    # Silent or debug mode - no progress bar
+    for (i in 1:numSamples) {
+      idx <- cells_by_sample[[i]]
+
+      # Get Yi_fitted for this sample
+      Yi_fitted <- compute_Y_fitted(self, private, i)
+
+      # Get Mi for this sample
+      Mi <- M[, idx, drop = FALSE]
+
+      # Call C++ dispersion function (sparse-optimized)
+      dispersion_data <- compute_dispersion_sparse(Yi_fitted, Mi, as.integer(subsample))
+
+      predicted <- dispersion_data$predicted
+      observed <- dispersion_data$observed
+
+      # Compute residual squared
+      res_sq <- (observed - predicted)^2
+
+      # Bin by predicted values
+      n_bins <- floor(sqrt(length(predicted)))
+      bins <- cut(
+        predicted,
+        breaks = stats::quantile(predicted, seq(0, 1, length = n_bins + 1)),
+        include.lowest = TRUE
+      )
+
+      # Aggregate by bin
+      xy <- stats::aggregate(
+        cbind(predicted, res_sq),
+        by = list(bin = bins),
+        FUN = mean
+      )
+
+      colnames(xy) <- c("bin", "Expected_Var", "Observed_Var")
+      xy$Sample <- sampleNames[i]
+
+      # Count observations per bin
+      xy$n <- stats::aggregate(
+        predicted,
+        by = list(bin = bins),
+        FUN = length
+      )$x
+
+      result_list[[i]] <- xy
+    }
   }
   
   # Combine all samples
