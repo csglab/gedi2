@@ -66,19 +66,9 @@ Rcpp::List compute_svd_factorized_cpp(
     N += Ni[i];
   }
   
-  if (verbose >= 1) {
-    Rcout << "Computing factorized SVD (Internal DB)..." << std::endl;
-    Rcout << "  Dimensions: " << J << " genes × " << N << " cells, " 
-          << K << " factors" << std::endl;
-  }
-  
   // ========================================================================
   // Step 1: SVD of Z
   // ========================================================================
-  
-  if (verbose >= 1) {
-    Rcout << "  [1/5] Computing SVD(Z)..." << std::endl;
-  }
   
   JacobiSVD<MatrixXd> svd_Z(Z, ComputeThinU | ComputeThinV);
   MatrixXd U_Z = svd_Z.matrixU();        // J × K
@@ -88,10 +78,6 @@ Rcpp::List compute_svd_factorized_cpp(
   // ========================================================================
   // Step 2: Concatenate B and compute DB
   // ========================================================================
-  
-  if (verbose >= 1) {
-    Rcout << "  [2/5] Concatenating B matrices..." << std::endl;
-  }
   
   MatrixXd B(K, N);
   int col_offset = 0;
@@ -110,10 +96,6 @@ Rcpp::List compute_svd_factorized_cpp(
   // Step 3: SVD of DB
   // ========================================================================
   
-  if (verbose >= 1) {
-    Rcout << "  [3/5] Computing SVD(DB)..." << std::endl;
-  }
-  
   JacobiSVD<MatrixXd> svd_DB(DB, ComputeThinU | ComputeThinV);
   MatrixXd U_DB = svd_DB.matrixU();        // K × K
   VectorXd S_DB = svd_DB.singularValues(); // K
@@ -123,10 +105,6 @@ Rcpp::List compute_svd_factorized_cpp(
   // Step 4: Form and decompose middle matrix
   // ========================================================================
   
-  if (verbose >= 1) {
-    Rcout << "  [4/5] Computing middle matrix..." << std::endl;
-  }
-  
   // Middle = diag(S_Z) * V_Z^T * U_DB * diag(S_DB)
   MatrixXd middle = S_Z.asDiagonal() * V_Z.transpose() * U_DB * S_DB.asDiagonal();
   
@@ -134,26 +112,18 @@ Rcpp::List compute_svd_factorized_cpp(
   // Step 5: SVD of middle matrix
   // ========================================================================
 
-  if (verbose >= 1) {
-    Rcout << "  [5/5] Computing SVD(middle)..." << std::endl;
-  }
-  
   JacobiSVD<MatrixXd> svd_middle(middle, ComputeThinU | ComputeThinV);
   MatrixXd U_middle = svd_middle.matrixU();        // K × K
   VectorXd S_middle = svd_middle.singularValues(); // K
   MatrixXd V_middle = svd_middle.matrixV();        // K × K
-  
+
   // ========================================================================
   // Reconstruct final SVD and return
   // ========================================================================
-  
+
   MatrixXd u = U_Z * U_middle;      // J × K
   MatrixXd v = V_DB * V_middle;     // N × K
   VectorXd d = S_middle;            // K
-  
-  if (verbose >= 1) {
-    Rcout << "Factorized SVD complete" << std::endl;
-  }
   
   return List::create(
     Named("d") = d,
@@ -205,20 +175,10 @@ Rcpp::List run_factorized_svd_cpp(
   if (K != K_proj) {
     stop("Dimension mismatch: Z columns (%d) must equal projDB rows (%d)", K, K_proj);
   }
-  
-  if (verbose >= 1) {
-    Rcout << "Running factorized SVD (Custom projDB)..." << std::endl;
-    Rcout << "  Dimensions: " << J << " genes × " << N_total << " custom cells, " 
-          << K << " factors" << std::endl;
-  }
-  
+
   // ========================================================================
   // Step 1: SVD of Z
   // ========================================================================
-  
-  if (verbose >= 1) {
-    Rcout << "  [1/4] Computing SVD(Z)..." << std::endl;
-  }
   
   JacobiSVD<MatrixXd> svd_Z(Z, ComputeThinU | ComputeThinV);
   MatrixXd U_Z = svd_Z.matrixU();        // J × K
@@ -229,10 +189,6 @@ Rcpp::List run_factorized_svd_cpp(
   // Step 2: SVD of projDB (Input matrix)
   // ========================================================================
   
-  if (verbose >= 1) {
-    Rcout << "  [2/4] Computing SVD(projDB)..." << std::endl;
-  }
-  
   JacobiSVD<MatrixXd> svd_projDB(projDB, ComputeThinU | ComputeThinV);
   MatrixXd U_DB = svd_projDB.matrixU();        // K × K
   VectorXd S_DB = svd_projDB.singularValues(); // K
@@ -241,38 +197,26 @@ Rcpp::List run_factorized_svd_cpp(
   // ========================================================================
   // Step 3: Form and decompose middle matrix
   // ========================================================================
-  
-  if (verbose >= 1) {
-    Rcout << "  [3/4] Computing middle matrix..." << std::endl;
-  }
-  
+
   // Middle = diag(S_Z) * V_Z^T * U_DB * diag(S_DB)
   MatrixXd middle = S_Z.asDiagonal() * V_Z.transpose() * U_DB * S_DB.asDiagonal();
-  
+
   // ========================================================================
   // Step 4: SVD of middle matrix
   // ========================================================================
-  
-  if (verbose >= 1) {
-    Rcout << "  [4/4] Computing SVD(middle)..." << std::endl;
-  }
-  
+
   JacobiSVD<MatrixXd> svd_middle(middle, ComputeThinU | ComputeThinV);
   MatrixXd U_middle = svd_middle.matrixU();        // K × K
   VectorXd S_middle = svd_middle.singularValues(); // K
   MatrixXd V_middle = svd_middle.matrixV();        // K × K
-  
+
   // ========================================================================
   // Reconstruct final SVD and return
   // ========================================================================
-  
+
   MatrixXd u = U_Z * U_middle;      // J × K
   MatrixXd v = V_DB * V_middle;     // N_total × K
   VectorXd d = S_middle;            // K
-  
-  if (verbose >= 1) {
-    Rcout << "Factorized SVD complete" << std::endl;
-  }
   
   return List::create(
     Named("d") = d,

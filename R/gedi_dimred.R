@@ -15,13 +15,13 @@ EmbeddingsAccessor <- R6Class(
       private$.gedi_private <- gedi_private
     },
 
-    umap = function(...) {
-      # If arguments provided, compute fresh UMAP with custom parameters
+    compute_umap = function(...) {
+      # Custom UMAP with parameters (not cached)
       args <- list(...)
       if (length(args) > 0) {
         return(compute_umap(private$.gedi_self, private$.gedi_private, ...))
       }
-      # Otherwise return cached default UMAP (same as $umap field)
+      # If no args, return cached default UMAP (same as $umap active binding)
       return(compute_umap_cached(private$.gedi_self, private$.gedi_private))
     },
 
@@ -30,8 +30,9 @@ EmbeddingsAccessor <- R6Class(
       cat("\nAvailable embeddings (lazy-computed):\n")
       cat("  $svd   - Factorized SVD\n")
       cat("  $pca   - PCA coordinates\n")
-      cat("  $umap  - UMAP embedding (cached with default parameters)\n")
-      cat("  $umap(...) - UMAP with custom parameters (not cached)\n")
+      cat("  $umap  - UMAP embedding (default parameters, cached)\n")
+      cat("\nFor custom UMAP parameters, use:\n")
+      cat("  $compute_umap(n_neighbors=30, min_dist=0.5, ...)\n")
       cat("\nAccess with: model$embeddings$pca or model$embeddings$umap\n")
       invisible(self)
     }
@@ -49,6 +50,11 @@ EmbeddingsAccessor <- R6Class(
     pca = function(value) {
       if (!missing(value)) stop("pca is read-only", call. = FALSE)
       compute_pca(private$.gedi_self, private$.gedi_private)
+    },
+
+    umap = function(value) {
+      if (!missing(value)) stop("umap is read-only", call. = FALSE)
+      compute_umap_cached(private$.gedi_self, private$.gedi_private)
     }
   )
 )
@@ -78,40 +84,44 @@ compute_svd_factorized <- function(self, private, force_recompute = FALSE) {
   
   # Check cache
   if (!force_recompute && !is.null(private$.cache$svd)) {
-    if (private$.verbose > 0) {
-      cat("Using cached SVD\n")
-    }
+    log_cached("SVD", private$.verbose)
     return(private$.cache$svd)
   }
-  
+
   # Validate model state
   if (is.null(private$.lastResult)) {
     stop("No results yet. Run $train() first.", call. = FALSE)
   }
-  
-  # Call C++ function
+
+  log_start("Factorized SVD", private$.verbose)
+
+  # Call C++ function (silent)
   svd_result <- compute_svd_factorized_cpp(
     Z = self$params$Z,
     D = self$params$D,
     Bi_list = self$params$Bi,
-    verbose = private$.verbose
+    verbose = 0  # C++ silent
   )
-  
+
   # Add dimension names
   names(svd_result$d) <- paste0("LV", seq_len(self$aux$K))
-  
+
   rownames(svd_result$u) <- private$.geneIDs
   colnames(svd_result$u) <- paste0("LV", seq_len(self$aux$K))
-  
+
   rownames(svd_result$v) <- private$.cellIDs
   colnames(svd_result$v) <- paste0("LV", seq_len(self$aux$K))
-  
+
   # Cache result
   if (is.null(private$.cache)) {
     private$.cache <- list()
   }
   private$.cache$svd <- svd_result
-  
+
+  details <- sprintf("%d genes x %d cells x %d factors",
+                     nrow(svd_result$u), nrow(svd_result$v), length(svd_result$d))
+  log_complete("Factorized SVD", details, private$.verbose)
+
   return(svd_result)
 }
 
@@ -134,42 +144,36 @@ compute_pca <- function(self, private, force_recompute = FALSE) {
   
   # Check cache
   if (!force_recompute && !is.null(private$.cache$pca)) {
-    if (private$.verbose > 0) {
-      cat("Using cached PCA\n")
-    }
+    log_cached("PCA", private$.verbose)
     return(private$.cache$pca)
   }
-  
+
   # Validate model state
   if (is.null(private$.lastResult)) {
     stop("No results yet. Run $train() first.", call. = FALSE)
   }
-  
+
+  log_start("PCA coordinates", private$.verbose)
+
   # Get SVD (uses cache if available)
   svd_result <- compute_svd_factorized(self, private)
-  
-  if (private$.verbose >= 1) {
-    cat("Computing PCA coordinates from SVD...\n")
-  }
-  
+
   # PCA = V × diag(d)
   pca_coords <- svd_result$v %*% diag(svd_result$d, nrow = length(svd_result$d))
-  
+
   # Set dimension names
   rownames(pca_coords) <- private$.cellIDs
   colnames(pca_coords) <- paste0("PC", seq_len(ncol(pca_coords)))
-  
+
   # Cache result
   if (is.null(private$.cache)) {
     private$.cache <- list()
   }
   private$.cache$pca <- pca_coords
-  
-  if (private$.verbose >= 1) {
-    cat("✓ PCA computed: ", nrow(pca_coords), " cells × ", 
-        ncol(pca_coords), " PCs\n", sep = "")
-  }
-  
+
+  details <- format_dims(nrow(pca_coords), ncol(pca_coords), "cells", "PCs")
+  log_complete("PCA coordinates", details, private$.verbose)
+
   return(pca_coords)
 }
 
@@ -192,9 +196,7 @@ compute_umap_cached <- function(self, private, force_recompute = FALSE) {
 
   # Check cache
   if (!force_recompute && !is.null(private$.cache$umap)) {
-    if (private$.verbose > 0) {
-      cat("Using cached UMAP\n")
-    }
+    log_cached("UMAP", private$.verbose)
     return(private$.cache$umap)
   }
 
@@ -259,37 +261,30 @@ compute_umap <- function(self, private,
          call. = FALSE)
   }
   
+  log_start("UMAP embedding", private$.verbose)
+
   # Get input data
   if (input == "pca") {
-    if (private$.verbose >= 1) {
-      cat("Using PCA coordinates as UMAP input\n")
-    }
+    log_info(sprintf("Input: PCA coordinates"), private$.verbose)
     X <- compute_pca(self, private)
-    
+
   } else if (input == "db") {
-    if (private$.verbose >= 1) {
-      cat("Using DB projection as UMAP input\n")
-    }
+    log_info(sprintf("Input: DB projection"), private$.verbose)
     X <- t(compute_DB(self, private))
-    
+
   } else if (input == "zdb") {
-    if (private$.verbose >= 1) {
-      cat("Using ZDB projection as UMAP input\n")
-    }
+    log_info(sprintf("Input: ZDB projection"), private$.verbose)
     X <- t(compute_ZDB(self, private))
-    
+
   } else {
     stop("input must be 'pca', 'db', or 'zdb'", call. = FALSE)
   }
-  
+
+  # Log parameters
+  log_info(sprintf("Parameters: n_neighbors=%d, min_dist=%.2f, n_components=%d",
+                   n_neighbors, min_dist, n_components), private$.verbose)
+
   # Run UMAP
-  if (private$.verbose >= 1) {
-    cat("Computing UMAP embedding...\n")
-    cat("  Parameters: n_neighbors=", n_neighbors, 
-        ", min_dist=", min_dist,
-        ", n_components=", n_components, "\n", sep = "")
-  }
-  
   umap_result <- uwot::umap(
     X,
     n_neighbors = n_neighbors,
@@ -301,16 +296,14 @@ compute_umap <- function(self, private,
     verbose = private$.verbose > 0,
     ...
   )
-  
+
   # Set dimension names
   rownames(umap_result) <- private$.cellIDs
   colnames(umap_result) <- paste0("UMAP", seq_len(n_components))
-  
-  if (private$.verbose >= 1) {
-    cat("✓ UMAP computed: ", nrow(umap_result), " cells × ", 
-        ncol(umap_result), " dimensions\n", sep = "")
-  }
-  
+
+  details <- format_dims(nrow(umap_result), ncol(umap_result), "cells", "dimensions")
+  log_complete("UMAP embedding", details, private$.verbose)
+
   return(umap_result)
 }
 
