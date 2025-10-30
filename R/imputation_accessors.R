@@ -66,11 +66,9 @@ get_imputed_Y <- function(self, private, M = NULL, logScale = TRUE, rowCentre = 
   cache_key <- paste0("Y_imputed_", logScale, "_", rowCentre)
   
   # Check if cached
-  if (!is.null(private$.imputation_cache) && 
+  if (!is.null(private$.imputation_cache) &&
       !is.null(private$.imputation_cache[[cache_key]])) {
-    if (private$.verbose > 0) {
-      cat("✓ Using cached imputed Y\n")
-    }
+    log_cached("Imputed Y", private$.verbose)
     return(private$.imputation_cache[[cache_key]])
   }
   
@@ -96,23 +94,51 @@ get_imputed_Y <- function(self, private, M = NULL, logScale = TRUE, rowCentre = 
   
   # Compute imputed Y for each sample
   Y_imputed_list <- vector("list", numSamples)
-  
-  for (i in 1:numSamples) {
-    # Reconstruct Yi_fitted from parameters (NO M needed!)
-    Yi_fitted <- compute_Y_fitted(self, private, i)
-    
-    # Remove sample effects
-    Y_imputed_list[[i]] <- compute_Y_imputed(
-      Yi_fitted = Yi_fitted,
-      params = self$params,
-      sample_idx = i,
-      rowCentre = rowCentre
-    )
+
+  if (private$.verbose == 1) {
+    cat(sprintf("Computing imputed Y (%d samples)\n", numSamples))
+    cat("|", rep(" ", 50), "| 0%\r", sep = "")
+    flush.console()
+
+    for (i in 1:numSamples) {
+      # Reconstruct Yi_fitted from parameters (NO M needed!)
+      Yi_fitted <- compute_Y_fitted(self, private, i)
+
+      # Remove sample effects
+      Y_imputed_list[[i]] <- compute_Y_imputed(
+        Yi_fitted = Yi_fitted,
+        params = self$params,
+        sample_idx = i,
+        rowCentre = rowCentre
+      )
+
+      # Update progress bar
+      pct <- round(i / numSamples * 100)
+      n_filled <- round(50 * i / numSamples)
+      cat("|", rep("=", n_filled), rep(" ", 50 - n_filled), "| ", pct, "%\r", sep = "")
+      flush.console()
+    }
+    cat("\n")  # Final newline
+
+  } else {
+    # Silent or debug mode - no progress bar
+    for (i in 1:numSamples) {
+      # Reconstruct Yi_fitted from parameters (NO M needed!)
+      Yi_fitted <- compute_Y_fitted(self, private, i)
+
+      # Remove sample effects
+      Y_imputed_list[[i]] <- compute_Y_imputed(
+        Yi_fitted = Yi_fitted,
+        params = self$params,
+        sample_idx = i,
+        rowCentre = rowCentre
+      )
+    }
   }
-  
+
   # Concatenate all samples
   Y_imputed <- do.call(cbind, Y_imputed_list)
-  
+
   # Add dimension names
   rownames(Y_imputed) <- private$.geneIDs
   colnames(Y_imputed) <- private$.cellIDs
@@ -138,12 +164,10 @@ get_imputed_Y <- function(self, private, M = NULL, logScale = TRUE, rowCentre = 
     private$.imputation_cache <- list()
   }
   private$.imputation_cache[[cache_key]] <- Y_imputed
-  
-  if (private$.verbose >= 1) {
-    cat("✓ Imputed Y computed: ", nrow(Y_imputed), " genes × ", 
-        ncol(Y_imputed), " cells\n", sep = "")
-    cat("  logScale = ", logScale, ", rowCentre = ", rowCentre, "\n", sep = "")
-  }
+
+  details <- format_dims(nrow(Y_imputed), ncol(Y_imputed), "genes", "cells")
+  log_complete("Imputed Y", details, private$.verbose)
+  log_info(sprintf("logScale = %s, rowCentre = %s", logScale, rowCentre), private$.verbose)
   
   return(Y_imputed)
 }
@@ -175,11 +199,9 @@ get_Y_variance <- function(self, private, M) {
   }
   
   # Check cache
-  if (!is.null(private$.imputation_cache) && 
+  if (!is.null(private$.imputation_cache) &&
       !is.null(private$.imputation_cache$Y_var)) {
-    if (private$.verbose > 0) {
-      cat("✓ Using cached Y variance\n")
-    }
+    log_cached("Y variance", private$.verbose)
     return(private$.imputation_cache$Y_var)
   }
   
@@ -192,11 +214,9 @@ get_Y_variance <- function(self, private, M) {
       private$.imputation_cache <- list()
     }
     private$.imputation_cache$Y_var <- Y_var
-    
-    if (private$.verbose >= 1) {
-      cat("✓ Y variance computed: ", nrow(Y_var), " genes × ", 
-          ncol(Y_var), " cells\n", sep = "")
-    }
+
+    details <- format_dims(nrow(Y_var), ncol(Y_var), "genes", "cells")
+    log_complete("Y variance", details, private$.verbose)
   }
   
   return(Y_var)
@@ -231,12 +251,10 @@ get_dispersion <- function(self, private, M, subsample = 1e6) {
   
   # Call core computation function
   dispersion_df <- compute_dispersion(self, private, M, subsample)
-  
-  if (private$.verbose >= 1) {
-    cat("✓ Dispersion analysis complete: ", nrow(dispersion_df), " bins across ",
-        self$aux$numSamples, " samples\n", sep = "")
-  }
-  
+
+  details <- sprintf("%d bins across %d samples", nrow(dispersion_df), self$aux$numSamples)
+  log_complete("Dispersion analysis", details, private$.verbose)
+
   return(dispersion_df)
 }
 
