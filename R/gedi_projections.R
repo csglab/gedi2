@@ -73,23 +73,23 @@ compute_ZDB <- function(self, private, force_recompute = FALSE) {
   
   # Check if cached and not forcing recompute
   if (!force_recompute && !is.null(private$.cache$ZDB)) {
-    if (private$.verbose > 0) {
-      cat("✓ Using cached ZDB\n")
-    }
+    log_cached("ZDB", private$.verbose)
     return(private$.cache$ZDB)
   }
-  
+
   # Validate model state
   if (is.null(private$.lastResult)) {
     stop("No results yet. Run $train() first.", call. = FALSE)
   }
-  
+
+  log_start("ZDB projection", private$.verbose)
+
   # Call C++ function
   ZDB <- compute_ZDB_cpp(
     Z = self$params$Z,
     D = self$params$D,
     Bi_list = self$params$Bi,
-    verbose = private$.verbose
+    verbose = 0  # C++ silent
   )
   
   # Add row/column names
@@ -101,7 +101,10 @@ compute_ZDB <- function(self, private, force_recompute = FALSE) {
     private$.cache <- list()
   }
   private$.cache$ZDB <- ZDB
-  
+
+  details <- format_dims(nrow(ZDB), ncol(ZDB), "genes", "cells")
+  log_complete("ZDB projection", details, private$.verbose)
+
   return(ZDB)
 }
 
@@ -125,34 +128,37 @@ compute_DB <- function(self, private, force_recompute = FALSE) {
   
   # Check cache
   if (!force_recompute && !is.null(private$.cache$DB)) {
-    if (private$.verbose > 0) {
-      cat("✓ Using cached DB\n")
-    }
+    log_cached("DB", private$.verbose)
     return(private$.cache$DB)
   }
-  
+
   # Validate model state
   if (is.null(private$.lastResult)) {
     stop("No results yet. Run $train() first.", call. = FALSE)
   }
-  
+
+  log_start("DB projection", private$.verbose)
+
   # Call C++ function
   DB <- compute_DB_cpp(
     D = self$params$D,
     Bi_list = self$params$Bi,
-    verbose = private$.verbose
+    verbose = 0  # C++ silent
   )
-  
+
   # Add row/column names
   rownames(DB) <- paste0("LV", seq_len(self$aux$K))
   colnames(DB) <- private$.cellIDs
-  
+
   # Cache result
   if (is.null(private$.cache)) {
     private$.cache <- list()
   }
   private$.cache$DB <- DB
-  
+
+  details <- format_dims(nrow(DB), ncol(DB), "factors", "cells")
+  log_complete("DB projection", details, private$.verbose)
+
   return(DB)
 }
 
@@ -176,48 +182,51 @@ compute_ADB <- function(self, private, force_recompute = FALSE) {
   
   # Check cache
   if (!force_recompute && !is.null(private$.cache$ADB)) {
-    if (private$.verbose > 0) {
-      cat("✓ Using cached ADB\n")
-    }
+    log_cached("ADB", private$.verbose)
     return(private$.cache$ADB)
   }
-  
+
   # Validate model state
   if (is.null(private$.lastResult)) {
     stop("No results yet. Run $train() first.", call. = FALSE)
   }
-  
+
   # Check if C prior was provided
   if (self$aux$P == 0) {
-    stop("Cannot compute ADB: no gene-level prior (C) was provided during setup.", 
+    stop("Cannot compute ADB: no gene-level prior (C) was provided during setup.",
          call. = FALSE)
   }
-  
+
   # Check if aux_static exists
   if (is.null(private$.aux_static)) {
-    stop("Missing auxiliary data. Model may not be properly initialized.", 
+    stop("Missing auxiliary data. Model may not be properly initialized.",
          call. = FALSE)
   }
-  
+
+  log_start("ADB projection", private$.verbose)
+
   # Call C++ function
   ADB <- compute_ADB_cpp(
     C_rotation = private$.aux_static$C.rotation,
     A = self$params$A,
     D = self$params$D,
     Bi_list = self$params$Bi,
-    verbose = private$.verbose
+    verbose = 0  # C++ silent
   )
-  
+
   # Add row/column names
   rownames(ADB) <- colnames(private$.aux_static$inputC)
   colnames(ADB) <- private$.cellIDs
-  
+
   # Cache result
   if (is.null(private$.cache)) {
     private$.cache <- list()
   }
   private$.cache$ADB <- ADB
-  
+
+  details <- format_dims(nrow(ADB), ncol(ADB), "pathways", "cells")
+  log_complete("ADB projection", details, private$.verbose)
+
   return(ADB)
 }
 
