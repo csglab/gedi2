@@ -31,7 +31,7 @@
     # UMAP can be accessed as field or method
     # As field: uses cached default UMAP
     # As method with no args: also uses cached default UMAP
-    umap_emb <- model$embeddings$umap()
+    umap_emb <- model$embeddings$umap
     return(umap_emb[, dims])
 
   } else if (embedding_type == "pca") {

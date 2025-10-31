@@ -445,7 +445,7 @@ gedi_to_seurat <- function(model,
     # Add UMAP if cached
     if (cache_status["umap"]) {
       message("  Adding UMAP embedding...")
-      umap_coords <- model$embeddings$umap()
+      umap_coords <- model$embeddings$umap
       common_cells <- intersect(cell_ids, colnames(seurat_obj))
       umap_coords <- umap_coords[match(common_cells, cell_ids), , drop = FALSE]
       rownames(umap_coords) <- common_cells
