@@ -8,10 +8,13 @@
 #' @description
 #' Extracts count data from a Seurat object and creates a GEDI model.
 #' Automatically validates that the data contains raw counts (not normalized).
+#' Handles both Seurat v4 and v5, including split layers in v5.
 #'
 #' @param seurat_object Seurat object
 #' @param assay Character, which assay to use (default: "RNA")
-#' @param slot Character, which slot to extract (default: "counts")
+#' @param slot Character, which slot/layer to extract (default: "counts").
+#'   For Seurat v5 with split layers (e.g., counts.CTRL, counts.STIM),
+#'   this will automatically detect and combine all matching layers.
 #' @param sample_column Character, column name in meta.data for sample labels
 #'   (default: "orig.ident")
 #' @param subset_samples Character vector, subset to specific samples (default: NULL = all)
@@ -46,6 +49,16 @@
 #'   K = 15,
 #'   C = pathway_matrix
 #' )
+#'
+#' # Seurat v5 with split layers (counts.CTRL, counts.STIM, etc.)
+#' # Automatically detects and combines split layers
+#' gedi_model <- seurat_to_gedi(
+#'   seurat_object = ifnb,  # Has counts.CTRL and counts.STIM
+#'   assay = "RNA",
+#'   slot = "counts",  # Will find and join counts.CTRL + counts.STIM
+#'   sample_column = "stim",
+#'   K = 15
+#' )
 #' }
 #'
 #' @export
@@ -78,25 +91,73 @@ seurat_to_gedi <- function(seurat_object,
   }
 
   # Extract count matrix (handle both Seurat v4 and v5)
-  if (slot == "counts") {
-    # Try layer argument first (Seurat v5), fall back to slot (Seurat v4)
-    M <- tryCatch(
-      Seurat::GetAssayData(seurat_object, assay = assay, layer = "counts"),
-      error = function(e) {
-        Seurat::GetAssayData(seurat_object, assay = assay, slot = "counts")
-      }
-    )
-  } else if (slot == "data") {
-    M <- tryCatch(
-      Seurat::GetAssayData(seurat_object, assay = assay, layer = "data"),
-      error = function(e) {
-        Seurat::GetAssayData(seurat_object, assay = assay, slot = "data")
-      }
-    )
-    warning("Using 'data' slot instead of 'counts'. ",
-            "GEDI expects raw counts for proper modeling.", call. = FALSE)
+  # Seurat v5 can have split layers like counts.CTRL, counts.STIM
+  assay_obj <- seurat_object@assays[[assay]]
+
+  # Detect if we have multiple layers for the requested slot (Seurat v5 split layers)
+  if (methods::is(assay_obj, "Assay5")) {
+    # Seurat v5 - check for split layers
+    layer_names <- names(assay_obj@layers)
+    slot_pattern <- paste0("^", slot, "\\.")  # e.g., "^counts\\."
+
+    # Find all layers matching the slot pattern
+    matching_layers <- grep(slot_pattern, layer_names, value = TRUE)
+
+    if (length(matching_layers) > 1) {
+      # Multiple split layers found - need to join them
+      message("Detected ", length(matching_layers), " split layers: ",
+              paste(matching_layers, collapse = ", "))
+      message("Joining layers with do.call(cbind)...")
+
+      # Extract each layer and combine
+      layer_matrices <- lapply(matching_layers, function(layer_name) {
+        Seurat::GetAssayData(seurat_object, assay = assay, layer = layer_name)
+      })
+
+      # Combine all layers column-wise
+      M <- do.call(cbind, layer_matrices)
+
+    } else if (length(matching_layers) == 1) {
+      # Single layer with pattern name (e.g., just "counts.sample1")
+      M <- Seurat::GetAssayData(seurat_object, assay = assay, layer = matching_layers[1])
+
+    } else {
+      # No pattern match - try direct slot name
+      M <- tryCatch(
+        Seurat::GetAssayData(seurat_object, assay = assay, layer = slot),
+        error = function(e) {
+          stop("No layers found matching '", slot, "' in Seurat v5 assay. ",
+               "Available layers: ", paste(layer_names, collapse = ", "), call. = FALSE)
+        }
+      )
+    }
+
+    if (slot == "data") {
+      warning("Using 'data' layer instead of 'counts'. ",
+              "GEDI expects raw counts for proper modeling.", call. = FALSE)
+    }
+
   } else {
-    stop("slot must be 'counts' or 'data'", call. = FALSE)
+    # Seurat v4 or earlier - use traditional slot access
+    if (slot == "counts") {
+      M <- tryCatch(
+        Seurat::GetAssayData(seurat_object, assay = assay, layer = "counts"),
+        error = function(e) {
+          Seurat::GetAssayData(seurat_object, assay = assay, slot = "counts")
+        }
+      )
+    } else if (slot == "data") {
+      M <- tryCatch(
+        Seurat::GetAssayData(seurat_object, assay = assay, layer = "data"),
+        error = function(e) {
+          Seurat::GetAssayData(seurat_object, assay = assay, slot = "data")
+        }
+      )
+      warning("Using 'data' slot instead of 'counts'. ",
+              "GEDI expects raw counts for proper modeling.", call. = FALSE)
+    } else {
+      stop("slot must be 'counts' or 'data'", call. = FALSE)
+    }
   }
 
   # Validate that data appears to be counts (uses deterministic check to avoid RNG)

@@ -860,8 +860,8 @@ private:
 #pragma omp parallel for schedule(dynamic) if(numSamples > 1 && num_threads > 1)
 #endif
     for (int i = 0; i < numSamples; ++i) {
-      const int Ni = aux_Ni(i);
-      
+      // const int Ni = aux_Ni(i);  // Unused local copy
+
       MatrixXd Wi(J, K);
       for (int k = 0; k < K; ++k) {
         Wi.col(k) = (params_Z.col(k) + params_Qi[i].col(k)) * params_D(k);

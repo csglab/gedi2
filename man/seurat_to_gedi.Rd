@@ -23,7 +23,9 @@ seurat_to_gedi(
 
 \item{assay}{Character, which assay to use (default: "RNA")}
 
-\item{slot}{Character, which slot to extract (default: "counts")}
+\item{slot}{Character, which slot/layer to extract (default: "counts").
+For Seurat v5 with split layers (e.g., counts.CTRL, counts.STIM),
+this will automatically detect and combine all matching layers.}
 
 \item{sample_column}{Character, column name in meta.data for sample labels
 (default: "orig.ident")}
@@ -49,6 +51,7 @@ GEDI R6 object
 \description{
 Extracts count data from a Seurat object and creates a GEDI model.
 Automatically validates that the data contains raw counts (not normalized).
+Handles both Seurat v4 and v5, including split layers in v5.
 }
 \examples{
 \dontrun{
@@ -70,6 +73,16 @@ gedi_model <- seurat_to_gedi(
   sample_column = "sample_id",
   K = 15,
   C = pathway_matrix
+)
+
+# Seurat v5 with split layers (counts.CTRL, counts.STIM, etc.)
+# Automatically detects and combines split layers
+gedi_model <- seurat_to_gedi(
+  seurat_object = ifnb,  # Has counts.CTRL and counts.STIM
+  assay = "RNA",
+  slot = "counts",  # Will find and join counts.CTRL + counts.STIM
+  sample_column = "stim",
+  K = 15
 )
 }
 
