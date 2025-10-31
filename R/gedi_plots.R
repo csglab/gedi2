@@ -185,7 +185,7 @@ plot_features <- function(model,
   # Get embedding coordinates
   if (is.character(embedding)) {
     if (embedding == "umap") {
-      emb_mat <- model$embeddings$umap()
+      emb_mat <- model$embeddings$umap
     } else if (embedding == "pca") {
       emb_mat <- model$embeddings$pca[, 1:2]
     } else {
@@ -362,7 +362,7 @@ plot_feature_ratio <- function(model,
   # Get embedding coordinates
   if (is.character(embedding)) {
     if (embedding == "umap") {
-      emb_mat <- model$embeddings$umap()
+      emb_mat <- model$embeddings$umap
     } else if (embedding == "pca") {
       emb_mat <- model$embeddings$pca[, 1:2]
     } else {
