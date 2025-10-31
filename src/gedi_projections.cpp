@@ -269,7 +269,7 @@ Eigen::MatrixXd compute_ADB_cpp(
 ) {
 
   // Dimension extraction - C_rotation is num_pathways x P, A is P x K
-  int num_pathways = C_rotation.rows();  // Original number of pathways
+  // int num_pathways = C_rotation.rows();  // Unused local variable (original number of pathways)
   int P = C_rotation.cols();             // Number of reduced SVD components
   int K = A.cols();                      // Number of latent factors
   int numSamples = Bi_list.size();

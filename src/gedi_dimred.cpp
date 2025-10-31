@@ -38,8 +38,8 @@ Rcpp::List compute_svd_factorized_cpp(
   // ========================================================================
   // Dimension validation and setup
   // ========================================================================
-  
-  int J = Z.rows();
+
+  // int J = Z.rows();  // Unused local variable
   int K = Z.cols();
   int numSamples = Bi_list.size();
   
@@ -166,11 +166,11 @@ Rcpp::List run_factorized_svd_cpp(
   // ========================================================================
   // Dimension validation
   // ========================================================================
-  
-  int J = Z.rows();
+
+  // int J = Z.rows();  // Unused local variable
   int K = Z.cols();
   int K_proj = projDB.rows();
-  int N_total = projDB.cols();
+  // int N_total = projDB.cols();  // Unused local variable
 
   if (K != K_proj) {
     stop("Dimension mismatch: Z columns (%d) must equal projDB rows (%d)", K, K_proj);
