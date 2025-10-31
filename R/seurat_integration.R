@@ -24,6 +24,8 @@
 #' @param H Sample-level covariate matrix (covariates × samples) (default: NULL)
 #' @param validate_counts Logical, whether to validate data appears to be counts
 #'   (default: TRUE)
+#' @param use_variable_features Logical, whether to subset to highly variable features
+#'   (default: TRUE). If TRUE, uses genes from VariableFeatures(seurat_object).
 #' @param ... Additional arguments passed to CreateGEDIObject()
 #'
 #' @return GEDI R6 object
@@ -72,6 +74,7 @@ seurat_to_gedi <- function(seurat_object,
                             C = NULL,
                             H = NULL,
                             validate_counts = TRUE,
+                            use_variable_features = TRUE,
                             ...) {
 
   # Check if Seurat is available
@@ -157,6 +160,28 @@ seurat_to_gedi <- function(seurat_object,
               "GEDI expects raw counts for proper modeling.", call. = FALSE)
     } else {
       stop("slot must be 'counts' or 'data'", call. = FALSE)
+    }
+  }
+
+  # Subset to highly variable features if requested
+  if (use_variable_features) {
+    hvg <- Seurat::VariableFeatures(seurat_object)
+
+    if (length(hvg) == 0) {
+      warning("use_variable_features = TRUE but no variable features found in Seurat object. ",
+              "Run FindVariableFeatures() first, or set use_variable_features = FALSE. ",
+              "Using all genes.", call. = FALSE)
+    } else {
+      # Subset to HVGs that exist in the matrix
+      hvg_in_matrix <- intersect(hvg, rownames(M))
+
+      if (length(hvg_in_matrix) == 0) {
+        stop("None of the variable features are found in the matrix. ",
+             "Check that VariableFeatures match the gene names in the assay.", call. = FALSE)
+      }
+
+      message("Subsetting to ", length(hvg_in_matrix), " highly variable features")
+      M <- M[hvg_in_matrix, , drop = FALSE]
     }
   }
 
