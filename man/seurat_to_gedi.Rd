@@ -15,6 +15,7 @@ seurat_to_gedi(
   C = NULL,
   H = NULL,
   validate_counts = TRUE,
+  use_variable_features = TRUE,
   ...
 )
 }
@@ -42,6 +43,9 @@ this will automatically detect and combine all matching layers.}
 
 \item{validate_counts}{Logical, whether to validate data appears to be counts
 (default: TRUE)}
+
+\item{use_variable_features}{Logical, whether to subset to highly variable features
+(default: TRUE). If TRUE, uses genes from VariableFeatures(seurat_object).}
 
 \item{...}{Additional arguments passed to CreateGEDIObject()}
 }
