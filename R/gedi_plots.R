@@ -302,27 +302,43 @@ plot_features <- function(model,
     lim <- color_limits
     use_free_scale <- FALSE
   }
-  
+
+  # Determine legend label based on projection type
+  legend_label <- switch(projection,
+    "zdb" = "Expression",
+    "db" = "Factor Activity",
+    "adb" = "Pathway Activity",
+    "Expression"  # default fallback
+  )
+
+  # Determine default title based on projection type
+  default_title <- switch(projection,
+    "zdb" = "Gene Expression",
+    "db" = "Latent Factor Activity",
+    "adb" = "Pathway Activity",
+    "Feature Expression"  # default fallback
+  )
+
   # Create plot
   p <- ggplot2::ggplot(df, ggplot2::aes(x = Dim1, y = Dim2, color = Value)) +
     ggplot2::geom_point(size = point_size, alpha = alpha) +
     ggplot2::facet_wrap(~ Feature, ncol = ncol)
-  
+
   # Add color scale
   if (use_free_scale) {
     # Per-facet limits - need to compute per feature
-    p <- p + scale_color_gedi_diverging(name = "Expression")
+    p <- p + scale_color_gedi_diverging(name = legend_label)
   } else {
-    p <- p + scale_color_gedi_diverging(limits = lim, name = "Expression")
+    p <- p + scale_color_gedi_diverging(limits = lim, name = legend_label)
   }
-  
+
   # Add labels and theme
   emb_name <- if (is.character(embedding)) toupper(embedding) else "Embedding"
   p <- p +
     ggplot2::labs(
       x = paste(emb_name, "1"),
       y = paste(emb_name, "2"),
-      title = if (is.null(title)) "Feature Expression" else title
+      title = if (is.null(title)) default_title else title
     ) +
     theme_gedi()
   
