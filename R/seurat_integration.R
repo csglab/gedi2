@@ -288,7 +288,12 @@ seurat_to_gedi <- function(seurat_object,
 #'   \itemize{
 #'     \item RNA assay: Original or back-transformed counts
 #'     \item imputed assay: GEDI imputed expression (if use_imputed = TRUE)
-#'     \item ZDB/DB assays: GEDI projections (if add_projections = TRUE)
+#'     \item ZDB/DB/ADB assays: GEDI projections (if add_projections = TRUE)
+#'       \itemize{
+#'         \item ZDB: Batch-corrected gene expression (genes × cells)
+#'         \item DB: Cell embeddings in latent factor space (K × cells)
+#'         \item ADB: Pathway activities (pathways × cells) - only if C matrix provided
+#'       }
 #'     \item umap/pca reductions: Embeddings (if add_embeddings = TRUE and cached)
 #'     \item meta.data: Sample labels and colData from GEDI model
 #'   }
@@ -436,6 +441,20 @@ gedi_to_seurat <- function(model,
       data = Matrix::Matrix(DB, sparse = TRUE)
     )
     seurat_obj[["DB"]] <- db_assay
+
+    # ADB projection (P pathways × N cells) - only if model has C matrix
+    if (model$aux$P > 0) {
+      ADB <- model$projections$ADB
+      P <- nrow(ADB)
+      # Row names should already be pathway names from C matrix
+      colnames(ADB) <- cell_ids
+      ADB <- ADB[, common_cells, drop = FALSE]
+
+      adb_assay <- Seurat::CreateAssayObject(
+        data = Matrix::Matrix(ADB, sparse = TRUE)
+      )
+      seurat_obj[["ADB"]] <- adb_assay
+    }
   }
 
   # Add embeddings
