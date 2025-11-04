@@ -239,8 +239,34 @@ plot_features <- function(model,
     # For DB: just use factor weights directly
     DB <- model$projections$DB  # K × N
     projections <- t(DB) %*% feature_weights  # N × F
+  } else if (projection == "adb") {
+    # For ADB: need to check if model has C/H matrices
+    if (model$aux$P == 0) {
+      stop("projection 'adb' requires a model with gene-level prior (C matrix). This model has P=0.", call. = FALSE)
+    }
+
+    # Get the full ADB projection: C.rotation * A * D * B (P × N)
+    # This gives us pathway activities across all cells
+    ADB <- model$projections$ADB  # P × N
+
+    # We need to project gene features through the pathway space
+    # feature_weights is K × F (latent factor loadings for selected genes from Z)
+    #
+    # Mathematical logic:
+    # 1. Get C.rotation[feature_idx, ] which is J_selected × P
+    #    This tells us how each selected gene maps to pathways
+    # 2. For each gene, compute its projection as:
+    #    sum over pathways: C.rotation[gene, pathway] * ADB[pathway, cells]
+
+    # Get C.rotation and extract rows for selected genes
+    C_rotation <- model$.__enclos_env__$private$.aux_static$C.rotation  # J × P
+    C_feature <- C_rotation[feature_idx, , drop = FALSE]  # F × P
+
+    # Project through pathway space: (F × P) %*% (P × N) = F × N
+    projections <- t(C_feature %*% ADB)  # N × F
+
   } else {
-    stop("projection must be 'zdb' or 'db'", call. = FALSE)
+    stop("projection must be 'zdb', 'db', or 'adb'", call. = FALSE)
   }
   
   # Build long-format data frame
