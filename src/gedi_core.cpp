@@ -883,7 +883,7 @@ private:
   
   void solve_Bi_all() {
 #ifdef _OPENMP
-#pragma omp parallel for schedule(dynamic) if(numSamples > 1 && num_threads > 1)
+#pragma omp parallel for schedule(guided) if(numSamples > 1)
 #endif
     for (int i = 0; i < numSamples; ++i) {
       // const int Ni = aux_Ni(i);  // Unused local copy
@@ -944,22 +944,22 @@ private:
   
   void update_QiDBi() {
 #ifdef _OPENMP
-#pragma omp parallel for schedule(static) if(numSamples > 2 && num_threads > 1)
+#pragma omp parallel for schedule(static) if(numSamples > 2)
 #endif
     for (int i = 0; i < numSamples; ++i) {
       MatrixXd QiD = params_Qi[i] * params_D.asDiagonal();
-      aux_QiDBi[i] = QiD * params_Bi[i];
+      aux_QiDBi[i].noalias() = QiD * params_Bi[i];
     }
   }
   
   void update_ZDBi() {
-    workspace_ZD = params_Z * params_D.asDiagonal();
-    
+    workspace_ZD.noalias() = params_Z * params_D.asDiagonal();
+
 #ifdef _OPENMP
-#pragma omp parallel for schedule(static) if(numSamples > 2 && num_threads > 1)
+#pragma omp parallel for schedule(static) if(numSamples > 2)
 #endif
     for (int i = 0; i < numSamples; ++i) {
-      aux_ZDBi[i] = workspace_ZD * params_Bi[i];
+      aux_ZDBi[i].noalias() = workspace_ZD * params_Bi[i];
     }
   }
   
@@ -974,9 +974,9 @@ private:
     for (int i = 0; i < numSamples; ++i) {
       col_offsets[i + 1] = col_offsets[i] + aux_Ni(i);
     }
-    
+
 #ifdef _OPENMP
-#pragma omp parallel for schedule(static) if(numSamples > 2 && num_threads > 1)
+#pragma omp parallel for schedule(static) if(numSamples > 2)
 #endif
     for (int i = 0; i < numSamples; ++i) {
       const int Ni = aux_Ni(i);
@@ -1022,11 +1022,11 @@ private:
     
     MatrixXd YBt = Y_final * B_final.transpose();
     MatrixXd YBtU = YBt.cwiseProduct(params_U);
-    
+
     params_S = YBtU.transpose() * aux_J_vec / (1.0 + lambda);
-    params_Z = params_U * params_S.asDiagonal();
+    params_Z.noalias() = params_U * params_S.asDiagonal();
   }
-  
+
   void solve_Z_regular() {
     int total_cells = 0;
     for (int i = 0; i < numSamples; ++i) {
@@ -1038,9 +1038,9 @@ private:
     for (int i = 0; i < numSamples; ++i) {
       col_offsets[i + 1] = col_offsets[i] + aux_Ni(i);
     }
-    
+
 #ifdef _OPENMP
-#pragma omp parallel for schedule(static) if(numSamples > 2 && num_threads > 1)
+#pragma omp parallel for schedule(static) if(numSamples > 2)
 #endif
     for (int i = 0; i < numSamples; ++i) {
       const int Ni = aux_Ni(i);
@@ -1075,7 +1075,7 @@ private:
   
   void solve_Qi_all() {
 #ifdef _OPENMP
-#pragma omp parallel for schedule(dynamic) if(numSamples > 1 && num_threads > 1)
+#pragma omp parallel for schedule(guided) if(numSamples > 1)
 #endif
     for (int i = 0; i < numSamples; ++i) {
       double lambda = 1.0 / hyperparams_S_Qi(i);
@@ -1101,7 +1101,7 @@ private:
   
   void solve_oi_all() {
 #ifdef _OPENMP
-#pragma omp parallel for schedule(static) if(numSamples > 2 && num_threads > 1)
+#pragma omp parallel for schedule(static) if(numSamples > 2)
 #endif
     for (int i = 0; i < numSamples; ++i) {
       double lambda = 1.0 / hyperparams_S_oi(i);
@@ -1123,9 +1123,9 @@ private:
   
   void solve_si_all() {
     double lambda = 1.0 / hyperparams_S_si;
-    
+
 #ifdef _OPENMP
-#pragma omp parallel for schedule(static) if(numSamples > 2 && num_threads > 1)
+#pragma omp parallel for schedule(static) if(numSamples > 2)
 #endif
     for (int i = 0; i < numSamples; ++i) {
       VectorXd gene_offset = params_o + params_oi[i];
@@ -1156,9 +1156,9 @@ private:
     if (obs_type == "Y") {
       return;
     }
-    
+
 #ifdef _OPENMP
-#pragma omp parallel for schedule(dynamic) if(numSamples > 1 && num_threads > 1)
+#pragma omp parallel for schedule(guided) if(numSamples > 1)
 #endif
     for (int i = 0; i < numSamples; ++i) {
       if (obs_type == "M") {
