@@ -141,7 +141,18 @@ private:
   MatrixXd workspace_CtC_inv;
   MatrixXd workspace_HpHp_inv;
   MatrixXd workspace_Yp;
-  
+
+  // Pre-allocated tracking storage (prevents allocations in loop)
+  MatrixXd tracking_prev_Z;
+  MatrixXd tracking_prev_A;
+  MatrixXd tracking_prev_Ro;
+  VectorXd tracking_prev_o;
+  std::vector<MatrixXd> tracking_prev_Bi;
+  std::vector<MatrixXd> tracking_prev_Qi;
+  std::vector<MatrixXd> tracking_prev_Rk;
+  std::vector<VectorXd> tracking_prev_si;
+  std::vector<VectorXd> tracking_prev_oi;
+
   std::vector<double> tracking_sigma2;
   std::vector<double> tracking_dZ;
   std::vector<double> tracking_dA;
@@ -433,6 +444,31 @@ public:
     tracking_dBi.resize(numSamples);
     tracking_dQi.resize(numSamples);
     tracking_dRk.resize(K);
+
+    // Pre-allocate tracking storage (CRITICAL FIX for memory growth)
+    tracking_prev_Z.resize(J, K);
+    tracking_prev_o.resize(J);
+    if (P > 0) tracking_prev_A.resize(P, K);
+    if (L > 0) tracking_prev_Ro.resize(J, L);
+
+    tracking_prev_Bi.resize(numSamples);
+    tracking_prev_Qi.resize(numSamples);
+    tracking_prev_si.resize(numSamples);
+    tracking_prev_oi.resize(numSamples);
+
+    for (int i = 0; i < numSamples; ++i) {
+      tracking_prev_Bi[i].resize(K, aux_Ni(i));
+      tracking_prev_Qi[i].resize(J, K);
+      tracking_prev_si[i].resize(aux_Ni(i));
+      tracking_prev_oi[i].resize(J);
+    }
+
+    if (L > 0) {
+      tracking_prev_Rk.resize(K);
+      for (int k = 0; k < K; ++k) {
+        tracking_prev_Rk[k].resize(J, L);
+      }
+    }
   }
   
   List initialize(bool multimodal = false) {
@@ -533,36 +569,27 @@ public:
     }
     
     for (int ite = 0; ite < iterations; ++ite) {
-      
-      MatrixXd prev_Z, prev_A, prev_Ro;
-      VectorXd prev_o;
-      std::vector<MatrixXd> prev_Bi, prev_Qi, prev_Rk;
-      std::vector<VectorXd> prev_si, prev_oi;
-      
+
+      // Use pre-allocated tracking storage (CRITICAL FIX for memory growth)
       bool do_tracking = (ite % track_interval == 0) || (track_interval == 1);
-      
+
       if (do_tracking) {
-        prev_Z = params_Z;
-        prev_o = params_o;
-        if (P > 0) prev_A = params_A;
-        if (L > 0) prev_Ro = params_Ro;
-        
-        prev_Bi.resize(numSamples);
-        prev_Qi.resize(numSamples);
-        prev_si.resize(numSamples);
-        prev_oi.resize(numSamples);
-        
+        // Reuse existing allocations - no new memory allocated!
+        tracking_prev_Z.noalias() = params_Z;
+        tracking_prev_o.noalias() = params_o;
+        if (P > 0) tracking_prev_A.noalias() = params_A;
+        if (L > 0) tracking_prev_Ro.noalias() = params_Ro;
+
         for (int i = 0; i < numSamples; ++i) {
-          prev_Bi[i] = params_Bi[i];
-          prev_Qi[i] = params_Qi[i];
-          prev_si[i] = params_si[i];
-          prev_oi[i] = params_oi[i];
+          tracking_prev_Bi[i].noalias() = params_Bi[i];
+          tracking_prev_Qi[i].noalias() = params_Qi[i];
+          tracking_prev_si[i].noalias() = params_si[i];
+          tracking_prev_oi[i].noalias() = params_oi[i];
         }
-        
+
         if (L > 0) {
-          prev_Rk.resize(K);
           for (int k = 0; k < K; ++k) {
-            prev_Rk[k] = params_Rk[k];
+            tracking_prev_Rk[k].noalias() = params_Rk[k];
           }
         }
       }
@@ -668,8 +695,7 @@ public:
       
       if (do_tracking) {
         FunctionTimer timer("calculate_tracking", verbose);
-        calculate_tracking(ite, prev_Z, prev_A, prev_Ro, prev_o,
-                           prev_Bi, prev_Qi, prev_si, prev_oi, prev_Rk);
+        calculate_tracking(ite);
       }
     }
     
@@ -864,7 +890,7 @@ private:
   
   void solve_Bi_all() {
 #ifdef _OPENMP
-#pragma omp parallel for schedule(dynamic) if(numSamples > 1 && num_threads > 1)
+#pragma omp parallel for schedule(guided) if(numSamples > 1)
 #endif
     for (int i = 0; i < numSamples; ++i) {
       MatrixXd Wi(J, K);
@@ -923,22 +949,22 @@ private:
   
   void update_QiDBi() {
 #ifdef _OPENMP
-#pragma omp parallel for schedule(static) if(numSamples > 2 && num_threads > 1)
+#pragma omp parallel for schedule(static) if(numSamples > 2)
 #endif
     for (int i = 0; i < numSamples; ++i) {
       MatrixXd QiD = params_Qi[i] * params_D.asDiagonal();
-      aux_QiDBi[i] = QiD * params_Bi[i];
+      aux_QiDBi[i].noalias() = QiD * params_Bi[i];
     }
   }
   
   void update_ZDBi() {
-    workspace_ZD = params_Z * params_D.asDiagonal();
-    
+    workspace_ZD.noalias() = params_Z * params_D.asDiagonal();
+
 #ifdef _OPENMP
-#pragma omp parallel for schedule(static) if(numSamples > 2 && num_threads > 1)
+#pragma omp parallel for schedule(static) if(numSamples > 2)
 #endif
     for (int i = 0; i < numSamples; ++i) {
-      aux_ZDBi[i] = workspace_ZD * params_Bi[i];
+      aux_ZDBi[i].noalias() = workspace_ZD * params_Bi[i];
     }
   }
   
@@ -953,9 +979,9 @@ private:
     for (int i = 0; i < numSamples; ++i) {
       col_offsets[i + 1] = col_offsets[i] + aux_Ni(i);
     }
-    
+
 #ifdef _OPENMP
-#pragma omp parallel for schedule(static) if(numSamples > 2 && num_threads > 1)
+#pragma omp parallel for schedule(static) if(numSamples > 2)
 #endif
     for (int i = 0; i < numSamples; ++i) {
       const int Ni = aux_Ni(i);
@@ -1001,11 +1027,11 @@ private:
     
     MatrixXd YBt = Y_final * B_final.transpose();
     MatrixXd YBtU = YBt.cwiseProduct(params_U);
-    
+
     params_S = YBtU.transpose() * aux_J_vec / (1.0 + lambda);
-    params_Z = params_U * params_S.asDiagonal();
+    params_Z.noalias() = params_U * params_S.asDiagonal();
   }
-  
+
   void solve_Z_regular() {
     int total_cells = 0;
     for (int i = 0; i < numSamples; ++i) {
@@ -1017,9 +1043,9 @@ private:
     for (int i = 0; i < numSamples; ++i) {
       col_offsets[i + 1] = col_offsets[i] + aux_Ni(i);
     }
-    
+
 #ifdef _OPENMP
-#pragma omp parallel for schedule(static) if(numSamples > 2 && num_threads > 1)
+#pragma omp parallel for schedule(static) if(numSamples > 2)
 #endif
     for (int i = 0; i < numSamples; ++i) {
       const int Ni = aux_Ni(i);
@@ -1054,7 +1080,7 @@ private:
   
   void solve_Qi_all() {
 #ifdef _OPENMP
-#pragma omp parallel for schedule(dynamic) if(numSamples > 1 && num_threads > 1)
+#pragma omp parallel for schedule(guided) if(numSamples > 1)
 #endif
     for (int i = 0; i < numSamples; ++i) {
       double lambda = 1.0 / hyperparams_S_Qi(i);
@@ -1080,7 +1106,7 @@ private:
   
   void solve_oi_all() {
 #ifdef _OPENMP
-#pragma omp parallel for schedule(static) if(numSamples > 2 && num_threads > 1)
+#pragma omp parallel for schedule(static) if(numSamples > 2)
 #endif
     for (int i = 0; i < numSamples; ++i) {
       double lambda = 1.0 / hyperparams_S_oi(i);
@@ -1102,9 +1128,9 @@ private:
   
   void solve_si_all() {
     double lambda = 1.0 / hyperparams_S_si;
-    
+
 #ifdef _OPENMP
-#pragma omp parallel for schedule(static) if(numSamples > 2 && num_threads > 1)
+#pragma omp parallel for schedule(static) if(numSamples > 2)
 #endif
     for (int i = 0; i < numSamples; ++i) {
       VectorXd gene_offset = params_o + params_oi[i];
@@ -1135,9 +1161,9 @@ private:
     if (obs_type == "Y") {
       return;
     }
-    
+
 #ifdef _OPENMP
-#pragma omp parallel for schedule(dynamic) if(numSamples > 1 && num_threads > 1)
+#pragma omp parallel for schedule(guided) if(numSamples > 1)
 #endif
     for (int i = 0; i < numSamples; ++i) {
       if (obs_type == "M") {
@@ -1408,40 +1434,34 @@ private:
     workspace_CtC_inv = solver.solve(MatrixXd::Identity(P, P));
   }
   
-  void calculate_tracking(int ite, 
-                          const MatrixXd& prev_Z, const MatrixXd& prev_A,
-                          const MatrixXd& prev_Ro, const VectorXd& prev_o,
-                          const std::vector<MatrixXd>& prev_Bi,
-                          const std::vector<MatrixXd>& prev_Qi,
-                          const std::vector<VectorXd>& prev_si,
-                          const std::vector<VectorXd>& prev_oi,
-                          const std::vector<MatrixXd>& prev_Rk) {
-    
-    tracking_do[ite] = std::sqrt((params_o - prev_o).squaredNorm() / params_o.size());
-    tracking_dZ[ite] = std::sqrt((params_Z - prev_Z).squaredNorm() / params_Z.size());
-    
+  // Simplified tracking (uses pre-allocated storage)
+  void calculate_tracking(int ite) {
+
+    tracking_do[ite] = std::sqrt((params_o - tracking_prev_o).squaredNorm() / params_o.size());
+    tracking_dZ[ite] = std::sqrt((params_Z - tracking_prev_Z).squaredNorm() / params_Z.size());
+
     if (P > 0) {
-      tracking_dA[ite] = std::sqrt((params_A - prev_A).squaredNorm() / params_A.size());
+      tracking_dA[ite] = std::sqrt((params_A - tracking_prev_A).squaredNorm() / params_A.size());
     }
-    
+
     if (L > 0) {
-      tracking_dRo[ite] = std::sqrt((params_Ro - prev_Ro).squaredNorm() / params_Ro.size());
+      tracking_dRo[ite] = std::sqrt((params_Ro - tracking_prev_Ro).squaredNorm() / params_Ro.size());
     }
-    
+
     for (int i = 0; i < numSamples; ++i) {
-      tracking_dsi[i][ite] = std::sqrt((params_si[i] - prev_si[i]).squaredNorm() / 
+      tracking_dsi[i][ite] = std::sqrt((params_si[i] - tracking_prev_si[i]).squaredNorm() /
         params_si[i].size());
-      tracking_doi[i][ite] = std::sqrt((params_oi[i] - prev_oi[i]).squaredNorm() / 
+      tracking_doi[i][ite] = std::sqrt((params_oi[i] - tracking_prev_oi[i]).squaredNorm() /
         params_oi[i].size());
-      tracking_dBi[i][ite] = std::sqrt((params_Bi[i] - prev_Bi[i]).squaredNorm() / 
+      tracking_dBi[i][ite] = std::sqrt((params_Bi[i] - tracking_prev_Bi[i]).squaredNorm() /
         params_Bi[i].size());
-      tracking_dQi[i][ite] = std::sqrt((params_Qi[i] - prev_Qi[i]).squaredNorm() / 
+      tracking_dQi[i][ite] = std::sqrt((params_Qi[i] - tracking_prev_Qi[i]).squaredNorm() /
         params_Qi[i].size());
     }
-    
+
     if (L > 0) {
       for (int k = 0; k < K; ++k) {
-        tracking_dRk[k][ite] = std::sqrt((params_Rk[k] - prev_Rk[k]).squaredNorm() / 
+        tracking_dRk[k][ite] = std::sqrt((params_Rk[k] - tracking_prev_Rk[k]).squaredNorm() /
           params_Rk[k].size());
       }
     }
