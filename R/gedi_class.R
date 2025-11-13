@@ -654,26 +654,25 @@ GEDI <- R6Class(
 
         # Resume sinking for remaining iterations
         if (iterations > 1) {
-          for (i in 2:iterations) {
-            sink(tmp, type = "output", append = TRUE)
-            sink_active <- TRUE
+          # Run all remaining iterations, only get results at the end
+          sink(tmp, type = "output", append = TRUE)
+          sink_active <- TRUE
 
-            private$.lastResult <- GEDI_optimize(
-              model_ptr = private$.cppPtr,
-              iterations = 1,
-              track_interval = track_interval
-            )
+          # MEMORY FIX: Call GEDI_optimize once for all remaining iterations
+          # This avoids copying GBs of data from C++ to R on every iteration
+          private$.lastResult <- GEDI_optimize(
+            model_ptr = private$.cppPtr,
+            iterations = iterations - 1,  # Remaining iterations after first one
+            track_interval = track_interval
+          )
 
-            # Restore output to update progress bar
-            sink(type = "output")
-            sink_active <- FALSE
+          # Restore output
+          sink(type = "output")
+          sink_active <- FALSE
 
-            # Update progress bar on same line
-            pct <- round(i / iterations * 100)
-            n_filled <- round(50 * i / iterations)
-            cat("|", rep("=", n_filled), rep(" ", 50 - n_filled), "| ", pct, "%\r", sep = "")
-            flush.console()
-          }
+          # Update progress bar to 100%
+          cat("|", rep("=", 50), "| 100%\r", sep = "")
+          flush.console()
         }
 
       } else {
