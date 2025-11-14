@@ -1,4 +1,4 @@
-# GEDI
+# GEDI-2
 <img src="/Logo.svg" align="right" height="240"/>
 
 [![R-CMD-check](https://github.com/Arshammik/gedi/workflows/R-CMD-check/badge.svg)](https://github.com/Arshammik/gedi/actions)
