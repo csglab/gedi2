@@ -35,15 +35,15 @@ MatrixXd sparse_log1p(const SparseMatrix<double>& M) {
 // Helper to compute log ratio for paired sparse matrices -> dense result
 MatrixXd sparse_log_ratio(const SparseMatrix<double>& M1, const SparseMatrix<double>& M2) {
   MatrixXd result = MatrixXd(M1.rows(), M1.cols());
-  
-  for (int j = 0; j < M1.cols(); ++j) {
-    for (int i = 0; i < M1.rows(); ++i) {
+
+  for (Eigen::Index j = 0; j < M1.cols(); ++j) {
+    for (Eigen::Index i = 0; i < M1.rows(); ++i) {
       double m1_val = M1.coeff(i, j);
       double m2_val = M2.coeff(i, j);
       result(i, j) = std::log((m1_val + 1.0) / (m2_val + 1.0));
     }
   }
-  
+
   return result;
 }
 
@@ -174,7 +174,14 @@ public:
        const List& hyperparams,
        int verbose_ = 1,
        int num_threads_ = 0) :
+    // Initialize in declaration order to avoid -Wreorder warnings
+    J(0), N(0), K(0), P(0), L(0), numSamples(0),
     num_threads(num_threads_),
+    params_sigma2(1.0),
+    hyperparams_S_Z(1.0), hyperparams_S_A(1.0), hyperparams_S_R(1.0),
+    hyperparams_S_Qi_mean(1.0), hyperparams_S_oi_mean(1.0),
+    hyperparams_S_si(1.0), hyperparams_S_o(1.0),
+    orthoZ(true), adjustD(true), is_si_fixed(false),
     verbose(verbose_),
     is_initialized(false),
     total_iterations(0) {
@@ -342,8 +349,8 @@ public:
           target_Yi[i] = target_Xi[i]; // Copy
           
           // Convert: 1 -> 1, 0 -> -1, NA -> 0
-          for (int j = 0; j < target_Yi[i].rows(); ++j) {
-            for (int k = 0; k < target_Yi[i].cols(); ++k) {
+          for (Eigen::Index j = 0; j < target_Yi[i].rows(); ++j) {
+            for (Eigen::Index k = 0; k < target_Yi[i].cols(); ++k) {
               double val = target_Xi[i](j, k);
               if (std::isnan(val)) {
                 target_Yi[i](j, k) = 0.0;
@@ -886,8 +893,6 @@ private:
 #pragma omp parallel for schedule(guided) if(numSamples > 1)
 #endif
     for (int i = 0; i < numSamples; ++i) {
-      // const int Ni = aux_Ni(i);  // Unused local copy
-
       MatrixXd Wi(J, K);
       for (int k = 0; k < K; ++k) {
         Wi.col(k) = (params_Z.col(k) + params_Qi[i].col(k)) * params_D(k);
@@ -909,7 +914,7 @@ private:
     if (!multimodal && mode == "Bsphere") {
       for (int i = 0; i < numSamples; ++i) {
         VectorXd col_norms = params_Bi[i].colwise().norm();
-        for (int j = 0; j < params_Bi[i].cols(); ++j) {
+        for (Eigen::Index j = 0; j < params_Bi[i].cols(); ++j) {
           if (col_norms(j) > 1e-10) {
             double scale = 1.0 / col_norms(j);
             params_Bi[i].col(j) *= scale;
@@ -1173,10 +1178,10 @@ private:
         ArrayXXd logMi = (ArrayXXd(1.0 * target_Mi[i]) + 1e-10).log();
         ArrayXXd solution = Yi;
         ArrayXXd alpha = Yi - Yi_hat - ArrayXXd(params_sigma2 * target_Mi[i]);
-        
-        const int total_elements = solution.size();
-        
-        for (int j = 0; j < total_elements; ++j) {
+
+        const Eigen::Index total_elements = solution.size();
+
+        for (Eigen::Index j = 0; j < total_elements; ++j) {
           double exp_Yi, f, fp, fpp, upper, lower;
           
           if (Yi(j) > 0) {
@@ -1222,10 +1227,10 @@ private:
         ArrayXXd solution = Yi;
         ArrayXXd alpha = Yi_hat - ArrayXXd(params_sigma2 * target_M2i[i]);
         ArrayXXd beta = Yi_hat + ArrayXXd(params_sigma2 * target_M1i[i]);
-        
-        const int total_elements = solution.size();
-        
-        for (int j = 0; j < total_elements; ++j) {
+
+        const Eigen::Index total_elements = solution.size();
+
+        for (Eigen::Index j = 0; j < total_elements; ++j) {
           double exp_Yi, f, fp, fpp;
           
           if (Yi(j) > 0) {
@@ -1254,12 +1259,12 @@ private:
       } else if (obs_type == "X") {
         MatrixXd Yi_pred = (aux_ZDBi[i] + aux_QiDBi[i]).rowwise() + params_si[i].transpose();
         Yi_pred = Yi_pred.colwise() + (params_o + params_oi[i]);
-        
-        const int J_local = Yi_pred.rows();
-        const int Ni = Yi_pred.cols();
-        
-        for (int j = 0; j < J_local; ++j) {
-          for (int n = 0; n < Ni; ++n) {
+
+        const Eigen::Index J_local = Yi_pred.rows();
+        const Eigen::Index Ni = Yi_pred.cols();
+
+        for (Eigen::Index j = 0; j < J_local; ++j) {
+          for (Eigen::Index n = 0; n < Ni; ++n) {
             double X_val = target_Xi[i](j, n);
             
             if (X_val == 1.0) {
