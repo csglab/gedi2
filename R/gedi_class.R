@@ -297,7 +297,8 @@ GEDI <- R6Class(
       # Initialize sigma2_0
       if (obs_type != "X") {
         Yp_full <- Y_log_dense - VecVecProduct(J_vec, s_0) - o_0
-        sigma2_0 <- sum(Yp_full^2) / (N * J + 1)
+        # Fix integer overflow: convert N and J to numeric before multiplication
+        sigma2_0 <- sum(Yp_full^2) / (as.numeric(N) * as.numeric(J) + 1)
       } else {
         sigma2_0 <- 1
       }

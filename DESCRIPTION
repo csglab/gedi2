@@ -1,8 +1,8 @@
 Package: gedi
 Type: Package
 Title: Gene Expression Data Integration
-Version: 2.2.8
-Date: 2025-10-13
+Version: 2.2.9
+Date: 2025-11-16
 Authors@R: c(
     person("Arsham", "Mikaeili Namini", email = "arsham.mikaeilinamini@mail.mcgill.ca", role = c("aut", "cre")),
     person("Hamed", "S.Najafabadi", email = "hamed.najafabadi@mcgill.ca", role = c("aut"))
