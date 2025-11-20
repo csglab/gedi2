@@ -1,6 +1,6 @@
 Package: gedi
 Type: Package
-Title: Gene Expression Data Integration
+Title: Gene Expression Decomposition and Integration
 Version: 2.2.9
 Date: 2025-11-16
 Authors@R: c(
