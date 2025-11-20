@@ -25,6 +25,12 @@ install.packages("devtools")
 # Install gedi from GitHub
 devtools::install_github("csglab/gedi2")
 ```
+
+
+### Reproducible Code
+All reproducible code, scripts, and resources used in this project are available at: https://github.com/csglab/gedi2_manuscript
+
+
 ### Contributing
 
 Contributions are welcome! Please:
