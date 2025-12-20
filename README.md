@@ -8,6 +8,7 @@
 
 A high-performance, memory-efficient R package for integrating gene expression data from single-cell RNA sequencing experiments. GEDI 2.0 implements a unified generative model for interpretable latent embedding of multi-sample, multi-condition single-cell data.
 
+See the full Documentation in the [wiki page.](https://github.com/csglab/gedi2/wiki)
 
 ### System Requirements
 
