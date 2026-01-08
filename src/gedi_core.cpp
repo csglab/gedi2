@@ -98,8 +98,7 @@ private:
   MatrixXd params_Ro;
   double params_sigma2;
   
-  std::vector<MatrixXd> aux_ZDBi;
-  std::vector<MatrixXd> aux_QiDBi;
+  std::vector<MatrixXd> aux_DBi;  // K × Ni per sample (memory optimized)
   std::vector<MatrixXd> aux_Qi_hat;
   std::vector<VectorXd> aux_oi_hat;
   MatrixXd aux_C;
@@ -240,15 +239,11 @@ public:
       params_Ro = MatrixXd(0, 0);
     }
     
-    List ZDBi_list = aux["ZDBi"];
-    List QiDBi_list = aux["QiDBi"];
-    
-    aux_ZDBi.resize(numSamples);
-    aux_QiDBi.resize(numSamples);
-    
+    // Initialize DBi from R's initial values (K × Ni per sample)
+    List DBi_list = aux["DBi"];
+    aux_DBi.resize(numSamples);
     for (int i = 0; i < numSamples; ++i) {
-      aux_ZDBi[i] = as<MatrixXd>(ZDBi_list[i]);
-      aux_QiDBi[i] = as<MatrixXd>(QiDBi_list[i]);
+      aux_DBi[i] = as<MatrixXd>(DBi_list[i]);
     }
     
     if (L > 0) {
@@ -505,12 +500,8 @@ public:
         normalize_B(false);
       }
       {
-        FunctionTimer timer("update_ZDBi", verbose);
-        update_ZDBi();
-      }
-      {
-        FunctionTimer timer("update_QiDBi", verbose);
-        update_QiDBi();
+        FunctionTimer timer("update_DBi", verbose);
+        update_DBi();
       }
     }
     
@@ -602,17 +593,18 @@ public:
         FunctionTimer timer("solve_Bi_all", verbose);
         solve_Bi_all();
       }
-      
+
       {
         FunctionTimer timer("normalize_B", verbose);
         normalize_B(false);
       }
-      
+
+      // DBi optimization: Single update_DBi replaces update_QiDBi and update_ZDBi
       {
-        FunctionTimer timer("update_QiDBi (1)", verbose);
-        update_QiDBi();
+        FunctionTimer timer("update_DBi", verbose);
+        update_DBi();
       }
-      
+
       if (orthoZ) {
         FunctionTimer timer("solve_Z_orthogonal", verbose);
         solve_Z_orthogonal();
@@ -620,22 +612,12 @@ public:
         FunctionTimer timer("solve_Z_regular", verbose);
         solve_Z_regular();
       }
-      
-      {
-        FunctionTimer timer("update_ZDBi", verbose);
-        update_ZDBi();
-      }
-      
+
       {
         FunctionTimer timer("solve_Qi_all", verbose);
         solve_Qi_all();
       }
-      
-      {
-        FunctionTimer timer("update_QiDBi (2)", verbose);
-        update_QiDBi();
-      }
-      
+
       {
         FunctionTimer timer("solve_oi_all", verbose);
         solve_oi_all();
@@ -751,7 +733,9 @@ private:
       double lambda = 1.0 / hyperparams_S_oi(i);
       double Ni_val = aux_Ni(i);
 
-      MatrixXd residual = target_Yi[i] - aux_ZDBi[i] - aux_QiDBi[i];
+      // DBi optimization: compute (Z + Qi) * DBi on-demand instead of stored ZDBi + QiDBi
+      MatrixXd ZQi_DBi = (params_Z + params_Qi[i]) * aux_DBi[i];
+      MatrixXd residual = target_Yi[i] - ZQi_DBi;
       residual.rowwise() -= params_si[i].transpose();
       residual.colwise() -= params_o;
 
@@ -805,7 +789,7 @@ private:
     bool flipped = false;
 
     if (m < n) {
-      A = A.transpose();
+      A.transposeInPlace();
       std::swap(m, n);
       std::swap(nu, nv);
       flipped = true;
@@ -947,24 +931,14 @@ private:
     }
   }
   
-  void update_QiDBi() {
+  // DBi optimization: Single update function replaces update_QiDBi and update_ZDBi
+  // DBi = D * Bi is stored once, ZDBi and QiDBi computed on-demand
+  void update_DBi() {
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static) if(numSamples > 2)
 #endif
     for (int i = 0; i < numSamples; ++i) {
-      MatrixXd QiD = params_Qi[i] * params_D.asDiagonal();
-      aux_QiDBi[i].noalias() = QiD * params_Bi[i];
-    }
-  }
-  
-  void update_ZDBi() {
-    workspace_ZD.noalias() = params_Z * params_D.asDiagonal();
-
-#ifdef _OPENMP
-#pragma omp parallel for schedule(static) if(numSamples > 2)
-#endif
-    for (int i = 0; i < numSamples; ++i) {
-      aux_ZDBi[i].noalias() = workspace_ZD * params_Bi[i];
+      aux_DBi[i].noalias() = params_D.asDiagonal() * params_Bi[i];
     }
   }
   
@@ -987,15 +961,17 @@ private:
       const int Ni = aux_Ni(i);
       const int offset = col_offsets[i];
       VectorXd gene_offset = params_o + params_oi[i];
-      
-      MatrixXd Yi_res = target_Yi[i] - aux_QiDBi[i];
+
+      // DBi optimization: compute QiDBi = Qi * DBi on-demand
+      MatrixXd QiDBi = params_Qi[i] * aux_DBi[i];
+      MatrixXd Yi_res = target_Yi[i] - QiDBi;
       Yi_res.colwise() -= gene_offset;
       Yi_res.rowwise() -= params_si[i].transpose();
       workspace_Y_res.block(0, offset, J, Ni) = Yi_res;
-      
+
       workspace_B_concat.block(0, offset, K, Ni) = params_Bi[i];
     }
-    
+
     MatrixXd B = params_D.asDiagonal() * workspace_B_concat.leftCols(total_cells);
     
     double lambda = 1.0 / hyperparams_S_Z;
@@ -1051,17 +1027,19 @@ private:
       const int Ni = aux_Ni(i);
       const int offset = col_offsets[i];
       VectorXd gene_offset = params_o + params_oi[i];
-      
-      MatrixXd Yi_res = target_Yi[i] - aux_QiDBi[i];
+
+      // DBi optimization: compute QiDBi = Qi * DBi on-demand
+      MatrixXd QiDBi = params_Qi[i] * aux_DBi[i];
+      MatrixXd Yi_res = target_Yi[i] - QiDBi;
       Yi_res.colwise() -= gene_offset;
       Yi_res.rowwise() -= params_si[i].transpose();
       workspace_Y_res.block(0, offset, J, Ni) = Yi_res;
-      
+
       workspace_B_concat.block(0, offset, K, Ni) = params_Bi[i];
     }
-    
+
     double lambda = 1.0 / hyperparams_S_Z;
-    
+
     MatrixXd B = workspace_B_concat.leftCols(total_cells);
     MatrixXd DB = params_D.asDiagonal() * B;
     MatrixXd Y_DB_T = workspace_Y_res.leftCols(total_cells) * DB.transpose();
@@ -1084,21 +1062,22 @@ private:
 #endif
     for (int i = 0; i < numSamples; ++i) {
       double lambda = 1.0 / hyperparams_S_Qi(i);
-      
+
+      // DBi optimization: compute ZDBi = Z * DBi on-demand
+      MatrixXd ZDBi = params_Z * aux_DBi[i];
       VectorXd gene_offset = params_o + params_oi[i];
-      MatrixXd residual = target_Yi[i] - aux_ZDBi[i];
+      MatrixXd residual = target_Yi[i] - ZDBi;
       residual.colwise() -= gene_offset;
       residual.rowwise() -= params_si[i].transpose();
-      
-      MatrixXd DBi = params_D.asDiagonal() * params_Bi[i];
-      
-      MatrixXd gram = DBi * DBi.transpose() + lambda * aux_diag_K;
+
+      // Use precomputed aux_DBi instead of computing DBi locally
+      MatrixXd gram = aux_DBi[i] * aux_DBi[i].transpose() + lambda * aux_diag_K;
       LDLT<MatrixXd> solver(gram);
-      
+
       if (L == 0) {
-        params_Qi[i] = (residual * DBi.transpose()) * solver.solve(aux_diag_K);
+        params_Qi[i] = (residual * aux_DBi[i].transpose()) * solver.solve(aux_diag_K);
       } else {
-        MatrixXd lhs = residual * DBi.transpose() + lambda * aux_Qi_hat[i];
+        MatrixXd lhs = residual * aux_DBi[i].transpose() + lambda * aux_Qi_hat[i];
         params_Qi[i] = lhs * solver.solve(aux_diag_K);
       }
     }
@@ -1111,13 +1090,15 @@ private:
     for (int i = 0; i < numSamples; ++i) {
       double lambda = 1.0 / hyperparams_S_oi(i);
       double Ni_val = aux_Ni(i);
-      
-      MatrixXd residual = target_Yi[i] - aux_ZDBi[i] - aux_QiDBi[i];
+
+      // DBi optimization: compute (Z + Qi) * DBi on-demand
+      MatrixXd ZQi_DBi = (params_Z + params_Qi[i]) * aux_DBi[i];
+      MatrixXd residual = target_Yi[i] - ZQi_DBi;
       residual.rowwise() -= params_si[i].transpose();
       residual.colwise() -= params_o;
-      
+
       VectorXd row_sums = residual * aux_Ni_vec[i];
-      
+
       if (L == 0) {
         params_oi[i] = row_sums / (Ni_val + lambda);
       } else {
@@ -1125,7 +1106,7 @@ private:
       }
     }
   }
-  
+
   void solve_si_all() {
     double lambda = 1.0 / hyperparams_S_si;
 
@@ -1133,26 +1114,30 @@ private:
 #pragma omp parallel for schedule(static) if(numSamples > 2)
 #endif
     for (int i = 0; i < numSamples; ++i) {
+      // DBi optimization: compute (Z + Qi) * DBi on-demand
+      MatrixXd ZQi_DBi = (params_Z + params_Qi[i]) * aux_DBi[i];
       VectorXd gene_offset = params_o + params_oi[i];
-      MatrixXd residual = target_Yi[i] - aux_ZDBi[i] - aux_QiDBi[i];
+      MatrixXd residual = target_Yi[i] - ZQi_DBi;
       residual.colwise() -= gene_offset;
-      
+
       VectorXd col_sums = residual.transpose() * aux_J_vec;
       params_si[i] = (col_sums + lambda * hyperparams_si_0[i]) / (J + lambda);
     }
   }
-  
+
   void solve_o() {
     VectorXd o_sum = VectorXd::Zero(J);
-    
+
     for (int i = 0; i < numSamples; ++i) {
-      MatrixXd residual = target_Yi[i] - aux_ZDBi[i] - aux_QiDBi[i];
+      // DBi optimization: compute (Z + Qi) * DBi on-demand
+      MatrixXd ZQi_DBi = (params_Z + params_Qi[i]) * aux_DBi[i];
+      MatrixXd residual = target_Yi[i] - ZQi_DBi;
       residual.rowwise() -= params_si[i].transpose();
       residual.colwise() -= params_oi[i];
-      
+
       o_sum += residual * aux_Ni_vec[i];
     }
-    
+
     double lambda = 1.0 / hyperparams_S_o;
     params_o = (o_sum + hyperparams_o_0 * lambda) / (N + lambda);
   }
@@ -1168,12 +1153,12 @@ private:
     for (int i = 0; i < numSamples; ++i) {
       if (obs_type == "M") {
         ArrayXXd Yi = target_Yi[i].array();
-        ArrayXXd ZDBi = aux_ZDBi[i].array();
-        ArrayXXd QiDBi = aux_QiDBi[i].array();
+        // DBi optimization: compute (Z + Qi) * DBi on-demand
+        ArrayXXd ZQi_DBi = ((params_Z + params_Qi[i]) * aux_DBi[i]).array();
         ArrayXd si = params_si[i].array();
         ArrayXd oi = params_oi[i].array();
-        
-        ArrayXXd Yi_hat = ((ZDBi + QiDBi).rowwise() + si.transpose()).colwise() + 
+
+        ArrayXXd Yi_hat = (ZQi_DBi.rowwise() + si.transpose()).colwise() +
           (params_o.array() + oi);
         ArrayXXd logMi = (ArrayXXd(1.0 * target_Mi[i]) + 1e-10).log();
         ArrayXXd solution = Yi;
@@ -1183,7 +1168,7 @@ private:
 
         for (Eigen::Index j = 0; j < total_elements; ++j) {
           double exp_Yi, f, fp, fpp, upper, lower;
-          
+
           if (Yi(j) > 0) {
             exp_Yi = std::exp(-Yi(j));
             fpp = params_sigma2;
@@ -1195,9 +1180,9 @@ private:
             fp = fpp + 1.0;
             f = fpp + alpha(j);
           }
-          
+
           solution(j) -= 2.0 * f * fp / (2.0 * fp * fp - f * fpp);
-          
+
           if (logMi(j) < Yi_hat(j)) {
             upper = Yi_hat(j);
             lower = logMi(j);
@@ -1205,24 +1190,24 @@ private:
             upper = logMi(j);
             lower = Yi_hat(j);
           }
-          
+
           if (solution(j) < lower) {
             solution(j) = lower;
           } else if (solution(j) > upper) {
             solution(j) = upper;
           }
         }
-        
+
         target_Yi[i] = solution.matrix();
-        
+
       } else if (obs_type == "M_paired") {
         ArrayXXd Yi = target_Yi[i].array();
-        ArrayXXd ZDBi = aux_ZDBi[i].array();
-        ArrayXXd QiDBi = aux_QiDBi[i].array();
+        // DBi optimization: compute (Z + Qi) * DBi on-demand
+        ArrayXXd ZQi_DBi = ((params_Z + params_Qi[i]) * aux_DBi[i]).array();
         ArrayXd si = params_si[i].array();
         ArrayXd oi = params_oi[i].array();
-        
-        ArrayXXd Yi_hat = ((ZDBi + QiDBi).rowwise() + si.transpose()).colwise() + 
+
+        ArrayXXd Yi_hat = (ZQi_DBi.rowwise() + si.transpose()).colwise() +
           (params_o.array() + oi);
         ArrayXXd solution = Yi;
         ArrayXXd alpha = Yi_hat - ArrayXXd(params_sigma2 * target_M2i[i]);
@@ -1257,7 +1242,8 @@ private:
         target_Yi[i] = solution.matrix();
         
       } else if (obs_type == "X") {
-        MatrixXd Yi_pred = (aux_ZDBi[i] + aux_QiDBi[i]).rowwise() + params_si[i].transpose();
+        // DBi optimization: compute (Z + Qi) * DBi on-demand
+        MatrixXd Yi_pred = ((params_Z + params_Qi[i]) * aux_DBi[i]).rowwise() + params_si[i].transpose();
         Yi_pred = Yi_pred.colwise() + (params_o + params_oi[i]);
 
         const Eigen::Index J_local = Yi_pred.rows();
@@ -1318,11 +1304,13 @@ private:
         S += Qi_diff.squaredNorm() / hyperparams_S_Qi(i);
       }
       
+      // DBi optimization: compute (Z + Qi) * DBi on-demand
+      MatrixXd ZQi_DBi = (params_Z + params_Qi[i]) * aux_DBi[i];
       VectorXd gene_offset = params_o + params_oi[i];
-      MatrixXd residual = target_Yi[i] - aux_ZDBi[i] - aux_QiDBi[i];
+      MatrixXd residual = target_Yi[i] - ZQi_DBi;
       residual.colwise() -= gene_offset;
       residual.rowwise() -= params_si[i].transpose();
-      
+
       if (obs_type == "Y") {
         S += residual.squaredNorm();
       } else if (obs_type == "M") {

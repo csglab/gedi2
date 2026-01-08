@@ -358,8 +358,8 @@ GEDI <- R6Class(
       # ===================================================================
       
       aux <- list(
-        ZDBi = lapply(Ni, function(n) matrix(0, nrow = J, ncol = n)),
-        QiDBi = lapply(Ni, function(n) matrix(0, nrow = J, ncol = n)),
+        # DBi optimization: Store smaller K × Ni instead of J × Ni matrices
+        DBi = lapply(Ni, function(n) matrix(0, nrow = K, ncol = n)),
         Qi_hat = if (L > 0) lapply(1:num_samples, function(i) matrix(0, nrow = J, ncol = K)) else list(),
         oi_hat = if (L > 0) lapply(1:num_samples, function(i) rep(0, J)) else list(),
         J = J,
@@ -557,8 +557,7 @@ GEDI <- R6Class(
       data$target <- NULL
       data$params$Bi <- NULL
       data$params$Qi <- NULL
-      data$aux$ZDBi <- NULL
-      data$aux$QiDBi <- NULL
+      data$aux$DBi <- NULL  # DBi optimization: cleanup DBi instead of ZDBi/QiDBi
       rm(data)
       gc(full = TRUE)
       

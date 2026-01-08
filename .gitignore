@@ -55,3 +55,6 @@ rsconnect/
 
 # macOS system files
 .DS_Store
+
+# Temp directory for development
+temp/
