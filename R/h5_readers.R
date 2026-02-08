@@ -726,14 +726,14 @@ list_h5_structure <- function(file_path, recursive = TRUE) {
          "  Error: ", conditionMessage(e))
   })
 
-  cat("\n")
-  cat("Structure of:", basename(file_path), "\n")
-  cat(paste(rep("=", nchar(basename(file_path)) + 14), collapse = ""), "\n")
-  cat("Full path:", file_path, "\n")
-  cat(paste(rep("-", nchar(file_path) + 11), collapse = ""), "\n\n")
+  message("")
+  message("Structure of: ", basename(file_path))
+  message(paste(rep("=", nchar(basename(file_path)) + 14), collapse = ""))
+  message("Full path: ", file_path)
+  message(paste(rep("-", nchar(file_path) + 11), collapse = ""), "\n")
 
   print(structure_info)
-  cat("\n")
+  message("")
 
   return(invisible(structure_info))
 }
