@@ -1,4 +1,4 @@
-#' @importFrom utils packageVersion installed.packages
+#' @importFrom utils packageVersion
 
 .onAttach <- function(libname, pkgname) {
   # Get package version from DESCRIPTION
@@ -63,6 +63,7 @@
 #'   Options: "h5" (hdf5r), "umap" (uwot), "validation" (digest), or "all" (default).
 #' @param repos Character vector. The CRAN repository to use for installation.
 #'   Default is the user's configured repository.
+#' @param verbose Logical, whether to print progress messages (default: TRUE)
 #'
 #' @return NULL (invisibly)
 #'
@@ -79,7 +80,8 @@
 #' }
 #'
 #' @export
-install_optional_dependencies <- function(which = "all", repos = getOption("repos")) {
+install_optional_dependencies <- function(which = "all", repos = getOption("repos"),
+                                          verbose = TRUE) {
   
   # Define package groups
   pkg_groups <- list(
@@ -101,27 +103,31 @@ install_optional_dependencies <- function(which = "all", repos = getOption("repo
     packages <- unlist(pkg_groups[which], use.names = FALSE)
   }
   
-  message("Checking optional GEDI dependencies...")
+  if (verbose) message("Checking optional GEDI dependencies...")
   
   # Check which packages are not installed
-  installed <- packages %in% rownames(utils::installed.packages())
+  installed <- vapply(packages, function(pkg) {
+    requireNamespace(pkg, quietly = TRUE)
+  }, logical(1))
   to_install <- packages[!installed]
   
   if (length(to_install) > 0) {
-    message("Installing: ", paste(to_install, collapse = ", "))
+    if (verbose) message("Installing: ", paste(to_install, collapse = ", "))
     utils::install.packages(to_install, repos = repos)
-    message("\n=== Installation complete! ===")
+    if (verbose) message("\n=== Installation complete! ===")
     
     # Verify installation
-    newly_installed <- to_install %in% rownames(utils::installed.packages())
+    newly_installed <- vapply(to_install, function(pkg) {
+      requireNamespace(pkg, quietly = TRUE)
+    }, logical(1))
     if (all(newly_installed)) {
-      message("All packages successfully installed.")
+      if (verbose) message("All packages successfully installed.")
     } else {
       failed <- to_install[!newly_installed]
       warning("Failed to install: ", paste(failed, collapse = ", "), call. = FALSE)
     }
   } else {
-    message("All requested packages are already installed.")
+    if (verbose) message("All requested packages are already installed.")
   }
   
   invisible(NULL)
