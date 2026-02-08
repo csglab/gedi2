@@ -333,11 +333,11 @@ compute_Y_variance <- function(self, private, M) {
   # Check observation type
   obs_type <- self$aux$obs.type
   if (obs_type == "Y") {
-    message("Observation type is 'Y' (not raw counts). Returning NULL.")
+    if (private$.verbose >= 1) message("Observation type is 'Y' (not raw counts). Returning NULL.")
     return(NULL)
   }
   if (obs_type == "X") {
-    message("Observation type is 'X' (binary). Variance calculation not applicable. Returning NULL.")
+    if (private$.verbose >= 1) message("Observation type is 'X' (binary). Variance calculation not applicable. Returning NULL.")
     return(NULL)
   }
   
@@ -373,9 +373,10 @@ compute_Y_variance <- function(self, private, M) {
   Y_var_list <- vector("list", numSamples)
 
   if (private$.verbose == 1) {
-    cat(sprintf("Computing Y variance (%d samples)\n", numSamples))
-    cat("|", rep(" ", 50), "| 0%\r", sep = "")
-    flush.console()
+    message(sprintf("Computing Y variance (%d samples)", numSamples))
+    pb <- txtProgressBar(min = 0, max = numSamples, style = 3,
+                         width = 50, file = stderr())
+    on.exit(close(pb), add = TRUE)
 
     for (i in 1:numSamples) {
       idx <- cells_by_sample[[i]]
@@ -394,13 +395,8 @@ compute_Y_variance <- function(self, private, M) {
         Y_var_list[[i]] <- Yi_var_M_paired(Yi_fitted, M1i, M2i, self$params$sigma2)
       }
 
-      # Update progress bar
-      pct <- round(i / numSamples * 100)
-      n_filled <- round(50 * i / numSamples)
-      cat("|", rep("=", n_filled), rep(" ", 50 - n_filled), "| ", pct, "%\r", sep = "")
-      flush.console()
+      setTxtProgressBar(pb, i)
     }
-    cat("\n")  # Final newline
 
   } else {
     # Silent or debug mode - no progress bar
@@ -483,9 +479,10 @@ compute_dispersion <- function(self, private, M, subsample = 1e6) {
   result_list <- vector("list", numSamples)
 
   if (private$.verbose == 1) {
-    cat(sprintf("Computing dispersion (%d samples)\n", numSamples))
-    cat("|", rep(" ", 50), "| 0%\r", sep = "")
-    flush.console()
+    message(sprintf("Computing dispersion (%d samples)", numSamples))
+    pb <- txtProgressBar(min = 0, max = numSamples, style = 3,
+                         width = 50, file = stderr())
+    on.exit(close(pb), add = TRUE)
 
     for (i in 1:numSamples) {
       idx <- cells_by_sample[[i]]
@@ -532,13 +529,8 @@ compute_dispersion <- function(self, private, M, subsample = 1e6) {
 
       result_list[[i]] <- xy
 
-      # Update progress bar
-      pct <- round(i / numSamples * 100)
-      n_filled <- round(50 * i / numSamples)
-      cat("|", rep("=", n_filled), rep(" ", 50 - n_filled), "| ", pct, "%\r", sep = "")
-      flush.console()
+      setTxtProgressBar(pb, i)
     }
-    cat("\n")  # Final newline
 
   } else {
     # Silent or debug mode - no progress bar
