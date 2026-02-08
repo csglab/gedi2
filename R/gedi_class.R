@@ -609,30 +609,14 @@ GEDI <- R6Class(
         stop("Model not setup. Call CreateGEDIObject() first.", call. = FALSE)
       }
 
-      # Add Method 4 progress bar for verbose=1 only
+      # Add progress bar for verbose=1 only
       if (private$.verbose == 1) {
-        # Print initial header (stays fixed)
-        cat(sprintf("GEDI Optimization (%d iterations)\n", iterations))
+        message(sprintf("GEDI Optimization (%d iterations)", iterations))
 
-        # Custom progress bar that updates on same line
-        cat("|", rep(" ", 50), "| 0%\r", sep = "")
-        flush.console()
-
-        # Create temp file to sink C++ output
-        tmp <- tempfile()
-        sink_active <- FALSE
-
-        on.exit({
-          if (sink_active) {
-            sink(type = "output")
-          }
-          cat("\n")  # Final newline
-          if (file.exists(tmp)) unlink(tmp)
-        }, add = TRUE)
-
-        # Redirect C++ output to temp file
-        sink(tmp, type = "output")
-        sink_active <- TRUE
+        # Use txtProgressBar which writes to stderr (suppressible)
+        pb <- txtProgressBar(min = 0, max = iterations, style = 3,
+                             width = 50, file = stderr())
+        on.exit(close(pb), add = TRUE)
 
         # Initialize with first iteration (includes initialization)
         private$.lastResult <- GEDI_train(
@@ -641,38 +625,18 @@ GEDI <- R6Class(
           track_interval = track_interval,
           multimodal = multimodal
         )
+        setTxtProgressBar(pb, 1)
 
-        # Restore output temporarily to update progress bar
-        sink(type = "output")
-        sink_active <- FALSE
-
-        # Update progress bar
-        pct <- round(1 / iterations * 100)
-        n_filled <- round(50 * 1 / iterations)
-        cat("|", rep("=", n_filled), rep(" ", 50 - n_filled), "| ", pct, "%\r", sep = "")
-        flush.console()
-
-        # Resume sinking for remaining iterations
+        # Run remaining iterations
         if (iterations > 1) {
-          # Run all remaining iterations, only get results at the end
-          sink(tmp, type = "output", append = TRUE)
-          sink_active <- TRUE
-
           # MEMORY FIX: Call GEDI_optimize once for all remaining iterations
           # This avoids copying GBs of data from C++ to R on every iteration
           private$.lastResult <- GEDI_optimize(
             model_ptr = private$.cppPtr,
-            iterations = iterations - 1,  # Remaining iterations after first one
+            iterations = iterations - 1,
             track_interval = track_interval
           )
-
-          # Restore output
-          sink(type = "output")
-          sink_active <- FALSE
-
-          # Update progress bar to 100%
-          cat("|", rep("=", 50), "| 100%\r", sep = "")
-          flush.console()
+          setTxtProgressBar(pb, iterations)
         }
 
       } else {
