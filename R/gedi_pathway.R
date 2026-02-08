@@ -55,7 +55,7 @@ compute_dense_A <- function(self, private) {
   }
   
   if (private$.verbose >= 1) {
-    cat("Computing dense pathway-factor associations...\n")
+    message("Computing dense pathway-factor associations...")
   }
   
   # Compute A in original pathway space: C.rotation %*% A
@@ -69,7 +69,7 @@ compute_dense_A <- function(self, private) {
   colnames(A_full) <- paste0("LV", seq_len(self$aux$K))
   
   if (private$.verbose >= 1) {
-    cat(sprintf("  Computed %d pathways × %d factors\n", 
+    message(sprintf("  Computed %d pathways x %d factors", 
                 nrow(A_full), ncol(A_full)))
   }
   
@@ -151,7 +151,7 @@ compute_sparse_A <- function(self, private, C = NULL) {
     C <- private$.aux_static$inputC
     
     if (private$.verbose >= 1) {
-      cat("Computing sparse pathway-factor associations (using original C)...\n")
+      message("Computing sparse pathway-factor associations (using original C)...")
     }
     
   } else {
@@ -171,7 +171,7 @@ compute_sparse_A <- function(self, private, C = NULL) {
     }
     
     if (private$.verbose >= 1) {
-      cat(sprintf("Computing sparse pathway-factor associations (custom C: %d pathways)...\n",
+      message(sprintf("Computing sparse pathway-factor associations (custom C: %d pathways)...",
                   ncol(C)))
     }
   }
@@ -186,12 +186,12 @@ compute_sparse_A <- function(self, private, C = NULL) {
   
   # For each latent factor, run LASSO regression
   if (private$.verbose >= 1) {
-    cat(sprintf("  Running LASSO for %d factors...\n", K))
+    message(sprintf("  Running LASSO for %d factors...", K))
   }
   
   for (k in 1:K) {
     if (private$.verbose >= 2) {
-      cat(sprintf("    Factor %d/%d\n", k, K))
+      message(sprintf("    Factor %d/%d", k, K))
     }
     
     # Run cross-validated LASSO
@@ -235,9 +235,9 @@ compute_sparse_A <- function(self, private, C = NULL) {
     total_possible <- num_pathways * K
     sparsity_pct <- 100 * (1 - total_nonzero / total_possible)
     
-    cat(sprintf("  Sparsity: %.1f%% (%d / %d nonzero)\n",
+    message(sprintf("  Sparsity: %.1f%% (%d / %d nonzero)",
                 sparsity_pct, total_nonzero, total_possible))
-    cat(sprintf("  Nonzero per factor: min=%d, median=%d, max=%d\n",
+    message(sprintf("  Nonzero per factor: min=%d, median=%d, max=%d",
                 min(nonzero_per_factor),
                 median(nonzero_per_factor),
                 max(nonzero_per_factor)))
