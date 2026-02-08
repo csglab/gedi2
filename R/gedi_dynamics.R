@@ -441,6 +441,7 @@ create_dynamics_accessor <- function(self, private) {
 #' @param x Object of class gedi_dynamics
 #' @param ... Additional arguments (ignored)
 #'
+#' @return Invisibly returns \code{x}.
 #' @keywords internal
 #' @export
 print.gedi_dynamics <- function(x, ...) {
@@ -476,6 +477,7 @@ print.gedi_dynamics <- function(x, ...) {
 #' @param x Object of class gedi_dynamics_svd
 #' @param ... Additional arguments (ignored)
 #'
+#' @return Invisibly returns \code{x}.
 #' @keywords internal
 #' @export
 print.gedi_dynamics_svd <- function(x, ...) {

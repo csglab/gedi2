@@ -1,6 +1,7 @@
 # R/gedi_plot_utils.R
 
 #' GEDI Plot Theme
+#' @return A \code{ggplot2} theme object.
 #' @keywords internal
 theme_gedi <- function(base_size = 11) {
   ggplot2::theme_bw(base_size = base_size) +
@@ -27,6 +28,7 @@ theme_gedi <- function(base_size = 11) {
 
 
 #' Diverging Color Scale for GEDI Plots
+#' @return A \code{ggplot2} continuous color scale.
 #' @keywords internal
 scale_color_gedi_diverging <- function(limits = NULL, name = "Value", ...) {
   ggplot2::scale_color_gradientn(
@@ -51,6 +53,7 @@ scale_color_gedi_diverging <- function(limits = NULL, name = "Value", ...) {
 
 
 #' Fill Scale for GEDI Plots
+#' @return A \code{ggplot2} continuous fill scale.
 #' @keywords internal
 scale_fill_gedi_diverging <- function(limits = NULL, name = "Value", ...) {
   ggplot2::scale_fill_gradientn(
@@ -75,6 +78,7 @@ scale_fill_gedi_diverging <- function(limits = NULL, name = "Value", ...) {
 
 
 #' Discrete Color Palette for GEDI
+#' @return A \code{ggplot2} discrete color scale.
 #' @keywords internal
 scale_color_gedi_discrete <- function(name = "Group", ...) {
   # Extended palette with 24 distinct colors
@@ -97,6 +101,7 @@ scale_color_gedi_discrete <- function(name = "Group", ...) {
 
 
 #' Compute Color Limits from Data
+#' @return A numeric vector of length 2 with lower and upper limits.
 #' @keywords internal
 compute_color_limits <- function(values, symmetric = TRUE, quantile = 0.99) {
   if (symmetric) {

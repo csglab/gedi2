@@ -287,6 +287,7 @@ create_pathway_associations_accessor <- function(self, private) {
 #' @param x Object of class gedi_pathway_associations
 #' @param ... Additional arguments (ignored)
 #'
+#' @return Invisibly returns \code{x}.
 #' @keywords internal
 #' @export
 print.gedi_pathway_associations <- function(x, ...) {

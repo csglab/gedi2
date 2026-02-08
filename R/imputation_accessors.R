@@ -260,6 +260,7 @@ get_dispersion <- function(self, private, M, subsample = 1e6) {
 #' @param x Object of class gedi_imputation
 #' @param ... Additional arguments (ignored)
 #'
+#' @return Invisibly returns \code{x}.
 #' @keywords internal
 #' @export
 print.gedi_imputation <- function(x, ...) {
