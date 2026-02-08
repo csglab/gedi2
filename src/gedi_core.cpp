@@ -98,7 +98,7 @@ private:
   MatrixXd params_Ro;
   double params_sigma2;
   
-  std::vector<MatrixXd> aux_DBi;  // K × Ni per sample (memory optimized)
+  std::vector<MatrixXd> aux_DBi;  // K x Ni per sample (memory optimized)
   std::vector<MatrixXd> aux_Qi_hat;
   std::vector<VectorXd> aux_oi_hat;
   MatrixXd aux_C;
@@ -239,7 +239,7 @@ public:
       params_Ro = MatrixXd(0, 0);
     }
     
-    // Initialize DBi from R's initial values (K × Ni per sample)
+    // Initialize DBi from R's initial values (K x Ni per sample)
     List DBi_list = aux["DBi"];
     aux_DBi.resize(numSamples);
     for (int i = 0; i < numSamples; ++i) {
