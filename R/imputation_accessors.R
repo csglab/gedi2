@@ -96,9 +96,10 @@ get_imputed_Y <- function(self, private, M = NULL, logScale = TRUE, rowCentre = 
   Y_imputed_list <- vector("list", numSamples)
 
   if (private$.verbose == 1) {
-    cat(sprintf("Computing imputed Y (%d samples)\n", numSamples))
-    cat("|", rep(" ", 50), "| 0%\r", sep = "")
-    flush.console()
+    message(sprintf("Computing imputed Y (%d samples)", numSamples))
+    pb <- txtProgressBar(min = 0, max = numSamples, style = 3,
+                         width = 50, file = stderr())
+    on.exit(close(pb), add = TRUE)
 
     for (i in 1:numSamples) {
       # Reconstruct Yi_fitted from parameters (NO M needed!)
@@ -112,13 +113,8 @@ get_imputed_Y <- function(self, private, M = NULL, logScale = TRUE, rowCentre = 
         rowCentre = rowCentre
       )
 
-      # Update progress bar
-      pct <- round(i / numSamples * 100)
-      n_filled <- round(50 * i / numSamples)
-      cat("|", rep("=", n_filled), rep(" ", 50 - n_filled), "| ", pct, "%\r", sep = "")
-      flush.console()
+      setTxtProgressBar(pb, i)
     }
-    cat("\n")  # Final newline
 
   } else {
     # Silent or debug mode - no progress bar
