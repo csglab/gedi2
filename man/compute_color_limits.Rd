@@ -6,6 +6,9 @@
 \usage{
 compute_color_limits(values, symmetric = TRUE, quantile = 0.99)
 }
+\value{
+A numeric vector of length 2 with lower and upper limits.
+}
 \description{
 Compute Color Limits from Data
 }

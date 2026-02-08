@@ -6,6 +6,9 @@
 \usage{
 scale_fill_gedi_diverging(limits = NULL, name = "Value", ...)
 }
+\value{
+A \code{ggplot2} continuous fill scale.
+}
 \description{
 Fill Scale for GEDI Plots
 }

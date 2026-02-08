@@ -16,6 +16,7 @@ seurat_to_gedi(
   H = NULL,
   validate_counts = TRUE,
   use_variable_features = TRUE,
+  verbose = TRUE,
   ...
 )
 }
@@ -46,6 +47,8 @@ this will automatically detect and combine all matching layers.}
 
 \item{use_variable_features}{Logical, whether to subset to highly variable features
 (default: TRUE). If TRUE, uses genes from VariableFeatures(seurat_object).}
+
+\item{verbose}{Logical, whether to print progress messages (default: TRUE)}
 
 \item{...}{Additional arguments passed to CreateGEDIObject()}
 }

@@ -12,8 +12,8 @@ CreateGEDIObject(
   colData = NULL,
   C = NULL,
   H = NULL,
-  K = 10,
-  mode = "Bl2",
+  K = 40,
+  mode = "Bsphere",
   adjustD = TRUE,
   orthoZ = TRUE,
   Z_shrinkage = 1,
@@ -27,7 +27,7 @@ CreateGEDIObject(
   rsvd_p = 10,
   rsvd_sdist = "normal",
   verbose = 1,
-  num_threads = 0
+  num_threads = 1
 )
 }
 \arguments{

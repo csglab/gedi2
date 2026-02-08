@@ -6,6 +6,9 @@
 \usage{
 scale_color_gedi_diverging(limits = NULL, name = "Value", ...)
 }
+\value{
+A \code{ggplot2} continuous color scale.
+}
 \description{
 Diverging Color Scale for GEDI Plots
 }

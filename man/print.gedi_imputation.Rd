@@ -11,6 +11,9 @@ print.gedi_imputation(x, ...)
 
 \item{...}{Additional arguments (ignored)}
 }
+\value{
+Invisibly returns \code{x}.
+}
 \description{
 Print Method for Imputation Accessor
 }

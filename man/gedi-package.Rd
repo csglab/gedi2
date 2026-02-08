@@ -4,9 +4,9 @@
 \name{gedi-package}
 \alias{gedi}
 \alias{gedi-package}
-\title{gedi: Gene Expression Data Integration}
+\title{gedi: Gene Expression Decomposition and Integration}
 \description{
-A memory-efficient implementation for integrating gene expression data from single-cell RNA sequencing experiments. GEDI v2 uses a C++ backend with thin R wrappers to enable analysis of large-scale single-cell datasets. The package supports multiple data modalities including count matrices, paired data (Splicing, Velocyto, CITE-seq), and binary indicators. It implements a latent variable model with block coordinate descent optimization for dimensionality reduction and batch effect correction.
+A memory-efficient implementation for integrating gene expression data from single-cell RNA sequencing experiments. Uses a C++ backend with thin R wrappers to enable analysis of large-scale single-cell datasets. The package supports multiple data modalities including count matrices, paired data (splicing, RNA velocity, CITE-seq), and binary indicators. It implements a latent variable model with block coordinate descent optimization for dimensionality reduction and batch effect correction.
 
 A memory-efficient implementation for integrating gene expression data from
 single-cell RNA sequencing experiments. GEDI v2 uses a high-performance C++

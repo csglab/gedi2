@@ -216,7 +216,7 @@ run_factorized_svd_cpp <- function(Z, projDB, verbose = 0L) {
 #' @return Dense matrix (J x Ni) - residual Yi after removing sample effects
 #'
 #' @details
-#' Computes: Yi - QiDBi - (si ⊗ 1ᵀ) - (o + oi) ⊗ 1ᵀ
+#' Computes: Yi - QiDBi - (si (x) 1^T) - (o + oi) (x) 1^T
 #' This leaves only the ZDBi component (shared biological signal).
 #'
 #' @keywords internal
@@ -238,7 +238,7 @@ Yi_resZ <- function(Yi, QiDBi, si, o, oi) {
 #' @return Dense matrix (J x Ni) - predicted Yi
 #'
 #' @details
-#' Computes: Ŷi = ZDBi + QiDBi + (si ⊗ 1ᵀ) + (o + oi) ⊗ 1ᵀ
+#' Computes: Y_hati = ZDBi + QiDBi + (si (x) 1^T) + (o + oi) (x) 1^T
 #' This is the full model prediction for log-expression.
 #'
 #' @keywords internal
@@ -262,7 +262,7 @@ predict_Yhat <- function(ZDBi, QiDBi, si, o, oi) {
 #'
 #' This comes from the Poisson-lognormal model where:
 #' - Mi ~ Poisson(exp(Yi))
-#' - Yi ~ N(Ŷi, sigma2)
+#' - Yi ~ N(Y_hati, sigma2)
 #'
 #' The posterior variance decreases where:
 #' - Counts are high (exp(Yi) large)
@@ -292,7 +292,7 @@ Yi_var_M <- function(Yi, sigma2) {
 #'
 #' This comes from the binomial-logistic-normal model where:
 #' - M1i ~ Binomial(M1i + M2i, p)
-#' - logit(p) = Yi ~ N(Ŷi, sigma2)
+#' - logit(p) = Yi ~ N(Y_hati, sigma2)
 #'
 #' The variance depends on:
 #' - Total counts M (more counts = less variance)
@@ -324,7 +324,7 @@ Yi_var_M_paired <- function(Yi, M1i, M2i, sigma2) {
 #' for downstream dispersion analysis (binning and aggregation done in R).
 #'
 #' Memory optimization: Works only on sparse nonzero positions (typically 5-10% of matrix).
-#' For 30K genes × 10K cells with 5% nonzero: samples from ~15M positions instead of 300M.
+#' For 30K genes x 10K cells with 5% nonzero: samples from ~15M positions instead of 300M.
 #'
 #' @keywords internal
 #' @noRd
@@ -362,7 +362,7 @@ Yi_SSE_M_paired <- function(Yi, M1i, M2i, ZDBi, QiDBi, si, o, oi, sigma2) {
 #'
 #' @param feature_weights Vector of length K (factor loadings for this feature)
 #' @param D Scaling vector of length K
-#' @param Bi_list List of sample-specific cell projection matrices (K × Ni each)
+#' @param Bi_list List of sample-specific cell projection matrices (K x Ni each)
 #' @param verbose Integer verbosity level
 #'
 #' @return Vector of length N (total cells) with projected values
@@ -378,12 +378,12 @@ compute_feature_projection <- function(feature_weights, D, Bi_list, verbose = 0L
 #' Projects multiple features through the GEDI model simultaneously.
 #' Computes: (feature_weights * D) %*% B for F features.
 #'
-#' @param feature_weights Matrix K × F (factor loadings for F features)
+#' @param feature_weights Matrix K x F (factor loadings for F features)
 #' @param D Scaling vector of length K
-#' @param Bi_list List of sample-specific cell projection matrices (K × Ni each)
+#' @param Bi_list List of sample-specific cell projection matrices (K x Ni each)
 #' @param verbose Integer verbosity level
 #'
-#' @return Matrix N × F with projected values for each feature
+#' @return Matrix N x F with projected values for each feature
 #'
 #' @keywords internal
 #' @noRd
@@ -420,10 +420,10 @@ aggregate_vectors <- function(Dim1, Dim2, To1, To2, color, alpha, n_bins, min_pe
 #' the concatenation of all sample-specific Bi matrices. This is the main
 #' integrated representation of cells in the GEDI latent space.
 #'
-#' @param Z Shared metagene matrix (J Ã— K), where J = genes, K = latent factors
+#' @param Z Shared metagene matrix (J x K), where J = genes, K = latent factors
 #' @param D Scaling vector (length K) representing the importance of each factor
 #' @param Bi_list List of sample-specific cell projection matrices, where each
-#'   Bi is a K Ã— Ni matrix (Ni = number of cells in sample i)
+#'   Bi is a K x Ni matrix (Ni = number of cells in sample i)
 #' @param verbose Integer verbosity level:
 #'   \itemize{
 #'     \item 0: Silent (no output)
@@ -431,7 +431,7 @@ aggregate_vectors <- function(Dim1, Dim2, To1, To2, color, alpha, n_bins, min_pe
 #'     \item 2: Detailed per-sample information
 #'   }
 #'
-#' @return Dense matrix ZDB of dimensions J Ã— N, where N = sum(Ni) is the total
+#' @return Dense matrix ZDB of dimensions J x N, where N = sum(Ni) is the total
 #'   number of cells across all samples. Each column represents a cell in the
 #'   integrated latent space.
 #'
@@ -441,17 +441,17 @@ aggregate_vectors <- function(Dim1, Dim2, To1, To2, color, alpha, n_bins, min_pe
 #' 
 #' Computational strategy:
 #' \enumerate{
-#'   \item Pre-compute ZD = Z * diag(D) once (saves KÃ—JÃ—numSamples operations)
+#'   \item Pre-compute ZD = Z * diag(D) once (saves KxJxnumSamples operations)
 #'   \item For each sample i: compute ZD * Bi and concatenate
 #'   \item Use Eigen block operations for efficient memory access
 #' }
 #'
-#' Memory: Allocates one J Ã— N dense matrix. For large datasets (e.g., 20k genes,
+#' Memory: Allocates one J x N dense matrix. For large datasets (e.g., 20k genes,
 #' 50k cells), this requires ~8 GB RAM. Consider computing projections on demand
 #' or working with subsets if memory is limited.
 #'
 #' Performance: OpenMP parallelization available if enabled during compilation.
-#' Typical speed: ~100-200ms for 20k Ã— 5k dataset on modern CPU.
+#' Typical speed: ~100-200ms for 20k x 5k dataset on modern CPU.
 #'
 #' @keywords internal
 #' @noRd
@@ -467,10 +467,10 @@ compute_ZDB_cpp <- function(Z, D, Bi_list, verbose = 0L) {
 #'
 #' @param D Scaling vector (length K) representing factor importance
 #' @param Bi_list List of sample-specific cell projection matrices, where each
-#'   Bi is a K Ã— Ni matrix
+#'   Bi is a K x Ni matrix
 #' @param verbose Integer verbosity level (0 = silent, 1 = progress, 2 = detailed)
 #'
-#' @return Dense matrix DB of dimensions K Ã— N, where N = sum(Ni). Each column
+#' @return Dense matrix DB of dimensions K x N, where N = sum(Ni). Each column
 #'   represents a cell's coordinates in the latent factor space.
 #'
 #' @details
@@ -488,7 +488,7 @@ compute_ZDB_cpp <- function(Z, D, Bi_list, verbose = 0L) {
 #'   \item Apply diagonal scaling: diag(D) * B
 #' }
 #'
-#' Memory: Much smaller than ZDB (K Ã— N vs. J Ã— N). For K=10 and N=50k cells,
+#' Memory: Much smaller than ZDB (K x N vs. J x N). For K=10 and N=50k cells,
 #' requires only ~4 MB vs. ~8 GB for ZDB when J=20k.
 #'
 #' Performance: Very fast (~10-50ms) since K << J typically.
