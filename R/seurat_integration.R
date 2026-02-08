@@ -26,6 +26,7 @@
 #'   (default: TRUE)
 #' @param use_variable_features Logical, whether to subset to highly variable features
 #'   (default: TRUE). If TRUE, uses genes from VariableFeatures(seurat_object).
+#' @param verbose Logical, whether to print progress messages (default: TRUE)
 #' @param ... Additional arguments passed to CreateGEDIObject()
 #'
 #' @return GEDI R6 object
@@ -75,6 +76,7 @@ seurat_to_gedi <- function(seurat_object,
                             H = NULL,
                             validate_counts = TRUE,
                             use_variable_features = TRUE,
+                            verbose = TRUE,
                             ...) {
 
   # Check if Seurat is available
@@ -108,9 +110,9 @@ seurat_to_gedi <- function(seurat_object,
 
     if (length(matching_layers) > 1) {
       # Multiple split layers found - need to join them
-      message("Detected ", length(matching_layers), " split layers: ",
+      if (verbose) message("Detected ", length(matching_layers), " split layers: ",
               paste(matching_layers, collapse = ", "))
-      message("Joining layers with do.call(cbind)...")
+      if (verbose) message("Joining layers with do.call(cbind)...")
 
       # Extract each layer and combine
       layer_matrices <- lapply(matching_layers, function(layer_name) {
@@ -180,7 +182,7 @@ seurat_to_gedi <- function(seurat_object,
              "Check that VariableFeatures match the gene names in the assay.", call. = FALSE)
       }
 
-      message("Subsetting to ", length(hvg_in_matrix), " highly variable features")
+      if (verbose) message("Subsetting to ", length(hvg_in_matrix), " highly variable features")
       M <- M[hvg_in_matrix, , drop = FALSE]
     }
   }
@@ -228,7 +230,7 @@ seurat_to_gedi <- function(seurat_object,
 
     M <- M[, keep_cells]
     Samples <- Samples[keep_cells]
-    message("Subset to ", sum(keep_cells), " cells from ",
+    if (verbose) message("Subset to ", sum(keep_cells), " cells from ",
             length(subset_samples), " samples")
   }
 
@@ -242,10 +244,10 @@ seurat_to_gedi <- function(seurat_object,
   colData[[sample_column]] <- NULL
 
   # Create GEDI object
-  message("Creating GEDI object from Seurat data...")
-  message("  Genes: ", nrow(M))
-  message("  Cells: ", ncol(M))
-  message("  Samples: ", length(unique(Samples)))
+  if (verbose) message("Creating GEDI object from Seurat data...")
+  if (verbose) message("  Genes: ", nrow(M))
+  if (verbose) message("  Cells: ", ncol(M))
+  if (verbose) message("  Samples: ", length(unique(Samples)))
 
   gedi_model <- CreateGEDIObject(
     Samples = Samples,
@@ -258,7 +260,7 @@ seurat_to_gedi <- function(seurat_object,
     ...
   )
 
-  message("GEDI object created successfully!")
+  if (verbose) message("GEDI object created successfully!")
 
   return(gedi_model)
 }
@@ -283,6 +285,7 @@ seurat_to_gedi <- function(seurat_object,
 #'   available (default: TRUE)
 #' @param min_cells Integer, filter genes with counts in < min_cells (default: 0)
 #' @param min_features Integer, filter cells with < min_features genes (default: 0)
+#' @param verbose Logical, whether to print progress messages (default: TRUE)
 #'
 #' @return Seurat object with:
 #'   \itemize{
@@ -328,7 +331,8 @@ gedi_to_seurat <- function(model,
                             add_projections = TRUE,
                             add_embeddings = TRUE,
                             min_cells = 0,
-                            min_features = 0) {
+                            min_features = 0,
+                            verbose = TRUE) {
 
   # Check if Seurat is available
   if (!requireNamespace("Seurat", quietly = TRUE)) {
@@ -341,7 +345,7 @@ gedi_to_seurat <- function(model,
     stop("Model not trained. Run model$train() first.", call. = FALSE)
   }
 
-  message("Converting GEDI model to Seurat object...")
+  if (verbose) message("Converting GEDI model to Seurat object...")
 
   # Get metadata
   gene_ids <- model$metadata$geneIDs
@@ -350,12 +354,12 @@ gedi_to_seurat <- function(model,
 
   # Prepare count matrix
   if (is.null(M)) {
-    message("  No original counts provided, using back-transformed imputed values...")
+    if (verbose) message("  No original counts provided, using back-transformed imputed values...")
     # Get imputed log-expression and back-transform to counts (approximate)
     Y_imputed <- model$imputed$Y()
     M <- Matrix::Matrix(expm1(Y_imputed), sparse = TRUE)
   } else {
-    message("  Using provided count matrix...")
+    if (verbose) message("  Using provided count matrix...")
     # Ensure M has correct dimensions and ordering
     if (!identical(dim(M), c(length(gene_ids), length(cell_ids)))) {
       stop("M dimensions don't match model (expected ", length(gene_ids),
@@ -368,7 +372,7 @@ gedi_to_seurat <- function(model,
   colnames(M) <- cell_ids
 
   # Create Seurat object
-  message("  Creating Seurat object...")
+  if (verbose) message("  Creating Seurat object...")
   seurat_obj <- Seurat::CreateSeuratObject(
     counts = M,
     project = project,
@@ -398,7 +402,7 @@ gedi_to_seurat <- function(model,
 
   # Add imputed data as separate assay
   if (use_imputed) {
-    message("  Adding imputed assay...")
+    if (verbose) message("  Adding imputed assay...")
     Y_imputed <- model$imputed$Y()
     rownames(Y_imputed) <- gene_ids
     colnames(Y_imputed) <- cell_ids
@@ -416,7 +420,7 @@ gedi_to_seurat <- function(model,
 
   # Add projections as separate assays
   if (add_projections) {
-    message("  Adding projection assays...")
+    if (verbose) message("  Adding projection assays...")
 
     # ZDB projection (J genes × N cells)
     ZDB <- model$projections$ZDB
@@ -463,7 +467,7 @@ gedi_to_seurat <- function(model,
 
     # Add UMAP if cached
     if (cache_status["umap"]) {
-      message("  Adding UMAP embedding...")
+      if (verbose) message("  Adding UMAP embedding...")
       umap_coords <- model$embeddings$umap
       common_cells <- intersect(cell_ids, colnames(seurat_obj))
       umap_coords <- umap_coords[match(common_cells, cell_ids), , drop = FALSE]
@@ -479,7 +483,7 @@ gedi_to_seurat <- function(model,
 
     # Add PCA if cached
     if (cache_status["pca"]) {
-      message("  Adding PCA embedding...")
+      if (verbose) message("  Adding PCA embedding...")
       pca_coords <- model$embeddings$pca
       common_cells <- intersect(cell_ids, colnames(seurat_obj))
       pca_coords <- pca_coords[match(common_cells, cell_ids), , drop = FALSE]
@@ -494,9 +498,9 @@ gedi_to_seurat <- function(model,
     }
   }
 
-  message("Seurat object created successfully!")
-  message("  Assays: ", paste(names(seurat_obj@assays), collapse = ", "))
-  if (length(seurat_obj@reductions) > 0) {
+  if (verbose) message("Seurat object created successfully!")
+  if (verbose) message("  Assays: ", paste(names(seurat_obj@assays), collapse = ", "))
+  if (verbose && length(seurat_obj@reductions) > 0) {
     message("  Reductions: ", paste(names(seurat_obj@reductions), collapse = ", "))
   }
 
