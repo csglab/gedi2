@@ -90,8 +90,8 @@ Add your publication reference here when available.
 \seealso{
 Useful links:
 \itemize{
-  \item \url{https://github.com/Arshammik/gedi}
-  \item Report bugs at \url{https://github.com/Arshammik/gedi/issues}
+  \item \url{https://github.com/csglab/gedi2}
+  \item Report bugs at \url{https://github.com/csglab/gedi2/issues}
 }
 
 

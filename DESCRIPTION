@@ -15,8 +15,8 @@ Description: A memory-efficient implementation for integrating gene expression d
     a latent variable model with block coordinate descent optimization for
     dimensionality reduction and batch effect correction.
 License: MIT + file LICENSE
-URL: https://github.com/Arshammik/gedi
-BugReports: https://github.com/Arshammik/gedi/issues
+URL: https://github.com/csglab/gedi2
+BugReports: https://github.com/csglab/gedi2/issues
 Depends: R (>= 4.0.0)
 Imports: Rcpp (>= 1.0.0), R6 (>= 2.5.0), Matrix (>= 1.3.0),
         ggplot2, scales, methods, stats, utils
