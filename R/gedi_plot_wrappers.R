@@ -216,7 +216,8 @@ plot_embedding <- function(model,
         p <- p + ggplot2::geom_point(ggplot2::aes(color = Color),
                                      size = point_size, alpha = alpha)
       }
-      message("Note: Rasterization not implemented yet. Using regular points.")
+      warning("Rasterization not implemented yet. Using regular points.",
+              call. = FALSE)
     } else {
       if (!use_color) {
         p <- p + ggplot2::geom_point(size = point_size, alpha = alpha)
