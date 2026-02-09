@@ -7,12 +7,8 @@ CXX_STD = CXX14
 
 # Compiler flags for Windows
 # - Disable Eigen's deprecated warnings
-# - Disable unused-parameter warnings (common in Rcpp callback functions)
-# - Disable ignored-attributes warnings (common with Eigen + OpenMP)
 PKG_CXXFLAGS = $(SHLIB_OPENMP_CXXFLAGS) \
-               -DEIGEN_PERMANENTLY_DISABLE_STUPID_WARNINGS \
-               -Wno-unused-parameter \
-               -Wno-ignored-attributes
+               -DEIGEN_PERMANENTLY_DISABLE_STUPID_WARNINGS
 
 # Linker flags for OpenMP and BLAS/LAPACK on Windows
 PKG_LIBS = $(SHLIB_OPENMP_CXXFLAGS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)

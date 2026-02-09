@@ -6,6 +6,9 @@
 \usage{
 scale_color_gedi_discrete(name = "Group", ...)
 }
+\value{
+A \code{ggplot2} discrete color scale.
+}
 \description{
 Discrete Color Palette for GEDI
 }

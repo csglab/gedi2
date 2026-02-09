@@ -58,3 +58,5 @@ rsconnect/
 
 # Temp directory for development
 temp/
+Benchmark/
+.claude/

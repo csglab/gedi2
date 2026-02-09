@@ -22,8 +22,8 @@ using namespace Eigen;
  * offsets: diffO = Ro * H.rotation * contrast.
  * This is the C++ implementation of the old getDiffO.gedi()
  *
- * @param Ro Matrix (J × L) representing effect of sample variables on gene offsets
- * @param H_rotation Rotation matrix (L × num_covariates)
+ * @param Ro Matrix (J x L) representing effect of sample variables on gene offsets
+ * @param H_rotation Rotation matrix (L x num_covariates)
  * @param contrast Vector of length L specifying the contrast
  * @param verbose Integer verbosity level
  *
@@ -79,16 +79,16 @@ Eigen::VectorXd getDiffO_cpp(
 /**
  * Compute Differential Q in Z-space (Internal C++)
  *
- * Computes sample-variable effects on Qi, returning a J × K matrix.
+ * Computes sample-variable effects on Qi, returning a J x K matrix.
  * This is the C++ implementation of the old getDiffQ.gedi()
  *
- * @param Rk_list List of K matrices (each J × L), representing the effect of
+ * @param Rk_list List of K matrices (each J x L), representing the effect of
  * sample-level variables on each latent factor k
- * @param H_rotation Rotation matrix (L × num_covariates)
+ * @param H_rotation Rotation matrix (L x num_covariates)
  * @param contrast Vector of length L specifying the contrast
  * @param verbose Integer verbosity level
  *
- * @return Dense matrix diffQ of dimensions J × K representing the predicted
+ * @return Dense matrix diffQ of dimensions J x K representing the predicted
  * differential effect in Z-space.
  *
  * @keywords internal
@@ -123,11 +123,11 @@ Eigen::MatrixXd getDiffQ_cpp(
   }
 
   if (verbose >= 1) {
-    Rcout << "Computing diffQ (Z-space): " << J << " genes × " << K << " factors" << std::endl;
+    Rcout << "Computing diffQ (Z-space): " << J << " genes x " << K << " factors" << std::endl;
   }
   
   // Pre-compute H.rotation * contrast
-  VectorXd H_contrast = H_rotation * contrast; // L × 1
+  VectorXd H_contrast = H_rotation * contrast; // L x 1
   
   // Allocate result matrix
   MatrixXd diffQ_Z_space(J, K);
@@ -137,19 +137,19 @@ Eigen::MatrixXd getDiffQ_cpp(
   
   // Loop for k = 2 to K
   for (int k = 1; k < K; ++k) {
-    Eigen::MatrixXd Rk = as<Eigen::MatrixXd>(Rk_list[k]); // J × L
+    Eigen::MatrixXd Rk = as<Eigen::MatrixXd>(Rk_list[k]); // J x L
     
     // Validate dimensions for subsequent Rk
     if (Rk.rows() != J || Rk.cols() != L) {
       stop("Dimension mismatch: all Rk matrices must have the same JxL dimensions");
     }
     
-    // Compute effect for this factor: Rk * H_contrast (J × 1)
+    // Compute effect for this factor: Rk * H_contrast (J x 1)
     diffQ_Z_space.col(k) = Rk * H_contrast;
   }
 
   if (verbose >= 1) {
-    Rcout << "✓ diffQ (Z-space) computed" << std::endl;
+    Rcout << "[OK] diffQ (Z-space) computed" << std::endl;
   }
   
   return diffQ_Z_space;
@@ -162,14 +162,14 @@ Eigen::MatrixXd getDiffQ_cpp(
  * Computes the cell-specific differential expression effect (J x N).
  * This is the C++ implementation of the old getDiffExp.gedi()
  *
- * @param Rk_list List of K matrices (each J × L)
- * @param H_rotation Rotation matrix (L × num_covariates)
+ * @param Rk_list List of K matrices (each J x L)
+ * @param H_rotation Rotation matrix (L x num_covariates)
  * @param contrast Vector of length L specifying the contrast
  * @param D Scaling vector (length K)
- * @param Bi_list List of sample-specific cell projection matrices (K × Ni each)
+ * @param Bi_list List of sample-specific cell projection matrices (K x Ni each)
  * @param verbose Integer verbosity level
  *
- * @return Dense matrix diffExp of dimensions J × N representing the predicted
+ * @return Dense matrix diffExp of dimensions J x N representing the predicted
  * differential expression effect for each gene in each cell.
  *
  * @keywords internal
@@ -221,7 +221,7 @@ Eigen::MatrixXd getDiffExp_cpp(
   }
   
   if (verbose >= 1) {
-    Rcout << "Computing diffExp (Cell-space): " << J << " genes × " << N << " cells" << std::endl;
+    Rcout << "Computing diffExp (Cell-space): " << J << " genes x " << N << " cells" << std::endl;
     if (verbose >= 2) {
       Rcout << "  Contrast dimension: " << L << ", Factors: " << K << std::endl;
     }
@@ -239,12 +239,12 @@ Eigen::MatrixXd getDiffExp_cpp(
     col_offset += Ni_current;
   }
   
-  MatrixXd DB = D.asDiagonal() * B; // K × N
+  MatrixXd DB = D.asDiagonal() * B; // K x N
   
   // === Compute: diffExp = sum_k (Rk * H.rotation * contrast) * DB[k, :] ===
   if (verbose >= 2) Rcout << "  Computing sum of outer products..." << std::endl;
   
-  // Pre-compute H.rotation * contrast (L × 1 vector)
+  // Pre-compute H.rotation * contrast (L x 1 vector)
   VectorXd H_contrast = H_rotation * contrast;
   
   MatrixXd diffExp = MatrixXd::Zero(J, N);
@@ -259,19 +259,19 @@ Eigen::MatrixXd getDiffExp_cpp(
       Rcout << "    Factor " << (k + 1) << "/" << K << std::endl;
     }
     
-    Eigen::MatrixXd Rk = as<Eigen::MatrixXd>(Rk_list[k]); // J × L
+    Eigen::MatrixXd Rk = as<Eigen::MatrixXd>(Rk_list[k]); // J x L
     
-    // Compute effect for this factor: Rk * H_contrast (J × 1)
+    // Compute effect for this factor: Rk * H_contrast (J x 1)
     VectorXd effect_k = Rk * H_contrast;
     
-    // Add outer product: effect_k (J×1) with DB.row(k) (1×N)
+    // Add outer product: effect_k (Jx1) with DB.row(k) (1xN)
     diffExp += effect_k * DB.row(k);
   }
   
   if (verbose >= 1) {
     double mean_val = diffExp.mean();
     double std_val = std::sqrt((diffExp.array() - mean_val).square().mean());
-    Rcout << "✓ diffExp computed: mean = " << mean_val 
+    Rcout << "[OK] diffExp computed: mean = " << mean_val 
           << ", std = " << std_val << std::endl;
   }
   

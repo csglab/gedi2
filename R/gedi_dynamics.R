@@ -6,14 +6,14 @@
 #' Compute Differential Q in Z-space (JxK)
 #'
 #' @description
-#' Computes sample-variable effects on Qi, returning a J × K matrix.
+#' Computes sample-variable effects on Qi, returning a J x K matrix.
 #' This is the R wrapper for the C++ function getDiffQ_cpp().
 #'
 #' @param self Reference to GEDI R6 object
 #' @param private Reference to private environment
 #' @param contrast Contrast vector (length L)
 #'
-#' @return Matrix J × K showing differential effect in Z-space
+#' @return Matrix J x K showing differential effect in Z-space
 #'
 #' @keywords internal
 #' @noRd
@@ -364,7 +364,7 @@ run_joint_svd <- function(self, private, start.cond, end.cond, C_index,
 #' @param self Reference to GEDI R6 object
 #' @param private Reference to private environment
 #'
-#' @return Matrix (J × num_pathways) of gene expression gradients
+#' @return Matrix (J x num_pathways) of gene expression gradients
 #'
 #' @keywords internal
 #' @noRd
@@ -385,11 +385,11 @@ get_pathway_gradients <- function(self, private) {
   A_full <- private$.aux_static$C.rotation %*% self$params$A
   
   # Gradient is transpose of A
-  gradient <- t(A_full)  # K × num_pathways
+  gradient <- t(A_full)  # K x num_pathways
   
   # Project to gene space
   Z <- self$params$Z
-  gradient <- Z %*% gradient  # J × num_pathways
+  gradient <- Z %*% gradient  # J x num_pathways
   
   # Set dimension names
   rownames(gradient) <- private$.geneIDs
@@ -441,6 +441,8 @@ create_dynamics_accessor <- function(self, private) {
 #' @param x Object of class gedi_dynamics
 #' @param ... Additional arguments (ignored)
 #'
+#' @return Invisibly returns \code{x}.
+#' @method print gedi_dynamics
 #' @keywords internal
 #' @export
 print.gedi_dynamics <- function(x, ...) {
@@ -476,12 +478,14 @@ print.gedi_dynamics <- function(x, ...) {
 #' @param x Object of class gedi_dynamics_svd
 #' @param ... Additional arguments (ignored)
 #'
+#' @return Invisibly returns \code{x}.
+#' @method print gedi_dynamics_svd
 #' @keywords internal
 #' @export
 print.gedi_dynamics_svd <- function(x, ...) {
   cat("<GEDI Dynamics SVD Result>\n\n")
   cat(sprintf("Method: %s\n", x$metadata$method))
-  cat(sprintf("Dimensions: %d genes × %d components\n", nrow(x$u), ncol(x$u)))
+  cat(sprintf("Dimensions: %d genes x %d components\n", nrow(x$u), ncol(x$u)))
   cat(sprintf("Cells: %d\n", length(x$indices$embedding)))
   
   if (x$metadata$method == "vector_field") {

@@ -15,7 +15,7 @@ using namespace Eigen;
 //'
 //' @param feature_weights Vector of length K (factor loadings for this feature)
 //' @param D Scaling vector of length K
-//' @param Bi_list List of sample-specific cell projection matrices (K × Ni each)
+//' @param Bi_list List of sample-specific cell projection matrices (K x Ni each)
 //' @param verbose Integer verbosity level
 //'
 //' @return Vector of length N (total cells) with projected values
@@ -78,12 +78,12 @@ Eigen::VectorXd compute_feature_projection(
 //' Projects multiple features through the GEDI model simultaneously.
 //' Computes: (feature_weights * D) %*% B for F features.
 //'
-//' @param feature_weights Matrix K × F (factor loadings for F features)
+//' @param feature_weights Matrix K x F (factor loadings for F features)
 //' @param D Scaling vector of length K
-//' @param Bi_list List of sample-specific cell projection matrices (K × Ni each)
+//' @param Bi_list List of sample-specific cell projection matrices (K x Ni each)
 //' @param verbose Integer verbosity level
 //'
-//' @return Matrix N × F with projected values for each feature
+//' @return Matrix N x F with projected values for each feature
 //'
 //' @keywords internal
 //' @noRd
@@ -114,7 +114,7 @@ Eigen::MatrixXd compute_multi_feature_projection(
     N += Bi.cols();
   }
   
-  // Allocate result: N × F
+  // Allocate result: N x F
   MatrixXd result(N, F);
   int offset = 0;
   
@@ -133,7 +133,7 @@ Eigen::MatrixXd compute_multi_feature_projection(
   }
   
   if (verbose >= 1) {
-    Rcout << "Multi-feature projection computed: " << N << " cells × " 
+    Rcout << "Multi-feature projection computed: " << N << " cells x " 
           << F << " features" << std::endl;
   }
   

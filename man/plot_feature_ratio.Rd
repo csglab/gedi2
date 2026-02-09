@@ -28,7 +28,7 @@ plot_feature_ratio(
 \item{comparison}{Character, type of comparison ("difference" or "correlation")}
 
 \item{embedding}{Character specifying embedding type ("umap", "pca") or
-a custom N × 2 matrix}
+a custom N x 2 matrix}
 
 \item{projection}{Character, type of projection ("zdb" or "db")}
 
@@ -51,7 +51,7 @@ the projected space. Mathematically grounded for GEDI's log-space representation
 }
 \details{
 For comparison = "difference":
-Computes (Z\link{gene1,} - Z\link{gene2,}) * D * B, equivalent to ZDB\link{gene1,} - ZDB\link{gene2,}.
+Computes \code{(Z[gene1,] - Z[gene2,]) * D * B}, equivalent to \code{ZDB[gene1,] - ZDB[gene2,]}.
 In log-space, this represents log(gene1/gene2) in the original count space.
 Positive values indicate gene1 > gene2, negative indicates gene2 > gene1.
 }

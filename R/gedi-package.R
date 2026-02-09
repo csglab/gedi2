@@ -55,7 +55,6 @@
 #' @seealso
 #' \itemize{
 #'   \item \code{\link{CreateGEDIObject}}: Create a GEDI model
-#'   \item \code{\link{GEDI}}: R6 class documentation
 #' }
 #'
 #' @examples
@@ -86,5 +85,6 @@
 #' @import R6
 #' @import Matrix
 #' @importFrom methods as is
-#' @importFrom stats rnorm runif
+#' @importFrom stats coef median rnorm runif var
+#' @importFrom utils object.size setTxtProgressBar txtProgressBar
 NULL

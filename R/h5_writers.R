@@ -66,7 +66,6 @@
 #' # adata.obsm['X_gedi']  # GEDI embeddings
 #' }
 #'
-#' @importFrom hdf5r H5File h5attr h5attr<-
 #' @importFrom Matrix t
 #' @export
 write_h5ad <- function(model,
@@ -116,7 +115,7 @@ write_h5ad <- function(model,
       if (!is.null(private_env$.M_fingerprint)) {
         if (verbose) message("[write_h5ad] Validating M matrix identity...")
         validate_M_identity(M, private_env$.M_fingerprint)
-        if (verbose) message("[write_h5ad]   ✓ M matrix validated successfully")
+        if (verbose) message("[write_h5ad]   M matrix validated successfully")
       } else {
         warning("[write_h5ad] No M fingerprint stored in model. Skipping validation.")
       }
@@ -458,7 +457,7 @@ write_h5ad <- function(model,
   )
 
   # Write attributes for AnnData compatibility
-  h5attr(mat_group, "shape") <- as.integer(c(nrow(matrix), ncol(matrix)))
+  hdf5r::h5attr(mat_group, "shape") <- as.integer(c(nrow(matrix), ncol(matrix)))
 
   # Write string attributes as scalars for Python compatibility
   .write_h5ad_scalar_string_attr(mat_group, "encoding-type", "csr_matrix")
@@ -536,7 +535,7 @@ write_h5ad <- function(model,
       )
 
       # Note: encoding attributes removed for AnnData compatibility
-      h5attr(col_group, "ordered") <- FALSE
+      hdf5r::h5attr(col_group, "ordered") <- FALSE
 
     } else if (is.character(col_data)) {
       .write_h5ad_string_array(df_group, col_name, col_data)
@@ -571,7 +570,7 @@ write_h5ad <- function(model,
     attr$close()
   } else {
     # Empty column-order for dataframes with no columns (just index)
-    h5attr(df_group, "column-order") <- numeric(0)
+    hdf5r::h5attr(df_group, "column-order") <- numeric(0)
   }
 
   if (verbose) {

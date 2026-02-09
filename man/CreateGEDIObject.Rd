@@ -12,8 +12,8 @@ CreateGEDIObject(
   colData = NULL,
   C = NULL,
   H = NULL,
-  K = 10,
-  mode = "Bl2",
+  K = 40,
+  mode = "Bsphere",
   adjustD = TRUE,
   orthoZ = TRUE,
   Z_shrinkage = 1,
@@ -27,7 +27,7 @@ CreateGEDIObject(
   rsvd_p = 10,
   rsvd_sdist = "normal",
   verbose = 1,
-  num_threads = 0
+  num_threads = 1
 )
 }
 \arguments{
@@ -42,9 +42,9 @@ C++ will compute Yi = log(M+1) internally - no Yi copy stored in R!}
 
 \item{colData}{Optional data.frame with cell metadata}
 
-\item{C}{Gene-level prior matrix (genes × pathways)}
+\item{C}{Gene-level prior matrix (genes x pathways)}
 
-\item{H}{Sample-level covariate matrix (covariates × samples)}
+\item{H}{Sample-level covariate matrix (covariates x samples)}
 
 \item{K}{Number of latent factors (default: 10)}
 

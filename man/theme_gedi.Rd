@@ -6,6 +6,9 @@
 \usage{
 theme_gedi(base_size = 11)
 }
+\value{
+A \code{ggplot2} theme object.
+}
 \description{
 GEDI Plot Theme
 }

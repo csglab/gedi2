@@ -27,7 +27,7 @@ using namespace Eigen;
 //' @return Dense matrix (J x Ni) - residual Yi after removing sample effects
 //'
 //' @details
-//' Computes: Yi - QiDBi - (si ⊗ 1ᵀ) - (o + oi) ⊗ 1ᵀ
+//' Computes: Yi - QiDBi - (si (x) 1^T) - (o + oi) (x) 1^T
 //' This leaves only the ZDBi component (shared biological signal).
 //'
 //' @keywords internal
@@ -66,7 +66,7 @@ SEXP Yi_resZ(
 //' @return Dense matrix (J x Ni) - predicted Yi
 //'
 //' @details
-//' Computes: Ŷi = ZDBi + QiDBi + (si ⊗ 1ᵀ) + (o + oi) ⊗ 1ᵀ
+//' Computes: Y_hati = ZDBi + QiDBi + (si (x) 1^T) + (o + oi) (x) 1^T
 //' This is the full model prediction for log-expression.
 //'
 //' @keywords internal
@@ -111,7 +111,7 @@ SEXP predict_Yhat(
 //'
 //' This comes from the Poisson-lognormal model where:
 //' - Mi ~ Poisson(exp(Yi))
-//' - Yi ~ N(Ŷi, sigma2)
+//' - Yi ~ N(Y_hati, sigma2)
 //'
 //' The posterior variance decreases where:
 //' - Counts are high (exp(Yi) large)
@@ -151,7 +151,7 @@ SEXP Yi_var_M(
 //'
 //' This comes from the binomial-logistic-normal model where:
 //' - M1i ~ Binomial(M1i + M2i, p)
-//' - logit(p) = Yi ~ N(Ŷi, sigma2)
+//' - logit(p) = Yi ~ N(Y_hati, sigma2)
 //'
 //' The variance depends on:
 //' - Total counts M (more counts = less variance)
@@ -213,7 +213,7 @@ SEXP Yi_var_M_paired(
 //' for downstream dispersion analysis (binning and aggregation done in R).
 //'
 //' Memory optimization: Works only on sparse nonzero positions (typically 5-10% of matrix).
-//' For 30K genes × 10K cells with 5% nonzero: samples from ~15M positions instead of 300M.
+//' For 30K genes x 10K cells with 5% nonzero: samples from ~15M positions instead of 300M.
 //'
 //' @keywords internal
 //' @noRd
@@ -314,7 +314,7 @@ double Yi_SSE_M_paired(
     Eigen::VectorXd oi,
     double sigma2) {
   
-  // Compute residual: Yi - Ŷi
+  // Compute residual: Yi - Y_hati
   Eigen::MatrixXd residual = Yi - ZDBi - QiDBi;
   residual.rowwise() -= si.transpose();
   residual.colwise() -= (o + oi);

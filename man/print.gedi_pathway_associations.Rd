@@ -4,12 +4,15 @@
 \alias{print.gedi_pathway_associations}
 \title{Print Method for Pathway Associations Accessor}
 \usage{
-print.gedi_pathway_associations(x, ...)
+\method{print}{gedi_pathway_associations}(x, ...)
 }
 \arguments{
 \item{x}{Object of class gedi_pathway_associations}
 
 \item{...}{Additional arguments (ignored)}
+}
+\value{
+Invisibly returns \code{x}.
 }
 \description{
 Print Method for Pathway Associations Accessor

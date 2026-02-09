@@ -21,10 +21,10 @@ using namespace Eigen;
 //' the concatenation of all sample-specific Bi matrices. This is the main
 //' integrated representation of cells in the GEDI latent space.
 //'
-//' @param Z Shared metagene matrix (J Ã— K), where J = genes, K = latent factors
+//' @param Z Shared metagene matrix (J x K), where J = genes, K = latent factors
 //' @param D Scaling vector (length K) representing the importance of each factor
 //' @param Bi_list List of sample-specific cell projection matrices, where each
-//'   Bi is a K Ã— Ni matrix (Ni = number of cells in sample i)
+//'   Bi is a K x Ni matrix (Ni = number of cells in sample i)
 //' @param verbose Integer verbosity level:
 //'   \itemize{
 //'     \item 0: Silent (no output)
@@ -32,7 +32,7 @@ using namespace Eigen;
 //'     \item 2: Detailed per-sample information
 //'   }
 //'
-//' @return Dense matrix ZDB of dimensions J Ã— N, where N = sum(Ni) is the total
+//' @return Dense matrix ZDB of dimensions J x N, where N = sum(Ni) is the total
 //'   number of cells across all samples. Each column represents a cell in the
 //'   integrated latent space.
 //'
@@ -42,17 +42,17 @@ using namespace Eigen;
 //' 
 //' Computational strategy:
 //' \enumerate{
-//'   \item Pre-compute ZD = Z * diag(D) once (saves KÃ—JÃ—numSamples operations)
+//'   \item Pre-compute ZD = Z * diag(D) once (saves KxJxnumSamples operations)
 //'   \item For each sample i: compute ZD * Bi and concatenate
 //'   \item Use Eigen block operations for efficient memory access
 //' }
 //'
-//' Memory: Allocates one J Ã— N dense matrix. For large datasets (e.g., 20k genes,
+//' Memory: Allocates one J x N dense matrix. For large datasets (e.g., 20k genes,
 //' 50k cells), this requires ~8 GB RAM. Consider computing projections on demand
 //' or working with subsets if memory is limited.
 //'
 //' Performance: OpenMP parallelization available if enabled during compilation.
-//' Typical speed: ~100-200ms for 20k Ã— 5k dataset on modern CPU.
+//' Typical speed: ~100-200ms for 20k x 5k dataset on modern CPU.
 //'
 //' @keywords internal
 //' @noRd
@@ -130,10 +130,10 @@ Eigen::MatrixXd compute_ZDB_cpp(
 //'
 //' @param D Scaling vector (length K) representing factor importance
 //' @param Bi_list List of sample-specific cell projection matrices, where each
-//'   Bi is a K Ã— Ni matrix
+//'   Bi is a K x Ni matrix
 //' @param verbose Integer verbosity level (0 = silent, 1 = progress, 2 = detailed)
 //'
-//' @return Dense matrix DB of dimensions K Ã— N, where N = sum(Ni). Each column
+//' @return Dense matrix DB of dimensions K x N, where N = sum(Ni). Each column
 //'   represents a cell's coordinates in the latent factor space.
 //'
 //' @details
@@ -151,7 +151,7 @@ Eigen::MatrixXd compute_ZDB_cpp(
 //'   \item Apply diagonal scaling: diag(D) * B
 //' }
 //'
-//' Memory: Much smaller than ZDB (K Ã— N vs. J Ã— N). For K=10 and N=50k cells,
+//' Memory: Much smaller than ZDB (K x N vs. J x N). For K=10 and N=50k cells,
 //' requires only ~4 MB vs. ~8 GB for ZDB when J=20k.
 //'
 //' Performance: Very fast (~10-50ms) since K << J typically.

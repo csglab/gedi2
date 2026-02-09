@@ -48,7 +48,6 @@
 #' gedi_obj$setup(Y = expr_matrix, sample_id = samples, K = 10)
 #' }
 #'
-#' @importFrom hdf5r H5File
 #' @importFrom Matrix sparseMatrix t Matrix
 #' @export
 read_h5ad <- function(file_path,
@@ -455,7 +454,6 @@ read_h5ad <- function(file_path,
 #' gedi_obj$setup(Y = expr_matrix, K = 10)
 #' }
 #'
-#' @importFrom hdf5r H5File existsGroup
 #' @importFrom Matrix sparseMatrix
 #' @export
 read_h5 <- function(file_path,
@@ -696,7 +694,6 @@ read_h5 <- function(file_path,
 #' list_h5_structure("filtered_feature_bc_matrix.h5")
 #' }
 #'
-#' @importFrom hdf5r H5File
 #' @export
 list_h5_structure <- function(file_path, recursive = TRUE) {
 
@@ -726,14 +723,14 @@ list_h5_structure <- function(file_path, recursive = TRUE) {
          "  Error: ", conditionMessage(e))
   })
 
-  cat("\n")
-  cat("Structure of:", basename(file_path), "\n")
-  cat(paste(rep("=", nchar(basename(file_path)) + 14), collapse = ""), "\n")
-  cat("Full path:", file_path, "\n")
-  cat(paste(rep("-", nchar(file_path) + 11), collapse = ""), "\n\n")
+  message("")
+  message("Structure of: ", basename(file_path))
+  message(paste(rep("=", nchar(basename(file_path)) + 14), collapse = ""))
+  message("Full path: ", file_path)
+  message(paste(rep("-", nchar(file_path) + 11), collapse = ""), "\n")
 
   print(structure_info)
-  cat("\n")
+  message("")
 
   return(invisible(structure_info))
 }

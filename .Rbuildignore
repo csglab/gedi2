@@ -6,3 +6,11 @@
 ^\.DS_Store$
 ^README\.md$
 ^roadmap\.md$
+^Benchmark$
+^gedi\.Rcheck$
+^cran-comments\.md$
+^\.claude$
+^Logo\.svg$
+^check_output\.txt$
+^check_run\.log$
+^nohup\.out$

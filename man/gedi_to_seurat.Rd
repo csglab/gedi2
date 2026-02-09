@@ -13,7 +13,8 @@ gedi_to_seurat(
   add_projections = TRUE,
   add_embeddings = TRUE,
   min_cells = 0,
-  min_features = 0
+  min_features = 0,
+  verbose = TRUE
 )
 }
 \arguments{
@@ -38,13 +39,20 @@ available (default: TRUE)}
 \item{min_cells}{Integer, filter genes with counts in < min_cells (default: 0)}
 
 \item{min_features}{Integer, filter cells with < min_features genes (default: 0)}
+
+\item{verbose}{Logical, whether to print progress messages (default: TRUE)}
 }
 \value{
 Seurat object with:
 \itemize{
 \item RNA assay: Original or back-transformed counts
 \item imputed assay: GEDI imputed expression (if use_imputed = TRUE)
-\item ZDB/DB assays: GEDI projections (if add_projections = TRUE)
+\item ZDB/DB/ADB assays: GEDI projections (if add_projections = TRUE)
+\itemize{
+\item ZDB: Batch-corrected gene expression (genes x cells)
+\item DB: Cell embeddings in latent factor space (K x cells)
+\item ADB: Pathway activities (pathways x cells) - only if C matrix provided
+}
 \item umap/pca reductions: Embeddings (if add_embeddings = TRUE and cached)
 \item meta.data: Sample labels and colData from GEDI model
 }

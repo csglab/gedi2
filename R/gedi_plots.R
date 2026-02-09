@@ -1,11 +1,19 @@
 # R/gedi_plot_embedding.R
 
+# Suppress R CMD check NOTEs for ggplot2 NSE variables
+utils::globalVariables(c(
+  "Dim1", "Dim2", "Color", "Value", "Feature", "Alpha",
+  "To1", "To2", "VF_Color",
+  "Expected_Var", "Observed_Var", "Sample",
+  "Iteration", "RMSD", "Parameter", "Factor", "Group", "sigma2"
+))
+
 #' Plot 2D Embedding (Base Function)
 #'
 #' Base function for plotting 2D embeddings with customizable coloring.
 #' Supports both continuous and discrete color variables.
 #'
-#' @param embedding Matrix (N × 2) with x and y coordinates for each cell
+#' @param embedding Matrix (N x 2) with x and y coordinates for each cell
 #' @param color Vector of length N for coloring points, or NULL for uniform color
 #' @param color_limits Numeric vector c(low, high) for color scale limits,
 #'   or NULL to auto-compute from data (uses 99th percentile for symmetric limits)
@@ -91,7 +99,8 @@
       p <- p + ggplot2::geom_point(ggplot2::aes(color = Color), 
                                    size = point_size, alpha = alpha)
     }
-    message("Note: Rasterization not implemented yet. Using regular points.")
+    warning("Rasterization not implemented yet. Using regular points.",
+            call. = FALSE)
   } else {
     if (!use_color) {
       p <- p + ggplot2::geom_point(size = point_size, alpha = alpha)
@@ -147,7 +156,7 @@
 #' @param model GEDI model object
 #' @param features Character vector of gene names or integer indices
 #' @param embedding Character specifying embedding type ("umap", "pca") or
-#'   a custom N × 2 matrix
+#'   a custom N x 2 matrix
 #' @param projection Character, type of projection to compute ("zdb" or "db")
 #' @param color_limits Character ("global" for shared scale, "individual" for
 #'   per-facet scale) or numeric vector c(low, high)
@@ -224,8 +233,8 @@ plot_features <- function(model,
   
   # Extract feature weights from Z
   Z <- model$params$Z
-  feature_weights <- Z[feature_idx, , drop = FALSE]  # F × K
-  feature_weights <- t(feature_weights)  # K × F for C++
+  feature_weights <- Z[feature_idx, , drop = FALSE]  # F x K
+  feature_weights <- t(feature_weights)  # K x F for C++
   
   # Compute projections using C++
   if (projection == "zdb") {
@@ -234,36 +243,36 @@ plot_features <- function(model,
       D = model$params$D,
       Bi_list = model$params$Bi,
       verbose = 0
-    )  # Returns N × F matrix
+    )  # Returns N x F matrix
   } else if (projection == "db") {
     # For DB: just use factor weights directly
-    DB <- model$projections$DB  # K × N
-    projections <- t(DB) %*% feature_weights  # N × F
+    DB <- model$projections$DB  # K x N
+    projections <- t(DB) %*% feature_weights  # N x F
   } else if (projection == "adb") {
     # For ADB: need to check if model has C/H matrices
     if (model$aux$P == 0) {
       stop("projection 'adb' requires a model with gene-level prior (C matrix). This model has P=0.", call. = FALSE)
     }
 
-    # Get the full ADB projection: C.rotation * A * D * B (P × N)
+    # Get the full ADB projection: C.rotation * A * D * B (P x N)
     # This gives us pathway activities across all cells
-    ADB <- model$projections$ADB  # P × N
+    ADB <- model$projections$ADB  # P x N
 
     # We need to project gene features through the pathway space
-    # feature_weights is K × F (latent factor loadings for selected genes from Z)
+    # feature_weights is K x F (latent factor loadings for selected genes from Z)
     #
     # Mathematical logic:
-    # 1. Get C.rotation[feature_idx, ] which is J_selected × P
+    # 1. Get C.rotation[feature_idx, ] which is J_selected x P
     #    This tells us how each selected gene maps to pathways
     # 2. For each gene, compute its projection as:
     #    sum over pathways: C.rotation[gene, pathway] * ADB[pathway, cells]
 
     # Get C.rotation and extract rows for selected genes
-    C_rotation <- model$.__enclos_env__$private$.aux_static$C.rotation  # J × P
-    C_feature <- C_rotation[feature_idx, , drop = FALSE]  # F × P
+    C_rotation <- model$.__enclos_env__$private$.aux_static$C.rotation  # J x P
+    C_feature <- C_rotation[feature_idx, , drop = FALSE]  # F x P
 
-    # Project through pathway space: (F × P) %*% (P × N) = F × N
-    projections <- t(C_feature %*% ADB)  # N × F
+    # Project through pathway space: (F x P) %*% (P x N) = F x N
+    projections <- t(C_feature %*% ADB)  # N x F
 
   } else {
     stop("projection must be 'zdb', 'db', or 'adb'", call. = FALSE)
@@ -356,7 +365,7 @@ plot_features <- function(model,
 #' @param gene2 Character or integer, second gene name or index
 #' @param comparison Character, type of comparison ("difference" or "correlation")
 #' @param embedding Character specifying embedding type ("umap", "pca") or
-#'   a custom N × 2 matrix
+#'   a custom N x 2 matrix
 #' @param projection Character, type of projection ("zdb" or "db")
 #' @param color_limits Numeric vector c(low, high) or NULL for auto-compute
 #' @param randomize Logical, whether to randomize point order
@@ -368,7 +377,7 @@ plot_features <- function(model,
 #'
 #' @details
 #' For comparison = "difference":
-#' Computes (Z[gene1,] - Z[gene2,]) * D * B, equivalent to ZDB[gene1,] - ZDB[gene2,].
+#' Computes `(Z[gene1,] - Z[gene2,]) * D * B`, equivalent to `ZDB[gene1,] - ZDB[gene2,]`.
 #' In log-space, this represents log(gene1/gene2) in the original count space.
 #' Positive values indicate gene1 > gene2, negative indicates gene2 > gene1.
 #'
@@ -439,7 +448,7 @@ plot_feature_ratio <- function(model,
   if (comparison == "difference") {
     # Compute (Z[gene1,] - Z[gene2,]) * D * B
     Z <- model$params$Z
-    weight_diff <- Z[gene1_idx, ] - Z[gene2_idx, ]  # K × 1
+    weight_diff <- Z[gene1_idx, ] - Z[gene2_idx, ]  # K x 1
     
     ratio_values <- compute_feature_projection(
       feature_weights = weight_diff,

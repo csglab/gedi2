@@ -20,7 +20,7 @@
 )
 }
 \arguments{
-\item{embedding}{Matrix (N × 2) with x and y coordinates for each cell}
+\item{embedding}{Matrix (N x 2) with x and y coordinates for each cell}
 
 \item{color}{Vector of length N for coloring points, or NULL for uniform color}
 

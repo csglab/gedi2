@@ -23,7 +23,7 @@ create_progress_bar <- function(total, label = "Progress", verbose = 1) {
   }
 
   if (nchar(label) > 0) {
-    cat(label, "\n", sep = "")
+    message(label)
   }
 
   pb <- txtProgressBar(min = 0, max = total, style = 3, width = 50)
@@ -87,8 +87,7 @@ close_progress_bar <- function(pb) {
 #' @noRd
 log_stage <- function(stage, total, message, verbose = 1) {
   if (verbose >= 1) {
-    cat(sprintf("  [%d/%d] %s\n", stage, total, message))
-    flush.console()
+    message(sprintf("  [%d/%d] %s", stage, total, message))
   }
   invisible(NULL)
 }
@@ -109,8 +108,7 @@ log_stage <- function(stage, total, message, verbose = 1) {
 #' @noRd
 log_start <- function(operation, verbose = 1) {
   if (verbose >= 1) {
-    cat("Computing ", operation, "...\n", sep = "")
-    flush.console()
+    message("Computing ", operation, "...")
   }
   invisible(NULL)
 }
@@ -133,11 +131,10 @@ log_start <- function(operation, verbose = 1) {
 log_complete <- function(operation, details = NULL, verbose = 1) {
   if (verbose >= 1) {
     if (is.null(details)) {
-      cat("[DONE] ", operation, " complete\n", sep = "")
+      message("[DONE] ", operation, " complete")
     } else {
-      cat("[DONE] ", operation, " computed: ", details, "\n", sep = "")
+      message("[DONE] ", operation, " computed: ", details)
     }
-    flush.console()
   }
   invisible(NULL)
 }
@@ -160,11 +157,10 @@ log_complete <- function(operation, details = NULL, verbose = 1) {
 log_info <- function(message, verbose = 1, indent = TRUE) {
   if (verbose >= 1) {
     if (indent) {
-      cat("  ", message, "\n", sep = "")
+      message("  ", message)
     } else {
-      cat(message, "\n", sep = "")
+      message(message)
     }
-    flush.console()
   }
   invisible(NULL)
 }
@@ -185,8 +181,7 @@ log_info <- function(message, verbose = 1, indent = TRUE) {
 #' @noRd
 log_cached <- function(item, verbose = 1) {
   if (verbose >= 1) {
-    cat("[CACHED] Using cached ", item, "\n", sep = "")
-    flush.console()
+    message("[CACHED] Using cached ", item)
   }
   invisible(NULL)
 }

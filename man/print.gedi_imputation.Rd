@@ -4,12 +4,15 @@
 \alias{print.gedi_imputation}
 \title{Print Method for Imputation Accessor}
 \usage{
-print.gedi_imputation(x, ...)
+\method{print}{gedi_imputation}(x, ...)
 }
 \arguments{
 \item{x}{Object of class gedi_imputation}
 
 \item{...}{Additional arguments (ignored)}
+}
+\value{
+Invisibly returns \code{x}.
 }
 \description{
 Print Method for Imputation Accessor

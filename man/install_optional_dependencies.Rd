@@ -4,7 +4,11 @@
 \alias{install_optional_dependencies}
 \title{Install Optional GEDI Dependencies}
 \usage{
-install_optional_dependencies(which = "all", repos = getOption("repos"))
+install_optional_dependencies(
+  which = "all",
+  repos = getOption("repos"),
+  verbose = TRUE
+)
 }
 \arguments{
 \item{which}{Character vector specifying which dependencies to install.
@@ -12,6 +16,8 @@ Options: "h5" (hdf5r), "umap" (uwot), "validation" (digest), or "all" (default).
 
 \item{repos}{Character vector. The CRAN repository to use for installation.
 Default is the user's configured repository.}
+
+\item{verbose}{Logical, whether to print progress messages (default: TRUE)}
 }
 \value{
 NULL (invisibly)

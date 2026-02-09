@@ -13,7 +13,7 @@
 #' @param self Reference to GEDI R6 object
 #' @param private Reference to private environment
 #'
-#' @return Dense matrix (num_pathways × K) where rows correspond to original
+#' @return Dense matrix (num_pathways x K) where rows correspond to original
 #'   pathways and columns to latent factors. Positive values indicate pathways
 #'   that are enriched in a factor, negative values indicate depletion.
 #'
@@ -55,13 +55,13 @@ compute_dense_A <- function(self, private) {
   }
   
   if (private$.verbose >= 1) {
-    cat("Computing dense pathway-factor associations...\n")
+    message("Computing dense pathway-factor associations...")
   }
   
   # Compute A in original pathway space: C.rotation %*% A
-  # C.rotation is num_pathways × P
-  # A is P × K
-  # Result is num_pathways × K
+  # C.rotation is num_pathways x P
+  # A is P x K
+  # Result is num_pathways x K
   A_full <- private$.aux_static$C.rotation %*% self$params$A
   
   # Add row and column names
@@ -69,7 +69,7 @@ compute_dense_A <- function(self, private) {
   colnames(A_full) <- paste0("LV", seq_len(self$aux$K))
   
   if (private$.verbose >= 1) {
-    cat(sprintf("  Computed %d pathways × %d factors\n", 
+    message(sprintf("  Computed %d pathways x %d factors", 
                 nrow(A_full), ncol(A_full)))
   }
   
@@ -87,11 +87,11 @@ compute_dense_A <- function(self, private) {
 #'
 #' @param self Reference to GEDI R6 object
 #' @param private Reference to private environment
-#' @param C Optional gene × pathway matrix. If NULL (default), uses the original
+#' @param C Optional gene x pathway matrix. If NULL (default), uses the original
 #'   C matrix provided during model setup. Can provide a different pathway
 #'   database for post-hoc interpretation.
 #'
-#' @return Sparse matrix (num_pathways × K) with many zero entries. Non-zero
+#' @return Sparse matrix (num_pathways x K) with many zero entries. Non-zero
 #'   values indicate pathways that are strongly associated with each factor.
 #'
 #' @details
@@ -151,7 +151,7 @@ compute_sparse_A <- function(self, private, C = NULL) {
     C <- private$.aux_static$inputC
     
     if (private$.verbose >= 1) {
-      cat("Computing sparse pathway-factor associations (using original C)...\n")
+      message("Computing sparse pathway-factor associations (using original C)...")
     }
     
   } else {
@@ -171,7 +171,7 @@ compute_sparse_A <- function(self, private, C = NULL) {
     }
     
     if (private$.verbose >= 1) {
-      cat(sprintf("Computing sparse pathway-factor associations (custom C: %d pathways)...\n",
+      message(sprintf("Computing sparse pathway-factor associations (custom C: %d pathways)...",
                   ncol(C)))
     }
   }
@@ -186,12 +186,12 @@ compute_sparse_A <- function(self, private, C = NULL) {
   
   # For each latent factor, run LASSO regression
   if (private$.verbose >= 1) {
-    cat(sprintf("  Running LASSO for %d factors...\n", K))
+    message(sprintf("  Running LASSO for %d factors...", K))
   }
   
   for (k in 1:K) {
     if (private$.verbose >= 2) {
-      cat(sprintf("    Factor %d/%d\n", k, K))
+      message(sprintf("    Factor %d/%d", k, K))
     }
     
     # Run cross-validated LASSO
@@ -235,9 +235,9 @@ compute_sparse_A <- function(self, private, C = NULL) {
     total_possible <- num_pathways * K
     sparsity_pct <- 100 * (1 - total_nonzero / total_possible)
     
-    cat(sprintf("  Sparsity: %.1f%% (%d / %d nonzero)\n",
+    message(sprintf("  Sparsity: %.1f%% (%d / %d nonzero)",
                 sparsity_pct, total_nonzero, total_possible))
-    cat(sprintf("  Nonzero per factor: min=%d, median=%d, max=%d\n",
+    message(sprintf("  Nonzero per factor: min=%d, median=%d, max=%d",
                 min(nonzero_per_factor),
                 median(nonzero_per_factor),
                 max(nonzero_per_factor)))
@@ -287,6 +287,8 @@ create_pathway_associations_accessor <- function(self, private) {
 #' @param x Object of class gedi_pathway_associations
 #' @param ... Additional arguments (ignored)
 #'
+#' @return Invisibly returns \code{x}.
+#' @method print gedi_pathway_associations
 #' @keywords internal
 #' @export
 print.gedi_pathway_associations <- function(x, ...) {

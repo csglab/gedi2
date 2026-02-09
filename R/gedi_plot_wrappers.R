@@ -4,10 +4,10 @@
 #' Get Embedding Coordinates with Smart Caching
 #'
 #' @param model GEDI model object
-#' @param embedding_type Character: "umap", "pca", or a custom N×2 matrix
+#' @param embedding_type Character: "umap", "pca", or a custom Nx2 matrix
 #' @param dims Integer vector of length 2 for which dimensions to use (default c(1,2))
 #' @param verbose Logical, print messages about computation
-#' @return N×2 matrix of embedding coordinates
+#' @return Nx2 matrix of embedding coordinates
 #' @keywords internal
 .get_embedding <- function(model, embedding_type, dims = c(1, 2), verbose = TRUE) {
 
@@ -90,7 +90,7 @@
 
     # Compute projection on-demand for this gene only
     Z <- model$params$Z
-    feature_weights <- Z[gene_idx, ]  # K × 1
+    feature_weights <- Z[gene_idx, ]  # K x 1
 
     if (projection == "zdb") {
       expr_values <- compute_feature_projection(
@@ -100,8 +100,8 @@
         verbose = 0
       )
     } else if (projection == "db") {
-      DB <- model$projections$DB  # K × N
-      expr_values <- as.vector(t(DB) %*% feature_weights)  # N × 1
+      DB <- model$projections$DB  # K x N
+      expr_values <- as.vector(t(DB) %*% feature_weights)  # N x 1
     } else {
       stop("projection must be 'zdb' or 'db'", call. = FALSE)
     }
@@ -120,7 +120,7 @@
 #' Model is the first argument, and color_by handles metadata/genes automatically.
 #'
 #' @param model GEDI model object (or embedding matrix for backwards compatibility)
-#' @param embedding Character ("umap", "pca") or N×2 matrix
+#' @param embedding Character ("umap", "pca") or Nx2 matrix
 #' @param color_by Character: "sample", metadata column, gene name, or NULL
 #' @param color Vector for manual coloring (overrides color_by)
 #' @param projection Character: "zdb" or "db" for gene expression projection
@@ -216,7 +216,8 @@ plot_embedding <- function(model,
         p <- p + ggplot2::geom_point(ggplot2::aes(color = Color),
                                      size = point_size, alpha = alpha)
       }
-      message("Note: Rasterization not implemented yet. Using regular points.")
+      warning("Rasterization not implemented yet. Using regular points.",
+              call. = FALSE)
     } else {
       if (!use_color) {
         p <- p + ggplot2::geom_point(size = point_size, alpha = alpha)

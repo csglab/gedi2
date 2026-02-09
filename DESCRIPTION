@@ -1,33 +1,28 @@
 Package: gedi
 Type: Package
 Title: Gene Expression Decomposition and Integration
-Version: 2.3.0
-Date: 2026-01-08
+Version: 2.3.1
+Date: 2026-02-08
 Authors@R: c(
     person("Arsham", "Mikaeili Namini", email = "arsham.mikaeilinamini@mail.mcgill.ca", role = c("aut", "cre")),
     person("Hamed", "S.Najafabadi", email = "hamed.najafabadi@mcgill.ca", role = c("aut"))
     )
-Maintainer: Arsham Mikaeili Namini <arsham.mikaeilinamini@mail.mcgill.ca>
 Description: A memory-efficient implementation for integrating gene expression data
-    from single-cell RNA sequencing experiments. GEDI v2 uses a C++ backend with
+    from single-cell RNA sequencing experiments. Uses a C++ backend with
     thin R wrappers to enable analysis of large-scale single-cell datasets. The
     package supports multiple data modalities including count matrices, paired
-    data (Splicing, Velocyto, CITE-seq), and binary indicators. It implements a latent variable model
-    with block coordinate descent optimization for dimensionality reduction and
-    batch effect correction.
+    data (splicing, RNA velocity, CITE-seq), and binary indicators. It implements
+    a latent variable model with block coordinate descent optimization for
+    dimensionality reduction and batch effect correction.
 License: MIT + file LICENSE
-URL: https://github.com/Arshammik/gedi
-BugReports: https://github.com/Arshammik/gedi/issues
+URL: https://github.com/csglab/gedi2
+BugReports: https://github.com/csglab/gedi2/issues
 Depends: R (>= 4.0.0)
-Imports: Rcpp (>= 1.0.0), R6 (>= 2.5.0), Matrix (>= 1.3.0), hdf5r,
-        methods, stats, utils
+Imports: Rcpp (>= 1.0.0), R6 (>= 2.5.0), Matrix (>= 1.3.0),
+        ggplot2, scales, methods, stats, utils
 LinkingTo: Rcpp, RcppEigen
-Suggests: Seurat, SingleCellExperiment
-SystemRequirements: C++14, GNU make, Eigen3 (>= 3.3.0)
+Suggests: hdf5r, uwot, digest, glmnet, Seurat, SingleCellExperiment
+SystemRequirements: C++14, GNU make
 Encoding: UTF-8
 RoxygenNote: 7.3.3
 Roxygen: list(markdown = TRUE)
-NeedsCompilation: yes
-Packaged: 2025-10-22 18:58:46 UTC; arshammikaeili
-Author: Arsham Mikaeili Namini [aut, cre],
-  Hamed S.Najafabadi [aut]

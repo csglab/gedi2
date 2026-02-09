@@ -23,7 +23,7 @@ plot_features(
 \item{features}{Character vector of gene names or integer indices}
 
 \item{embedding}{Character specifying embedding type ("umap", "pca") or
-a custom N × 2 matrix}
+a custom N x 2 matrix}
 
 \item{projection}{Character, type of projection to compute ("zdb" or "db")}
 

@@ -4,12 +4,15 @@
 \alias{print.gedi_dynamics}
 \title{Print Method for Dynamics Accessor}
 \usage{
-print.gedi_dynamics(x, ...)
+\method{print}{gedi_dynamics}(x, ...)
 }
 \arguments{
 \item{x}{Object of class gedi_dynamics}
 
 \item{...}{Additional arguments (ignored)}
+}
+\value{
+Invisibly returns \code{x}.
 }
 \description{
 Print Method for Dynamics Accessor

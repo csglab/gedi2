@@ -18,10 +18,10 @@ ProjectionsAccessor <- R6Class(
     print = function() {
       cat("<GEDI Projections Accessor>\n")
       cat("\nAvailable projections (lazy-computed):\n")
-      cat("  $ZDB  - Shared manifold projection (J × N)\n")
-      cat("  $DB   - Latent factor embedding (K × N)\n")
+      cat("  $ZDB  - Shared manifold projection (J x N)\n")
+      cat("  $DB   - Latent factor embedding (K x N)\n")
       if (private$.gedi_self$aux$P > 0) {
-        cat("  $ADB  - Pathway activity projection (P × N)\n")
+        cat("  $ADB  - Pathway activity projection (P x N)\n")
       }
       cat("\nAccess with: model$projections$ZDB\n")
       invisible(self)
@@ -65,7 +65,7 @@ ProjectionsAccessor <- R6Class(
 #' @param private Reference to private environment
 #' @param force_recompute Logical, if TRUE bypasses cache and recomputes
 #'
-#' @return Dense matrix (J × N) with row/column names set to geneIDs/cellIDs
+#' @return Dense matrix (J x N) with row/column names set to geneIDs/cellIDs
 #'
 #' @keywords internal
 #' @noRd
@@ -119,7 +119,7 @@ compute_ZDB <- function(self, private, force_recompute = FALSE) {
 #' @param private Reference to private environment
 #' @param force_recompute Logical, if TRUE bypasses cache and recomputes
 #'
-#' @return Dense matrix (K × N) with row names "LV1", "LV2", ... and
+#' @return Dense matrix (K x N) with row names "LV1", "LV2", ... and
 #'   column names set to cellIDs
 #'
 #' @keywords internal
@@ -173,7 +173,7 @@ compute_DB <- function(self, private, force_recompute = FALSE) {
 #' @param private Reference to private environment
 #' @param force_recompute Logical, if TRUE bypasses cache and recomputes
 #'
-#' @return Dense matrix (P × N) with row names from original C matrix column
+#' @return Dense matrix (P x N) with row names from original C matrix column
 #'   names and column names set to cellIDs
 #'
 #' @keywords internal
@@ -242,7 +242,7 @@ compute_ADB <- function(self, private, force_recompute = FALSE) {
 #' @param contrast Numeric vector of length L specifying the contrast
 #' @param include_O Logical, if TRUE adds the global offset effect (diffO)
 #'
-#' @return Dense matrix (J × N) of differential expression values
+#' @return Dense matrix (J x N) of differential expression values
 #'
 #' @keywords internal
 #' @noRd

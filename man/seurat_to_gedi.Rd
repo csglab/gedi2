@@ -16,6 +16,7 @@ seurat_to_gedi(
   H = NULL,
   validate_counts = TRUE,
   use_variable_features = TRUE,
+  verbose = TRUE,
   ...
 )
 }
@@ -37,15 +38,17 @@ this will automatically detect and combine all matching layers.}
 
 \item{mode}{Character, normalization mode: "Bl2" or "Bsphere" (default: "Bl2")}
 
-\item{C}{Gene-level prior matrix (genes × pathways) (default: NULL)}
+\item{C}{Gene-level prior matrix (genes x pathways) (default: NULL)}
 
-\item{H}{Sample-level covariate matrix (covariates × samples) (default: NULL)}
+\item{H}{Sample-level covariate matrix (covariates x samples) (default: NULL)}
 
 \item{validate_counts}{Logical, whether to validate data appears to be counts
 (default: TRUE)}
 
 \item{use_variable_features}{Logical, whether to subset to highly variable features
 (default: TRUE). If TRUE, uses genes from VariableFeatures(seurat_object).}
+
+\item{verbose}{Logical, whether to print progress messages (default: TRUE)}
 
 \item{...}{Additional arguments passed to CreateGEDIObject()}
 }
