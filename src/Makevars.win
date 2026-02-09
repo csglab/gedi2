@@ -1,9 +1,6 @@
 # Makevars.win for Windows compilation
 # GEDI v2: Gene Expression Data Integration
-# Requires: C++14, Eigen3, OpenMP (optional)
-
-# C++14 standard
-CXX_STD = CXX14
+# Requires: Eigen3, OpenMP (optional)
 
 # Compiler flags for Windows
 # - Disable Eigen's deprecated warnings

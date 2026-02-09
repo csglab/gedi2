@@ -61,7 +61,7 @@
 #' @keywords internal
 #' @noRd
 GEDI_new <- function(params, aux, target, hyperparams, verbose = 1L, num_threads = 0L) {
-    .Call(`_gedi_GEDI_new`, params, aux, target, hyperparams, verbose, num_threads)
+    .Call(`_gedi2_GEDI_new`, params, aux, target, hyperparams, verbose, num_threads)
 }
 
 #' Initialize Latent Variables (Internal)
@@ -98,7 +98,7 @@ GEDI_new <- function(params, aux, target, hyperparams, verbose = 1L, num_threads
 #' @keywords internal
 #' @noRd
 GEDI_initialize <- function(model_ptr, multimodal = FALSE) {
-    .Call(`_gedi_GEDI_initialize`, model_ptr, multimodal)
+    .Call(`_gedi2_GEDI_initialize`, model_ptr, multimodal)
 }
 
 #' Optimize GEDI Model via Block Coordinate Descent (Internal)
@@ -142,7 +142,7 @@ GEDI_initialize <- function(model_ptr, multimodal = FALSE) {
 #' @keywords internal
 #' @noRd
 GEDI_optimize <- function(model_ptr, iterations, track_interval = 5L) {
-    .Call(`_gedi_GEDI_optimize`, model_ptr, iterations, track_interval)
+    .Call(`_gedi2_GEDI_optimize`, model_ptr, iterations, track_interval)
 }
 
 #' Train GEDI Model (Initialize + Optimize) (Internal)
@@ -179,27 +179,27 @@ GEDI_optimize <- function(model_ptr, iterations, track_interval = 5L) {
 #' @keywords internal
 #' @noRd
 GEDI_train <- function(model_ptr, iterations, track_interval = 5L, multimodal = FALSE) {
-    .Call(`_gedi_GEDI_train`, model_ptr, iterations, track_interval, multimodal)
+    .Call(`_gedi2_GEDI_train`, model_ptr, iterations, track_interval, multimodal)
 }
 
 getDiffO_cpp <- function(Ro, H_rotation, contrast, verbose = 0L) {
-    .Call(`_gedi_getDiffO_cpp`, Ro, H_rotation, contrast, verbose)
+    .Call(`_gedi2_getDiffO_cpp`, Ro, H_rotation, contrast, verbose)
 }
 
 getDiffQ_cpp <- function(Rk_list, H_rotation, contrast, verbose = 0L) {
-    .Call(`_gedi_getDiffQ_cpp`, Rk_list, H_rotation, contrast, verbose)
+    .Call(`_gedi2_getDiffQ_cpp`, Rk_list, H_rotation, contrast, verbose)
 }
 
 getDiffExp_cpp <- function(Rk_list, H_rotation, contrast, D, Bi_list, verbose = 0L) {
-    .Call(`_gedi_getDiffExp_cpp`, Rk_list, H_rotation, contrast, D, Bi_list, verbose)
+    .Call(`_gedi2_getDiffExp_cpp`, Rk_list, H_rotation, contrast, D, Bi_list, verbose)
 }
 
 compute_svd_factorized_cpp <- function(Z, D, Bi_list, verbose = 0L) {
-    .Call(`_gedi_compute_svd_factorized_cpp`, Z, D, Bi_list, verbose)
+    .Call(`_gedi2_compute_svd_factorized_cpp`, Z, D, Bi_list, verbose)
 }
 
 run_factorized_svd_cpp <- function(Z, projDB, verbose = 0L) {
-    .Call(`_gedi_run_factorized_svd_cpp`, Z, projDB, verbose)
+    .Call(`_gedi2_run_factorized_svd_cpp`, Z, projDB, verbose)
 }
 
 #' Compute Residual After Removing Sample Effects (Internal)
@@ -222,7 +222,7 @@ run_factorized_svd_cpp <- function(Z, projDB, verbose = 0L) {
 #' @keywords internal
 #' @noRd
 Yi_resZ <- function(Yi, QiDBi, si, o, oi) {
-    .Call(`_gedi_Yi_resZ`, Yi, QiDBi, si, o, oi)
+    .Call(`_gedi2_Yi_resZ`, Yi, QiDBi, si, o, oi)
 }
 
 #' Predict Yi from Model Parameters (Internal)
@@ -244,7 +244,7 @@ Yi_resZ <- function(Yi, QiDBi, si, o, oi) {
 #' @keywords internal
 #' @noRd
 predict_Yhat <- function(ZDBi, QiDBi, si, o, oi) {
-    .Call(`_gedi_predict_Yhat`, ZDBi, QiDBi, si, o, oi)
+    .Call(`_gedi2_predict_Yhat`, ZDBi, QiDBi, si, o, oi)
 }
 
 #' Variance of Yi for Single Count Matrix (Internal)
@@ -271,7 +271,7 @@ predict_Yhat <- function(ZDBi, QiDBi, si, o, oi) {
 #' @keywords internal
 #' @noRd
 Yi_var_M <- function(Yi, sigma2) {
-    .Call(`_gedi_Yi_var_M`, Yi, sigma2)
+    .Call(`_gedi2_Yi_var_M`, Yi, sigma2)
 }
 
 #' Variance of Yi for Paired Count Matrices (Internal)
@@ -302,7 +302,7 @@ Yi_var_M <- function(Yi, sigma2) {
 #' @keywords internal
 #' @noRd
 Yi_var_M_paired <- function(Yi, M1i, M2i, sigma2) {
-    .Call(`_gedi_Yi_var_M_paired`, Yi, M1i, M2i, sigma2)
+    .Call(`_gedi2_Yi_var_M_paired`, Yi, M1i, M2i, sigma2)
 }
 
 #' Compute Dispersion Statistics (Sparse-Optimized) (Internal)
@@ -329,7 +329,7 @@ Yi_var_M_paired <- function(Yi, M1i, M2i, sigma2) {
 #' @keywords internal
 #' @noRd
 compute_dispersion_sparse <- function(Yi_fitted, Mi, subsample) {
-    .Call(`_gedi_compute_dispersion_sparse`, Yi_fitted, Mi, subsample)
+    .Call(`_gedi2_compute_dispersion_sparse`, Yi_fitted, Mi, subsample)
 }
 
 #' Sum of Squared Errors for Paired Data (Internal)
@@ -352,7 +352,7 @@ compute_dispersion_sparse <- function(Yi_fitted, Mi, subsample) {
 #' @keywords internal
 #' @noRd
 Yi_SSE_M_paired <- function(Yi, M1i, M2i, ZDBi, QiDBi, si, o, oi, sigma2) {
-    .Call(`_gedi_Yi_SSE_M_paired`, Yi, M1i, M2i, ZDBi, QiDBi, si, o, oi, sigma2)
+    .Call(`_gedi2_Yi_SSE_M_paired`, Yi, M1i, M2i, ZDBi, QiDBi, si, o, oi, sigma2)
 }
 
 #' Compute Single Feature Projection (Internal)
@@ -370,7 +370,7 @@ Yi_SSE_M_paired <- function(Yi, M1i, M2i, ZDBi, QiDBi, si, o, oi, sigma2) {
 #' @keywords internal
 #' @noRd
 compute_feature_projection <- function(feature_weights, D, Bi_list, verbose = 0L) {
-    .Call(`_gedi_compute_feature_projection`, feature_weights, D, Bi_list, verbose)
+    .Call(`_gedi2_compute_feature_projection`, feature_weights, D, Bi_list, verbose)
 }
 
 #' Compute Multi-Feature Projection (Internal)
@@ -388,7 +388,7 @@ compute_feature_projection <- function(feature_weights, D, Bi_list, verbose = 0L
 #' @keywords internal
 #' @noRd
 compute_multi_feature_projection <- function(feature_weights, D, Bi_list, verbose = 0L) {
-    .Call(`_gedi_compute_multi_feature_projection`, feature_weights, D, Bi_list, verbose)
+    .Call(`_gedi2_compute_multi_feature_projection`, feature_weights, D, Bi_list, verbose)
 }
 
 #' Aggregate Vector Field into Bins (Internal)
@@ -411,7 +411,7 @@ compute_multi_feature_projection <- function(feature_weights, D, Bi_list, verbos
 #' @keywords internal
 #' @noRd
 aggregate_vectors <- function(Dim1, Dim2, To1, To2, color, alpha, n_bins, min_per_bin) {
-    .Call(`_gedi_aggregate_vectors`, Dim1, Dim2, To1, To2, color, alpha, n_bins, min_per_bin)
+    .Call(`_gedi2_aggregate_vectors`, Dim1, Dim2, To1, To2, color, alpha, n_bins, min_per_bin)
 }
 
 #' Compute ZDB Projection (Internal)
@@ -456,7 +456,7 @@ aggregate_vectors <- function(Dim1, Dim2, To1, To2, color, alpha, n_bins, min_pe
 #' @keywords internal
 #' @noRd
 compute_ZDB_cpp <- function(Z, D, Bi_list, verbose = 0L) {
-    .Call(`_gedi_compute_ZDB_cpp`, Z, D, Bi_list, verbose)
+    .Call(`_gedi2_compute_ZDB_cpp`, Z, D, Bi_list, verbose)
 }
 
 #' Compute DB Projection (Internal)
@@ -496,7 +496,7 @@ compute_ZDB_cpp <- function(Z, D, Bi_list, verbose = 0L) {
 #' @keywords internal
 #' @noRd
 compute_DB_cpp <- function(D, Bi_list, verbose = 0L) {
-    .Call(`_gedi_compute_DB_cpp`, D, Bi_list, verbose)
+    .Call(`_gedi2_compute_DB_cpp`, D, Bi_list, verbose)
 }
 
 #' Compute ADB Projection (Internal)
@@ -551,7 +551,7 @@ compute_DB_cpp <- function(D, Bi_list, verbose = 0L) {
 #' @keywords internal
 #' @noRd
 compute_ADB_cpp <- function(C_rotation, A, D, Bi_list, verbose = 0L) {
-    .Call(`_gedi_compute_ADB_cpp`, C_rotation, A, D, Bi_list, verbose)
+    .Call(`_gedi2_compute_ADB_cpp`, C_rotation, A, D, Bi_list, verbose)
 }
 
 #' Compute Cell-Specific Scaling Factors (Dense)
@@ -574,7 +574,7 @@ compute_ADB_cpp <- function(C_rotation, A, D, Bi_list, verbose = 0L) {
 #' @keywords internal
 #' @noRd
 compute_s_0_dense <- function(J_vec, Y, J) {
-    .Call(`_gedi_compute_s_0_dense`, J_vec, Y, J)
+    .Call(`_gedi2_compute_s_0_dense`, J_vec, Y, J)
 }
 
 #' Compute Library-Size Normalized Expression (Sparse)
@@ -595,7 +595,7 @@ compute_s_0_dense <- function(J_vec, Y, J) {
 #' @keywords internal
 #' @noRd
 compute_Yp <- function(Y, J_vec, s_0) {
-    .Call(`_gedi_compute_Yp`, Y, J_vec, s_0)
+    .Call(`_gedi2_compute_Yp`, Y, J_vec, s_0)
 }
 
 #' Compute Gene-Specific Offsets (Dense)
@@ -617,7 +617,7 @@ compute_Yp <- function(Y, J_vec, s_0) {
 #' @keywords internal
 #' @noRd
 compute_o_0_dense <- function(Yp, N_vec, N) {
-    .Call(`_gedi_compute_o_0_dense`, Yp, N_vec, N)
+    .Call(`_gedi2_compute_o_0_dense`, Yp, N_vec, N)
 }
 
 #' Compute Library-Size Normalized Expression (Dense)
@@ -638,7 +638,7 @@ compute_o_0_dense <- function(Yp, N_vec, N) {
 #' @keywords internal
 #' @noRd
 compute_Yp_dense <- function(Y, J_vec, s_0) {
-    .Call(`_gedi_compute_Yp_dense`, Y, J_vec, s_0)
+    .Call(`_gedi2_compute_Yp_dense`, Y, J_vec, s_0)
 }
 
 #' Vector Outer Product
@@ -658,7 +658,7 @@ compute_Yp_dense <- function(Y, J_vec, s_0) {
 #' @keywords internal
 #' @noRd
 VecVecProduct <- function(a, b) {
-    .Call(`_gedi_VecVecProduct`, a, b)
+    .Call(`_gedi2_VecVecProduct`, a, b)
 }
 
 #' Dense Matrix-Vector Product
@@ -678,7 +678,7 @@ VecVecProduct <- function(a, b) {
 #' @keywords internal
 #' @noRd
 MatVecProduct <- function(A, b) {
-    .Call(`_gedi_MatVecProduct`, A, b)
+    .Call(`_gedi2_MatVecProduct`, A, b)
 }
 
 #' Sparse Matrix-Vector Product
@@ -698,7 +698,7 @@ MatVecProduct <- function(A, b) {
 #' @keywords internal
 #' @noRd
 eigenSparseMatVecProduct <- function(A, b) {
-    .Call(`_gedi_eigenSparseMatVecProduct`, A, b)
+    .Call(`_gedi2_eigenSparseMatVecProduct`, A, b)
 }
 
 #' Compute Library-Size Normalized Count Matrix (Sparse)
@@ -720,7 +720,7 @@ eigenSparseMatVecProduct <- function(A, b) {
 #' @keywords internal
 #' @noRd
 compute_Mp <- function(M, J_vec, s_0) {
-    .Call(`_gedi_compute_Mp`, M, J_vec, s_0)
+    .Call(`_gedi2_compute_Mp`, M, J_vec, s_0)
 }
 
 #' Compute Cell-Specific Scaling Factors from Counts (Sparse)
@@ -744,7 +744,7 @@ compute_Mp <- function(M, J_vec, s_0) {
 #' @keywords internal
 #' @noRd
 compute_s_0 <- function(J_vec, M, J) {
-    .Call(`_gedi_compute_s_0`, J_vec, M, J)
+    .Call(`_gedi2_compute_s_0`, J_vec, M, J)
 }
 
 #' Compute Gene-Specific Offsets from Normalized Counts (Sparse)
@@ -768,6 +768,6 @@ compute_s_0 <- function(J_vec, M, J) {
 #' @keywords internal
 #' @noRd
 compute_o_0 <- function(Mp, N_vec, N) {
-    .Call(`_gedi_compute_o_0`, Mp, N_vec, N)
+    .Call(`_gedi2_compute_o_0`, Mp, N_vec, N)
 }
 

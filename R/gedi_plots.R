@@ -377,7 +377,7 @@ plot_features <- function(model,
 #'
 #' @details
 #' For comparison = "difference":
-#' Computes `(Z[gene1,] - Z[gene2,]) * D * B`, equivalent to `ZDB[gene1,] - ZDB[gene2,]`.
+#' Computes \verb{(Z[gene1,] - Z[gene2,]) * D * B}, equivalent to \verb{ZDB[gene1,] - ZDB[gene2,]}.
 #' In log-space, this represents log(gene1/gene2) in the original count space.
 #' Positive values indicate gene1 > gene2, negative indicates gene2 > gene1.
 #'

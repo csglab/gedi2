@@ -51,7 +51,7 @@ the projected space. Mathematically grounded for GEDI's log-space representation
 }
 \details{
 For comparison = "difference":
-Computes \code{(Z[gene1,] - Z[gene2,]) * D * B}, equivalent to \code{ZDB[gene1,] - ZDB[gene2,]}.
+Computes \verb{(Z[gene1,] - Z[gene2,]) * D * B}, equivalent to \verb{ZDB[gene1,] - ZDB[gene2,]}.
 In log-space, this represents log(gene1/gene2) in the original count space.
 Positive values indicate gene1 > gene2, negative indicates gene2 > gene1.
 }

@@ -39,7 +39,7 @@
     packageStartupMessage(
       "\nOptional dependencies not installed:\n",
       paste0("  - ", missing_pkgs, collapse = "\n"), "\n",
-      "\nInstall with: gedi::install_optional_dependencies()\n"
+      "\nInstall with: gedi2::install_optional_dependencies()\n"
     )
   }
 }
@@ -50,7 +50,7 @@
 # }
 
 .onUnload <- function(libpath) {
-  library.dynam.unload("gedi", libpath)
+  library.dynam.unload("gedi2", libpath)
 }
 
 
