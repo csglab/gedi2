@@ -13,7 +13,7 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 
 // GEDI_new
 SEXP GEDI_new(List params, List aux, List target, List hyperparams, int verbose, int num_threads);
-RcppExport SEXP _gedi_GEDI_new(SEXP paramsSEXP, SEXP auxSEXP, SEXP targetSEXP, SEXP hyperparamsSEXP, SEXP verboseSEXP, SEXP num_threadsSEXP) {
+RcppExport SEXP _gedi2_GEDI_new(SEXP paramsSEXP, SEXP auxSEXP, SEXP targetSEXP, SEXP hyperparamsSEXP, SEXP verboseSEXP, SEXP num_threadsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -29,7 +29,7 @@ END_RCPP
 }
 // GEDI_initialize
 List GEDI_initialize(SEXP model_ptr, bool multimodal);
-RcppExport SEXP _gedi_GEDI_initialize(SEXP model_ptrSEXP, SEXP multimodalSEXP) {
+RcppExport SEXP _gedi2_GEDI_initialize(SEXP model_ptrSEXP, SEXP multimodalSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -41,7 +41,7 @@ END_RCPP
 }
 // GEDI_optimize
 List GEDI_optimize(SEXP model_ptr, int iterations, int track_interval);
-RcppExport SEXP _gedi_GEDI_optimize(SEXP model_ptrSEXP, SEXP iterationsSEXP, SEXP track_intervalSEXP) {
+RcppExport SEXP _gedi2_GEDI_optimize(SEXP model_ptrSEXP, SEXP iterationsSEXP, SEXP track_intervalSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -54,7 +54,7 @@ END_RCPP
 }
 // GEDI_train
 List GEDI_train(SEXP model_ptr, int iterations, int track_interval, bool multimodal);
-RcppExport SEXP _gedi_GEDI_train(SEXP model_ptrSEXP, SEXP iterationsSEXP, SEXP track_intervalSEXP, SEXP multimodalSEXP) {
+RcppExport SEXP _gedi2_GEDI_train(SEXP model_ptrSEXP, SEXP iterationsSEXP, SEXP track_intervalSEXP, SEXP multimodalSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -68,7 +68,7 @@ END_RCPP
 }
 // getDiffO_cpp
 Eigen::VectorXd getDiffO_cpp(const Eigen::Map<Eigen::MatrixXd>& Ro, const Eigen::Map<Eigen::MatrixXd>& H_rotation, const Eigen::Map<Eigen::VectorXd>& contrast, int verbose);
-RcppExport SEXP _gedi_getDiffO_cpp(SEXP RoSEXP, SEXP H_rotationSEXP, SEXP contrastSEXP, SEXP verboseSEXP) {
+RcppExport SEXP _gedi2_getDiffO_cpp(SEXP RoSEXP, SEXP H_rotationSEXP, SEXP contrastSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -82,7 +82,7 @@ END_RCPP
 }
 // getDiffQ_cpp
 Eigen::MatrixXd getDiffQ_cpp(const Rcpp::List& Rk_list, const Eigen::Map<Eigen::MatrixXd>& H_rotation, const Eigen::Map<Eigen::VectorXd>& contrast, int verbose);
-RcppExport SEXP _gedi_getDiffQ_cpp(SEXP Rk_listSEXP, SEXP H_rotationSEXP, SEXP contrastSEXP, SEXP verboseSEXP) {
+RcppExport SEXP _gedi2_getDiffQ_cpp(SEXP Rk_listSEXP, SEXP H_rotationSEXP, SEXP contrastSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -96,7 +96,7 @@ END_RCPP
 }
 // getDiffExp_cpp
 Eigen::MatrixXd getDiffExp_cpp(const Rcpp::List& Rk_list, const Eigen::Map<Eigen::MatrixXd>& H_rotation, const Eigen::Map<Eigen::VectorXd>& contrast, const Eigen::Map<Eigen::VectorXd>& D, const Rcpp::List& Bi_list, int verbose);
-RcppExport SEXP _gedi_getDiffExp_cpp(SEXP Rk_listSEXP, SEXP H_rotationSEXP, SEXP contrastSEXP, SEXP DSEXP, SEXP Bi_listSEXP, SEXP verboseSEXP) {
+RcppExport SEXP _gedi2_getDiffExp_cpp(SEXP Rk_listSEXP, SEXP H_rotationSEXP, SEXP contrastSEXP, SEXP DSEXP, SEXP Bi_listSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -112,7 +112,7 @@ END_RCPP
 }
 // compute_svd_factorized_cpp
 Rcpp::List compute_svd_factorized_cpp(const Eigen::Map<Eigen::MatrixXd>& Z, const Eigen::Map<Eigen::VectorXd>& D, const Rcpp::List& Bi_list, int verbose);
-RcppExport SEXP _gedi_compute_svd_factorized_cpp(SEXP ZSEXP, SEXP DSEXP, SEXP Bi_listSEXP, SEXP verboseSEXP) {
+RcppExport SEXP _gedi2_compute_svd_factorized_cpp(SEXP ZSEXP, SEXP DSEXP, SEXP Bi_listSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -126,7 +126,7 @@ END_RCPP
 }
 // run_factorized_svd_cpp
 Rcpp::List run_factorized_svd_cpp(const Eigen::Map<Eigen::MatrixXd>& Z, const Eigen::Map<Eigen::MatrixXd>& projDB, int verbose);
-RcppExport SEXP _gedi_run_factorized_svd_cpp(SEXP ZSEXP, SEXP projDBSEXP, SEXP verboseSEXP) {
+RcppExport SEXP _gedi2_run_factorized_svd_cpp(SEXP ZSEXP, SEXP projDBSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -139,7 +139,7 @@ END_RCPP
 }
 // Yi_resZ
 SEXP Yi_resZ(Eigen::MatrixXd Yi, Eigen::MatrixXd QiDBi, Eigen::VectorXd si, Eigen::VectorXd o, Eigen::VectorXd oi);
-RcppExport SEXP _gedi_Yi_resZ(SEXP YiSEXP, SEXP QiDBiSEXP, SEXP siSEXP, SEXP oSEXP, SEXP oiSEXP) {
+RcppExport SEXP _gedi2_Yi_resZ(SEXP YiSEXP, SEXP QiDBiSEXP, SEXP siSEXP, SEXP oSEXP, SEXP oiSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -154,7 +154,7 @@ END_RCPP
 }
 // predict_Yhat
 SEXP predict_Yhat(Eigen::MatrixXd ZDBi, Eigen::MatrixXd QiDBi, Eigen::VectorXd si, Eigen::VectorXd o, Eigen::VectorXd oi);
-RcppExport SEXP _gedi_predict_Yhat(SEXP ZDBiSEXP, SEXP QiDBiSEXP, SEXP siSEXP, SEXP oSEXP, SEXP oiSEXP) {
+RcppExport SEXP _gedi2_predict_Yhat(SEXP ZDBiSEXP, SEXP QiDBiSEXP, SEXP siSEXP, SEXP oSEXP, SEXP oiSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -169,7 +169,7 @@ END_RCPP
 }
 // Yi_var_M
 SEXP Yi_var_M(Eigen::MatrixXd Yi, double sigma2);
-RcppExport SEXP _gedi_Yi_var_M(SEXP YiSEXP, SEXP sigma2SEXP) {
+RcppExport SEXP _gedi2_Yi_var_M(SEXP YiSEXP, SEXP sigma2SEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -181,7 +181,7 @@ END_RCPP
 }
 // Yi_var_M_paired
 SEXP Yi_var_M_paired(Eigen::MatrixXd Yi, Eigen::SparseMatrix<double> M1i, Eigen::SparseMatrix<double> M2i, double sigma2);
-RcppExport SEXP _gedi_Yi_var_M_paired(SEXP YiSEXP, SEXP M1iSEXP, SEXP M2iSEXP, SEXP sigma2SEXP) {
+RcppExport SEXP _gedi2_Yi_var_M_paired(SEXP YiSEXP, SEXP M1iSEXP, SEXP M2iSEXP, SEXP sigma2SEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -195,7 +195,7 @@ END_RCPP
 }
 // compute_dispersion_sparse
 List compute_dispersion_sparse(Eigen::MatrixXd Yi_fitted, Eigen::SparseMatrix<double> Mi, int subsample);
-RcppExport SEXP _gedi_compute_dispersion_sparse(SEXP Yi_fittedSEXP, SEXP MiSEXP, SEXP subsampleSEXP) {
+RcppExport SEXP _gedi2_compute_dispersion_sparse(SEXP Yi_fittedSEXP, SEXP MiSEXP, SEXP subsampleSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -208,7 +208,7 @@ END_RCPP
 }
 // Yi_SSE_M_paired
 double Yi_SSE_M_paired(Eigen::MatrixXd Yi, Eigen::SparseMatrix<double> M1i, Eigen::SparseMatrix<double> M2i, Eigen::MatrixXd ZDBi, Eigen::MatrixXd QiDBi, Eigen::VectorXd si, Eigen::VectorXd o, Eigen::VectorXd oi, double sigma2);
-RcppExport SEXP _gedi_Yi_SSE_M_paired(SEXP YiSEXP, SEXP M1iSEXP, SEXP M2iSEXP, SEXP ZDBiSEXP, SEXP QiDBiSEXP, SEXP siSEXP, SEXP oSEXP, SEXP oiSEXP, SEXP sigma2SEXP) {
+RcppExport SEXP _gedi2_Yi_SSE_M_paired(SEXP YiSEXP, SEXP M1iSEXP, SEXP M2iSEXP, SEXP ZDBiSEXP, SEXP QiDBiSEXP, SEXP siSEXP, SEXP oSEXP, SEXP oiSEXP, SEXP sigma2SEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -227,7 +227,7 @@ END_RCPP
 }
 // compute_feature_projection
 Eigen::VectorXd compute_feature_projection(const Eigen::Map<Eigen::VectorXd>& feature_weights, const Eigen::Map<Eigen::VectorXd>& D, const Rcpp::List& Bi_list, int verbose);
-RcppExport SEXP _gedi_compute_feature_projection(SEXP feature_weightsSEXP, SEXP DSEXP, SEXP Bi_listSEXP, SEXP verboseSEXP) {
+RcppExport SEXP _gedi2_compute_feature_projection(SEXP feature_weightsSEXP, SEXP DSEXP, SEXP Bi_listSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -241,7 +241,7 @@ END_RCPP
 }
 // compute_multi_feature_projection
 Eigen::MatrixXd compute_multi_feature_projection(const Eigen::Map<Eigen::MatrixXd>& feature_weights, const Eigen::Map<Eigen::VectorXd>& D, const Rcpp::List& Bi_list, int verbose);
-RcppExport SEXP _gedi_compute_multi_feature_projection(SEXP feature_weightsSEXP, SEXP DSEXP, SEXP Bi_listSEXP, SEXP verboseSEXP) {
+RcppExport SEXP _gedi2_compute_multi_feature_projection(SEXP feature_weightsSEXP, SEXP DSEXP, SEXP Bi_listSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -255,7 +255,7 @@ END_RCPP
 }
 // aggregate_vectors
 DataFrame aggregate_vectors(const Eigen::Map<Eigen::VectorXd>& Dim1, const Eigen::Map<Eigen::VectorXd>& Dim2, const Eigen::Map<Eigen::VectorXd>& To1, const Eigen::Map<Eigen::VectorXd>& To2, const Eigen::Map<Eigen::VectorXd>& color, const Eigen::Map<Eigen::VectorXd>& alpha, int n_bins, int min_per_bin);
-RcppExport SEXP _gedi_aggregate_vectors(SEXP Dim1SEXP, SEXP Dim2SEXP, SEXP To1SEXP, SEXP To2SEXP, SEXP colorSEXP, SEXP alphaSEXP, SEXP n_binsSEXP, SEXP min_per_binSEXP) {
+RcppExport SEXP _gedi2_aggregate_vectors(SEXP Dim1SEXP, SEXP Dim2SEXP, SEXP To1SEXP, SEXP To2SEXP, SEXP colorSEXP, SEXP alphaSEXP, SEXP n_binsSEXP, SEXP min_per_binSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -273,7 +273,7 @@ END_RCPP
 }
 // compute_ZDB_cpp
 Eigen::MatrixXd compute_ZDB_cpp(const Eigen::Map<Eigen::MatrixXd>& Z, const Eigen::Map<Eigen::VectorXd>& D, const Rcpp::List& Bi_list, int verbose);
-RcppExport SEXP _gedi_compute_ZDB_cpp(SEXP ZSEXP, SEXP DSEXP, SEXP Bi_listSEXP, SEXP verboseSEXP) {
+RcppExport SEXP _gedi2_compute_ZDB_cpp(SEXP ZSEXP, SEXP DSEXP, SEXP Bi_listSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -287,7 +287,7 @@ END_RCPP
 }
 // compute_DB_cpp
 Eigen::MatrixXd compute_DB_cpp(const Eigen::Map<Eigen::VectorXd>& D, const Rcpp::List& Bi_list, int verbose);
-RcppExport SEXP _gedi_compute_DB_cpp(SEXP DSEXP, SEXP Bi_listSEXP, SEXP verboseSEXP) {
+RcppExport SEXP _gedi2_compute_DB_cpp(SEXP DSEXP, SEXP Bi_listSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -300,7 +300,7 @@ END_RCPP
 }
 // compute_ADB_cpp
 Eigen::MatrixXd compute_ADB_cpp(const Eigen::Map<Eigen::MatrixXd>& C_rotation, const Eigen::Map<Eigen::MatrixXd>& A, const Eigen::Map<Eigen::VectorXd>& D, const Rcpp::List& Bi_list, int verbose);
-RcppExport SEXP _gedi_compute_ADB_cpp(SEXP C_rotationSEXP, SEXP ASEXP, SEXP DSEXP, SEXP Bi_listSEXP, SEXP verboseSEXP) {
+RcppExport SEXP _gedi2_compute_ADB_cpp(SEXP C_rotationSEXP, SEXP ASEXP, SEXP DSEXP, SEXP Bi_listSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -315,7 +315,7 @@ END_RCPP
 }
 // compute_s_0_dense
 Eigen::VectorXd compute_s_0_dense(const Eigen::Map<Eigen::VectorXd>& J_vec, const Eigen::Map<Eigen::MatrixXd>& Y, double J);
-RcppExport SEXP _gedi_compute_s_0_dense(SEXP J_vecSEXP, SEXP YSEXP, SEXP JSEXP) {
+RcppExport SEXP _gedi2_compute_s_0_dense(SEXP J_vecSEXP, SEXP YSEXP, SEXP JSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -328,7 +328,7 @@ END_RCPP
 }
 // compute_Yp
 Eigen::SparseMatrix<double> compute_Yp(const Eigen::MappedSparseMatrix<double>& Y, const Eigen::Map<Eigen::VectorXd>& J_vec, const Eigen::Map<Eigen::VectorXd>& s_0);
-RcppExport SEXP _gedi_compute_Yp(SEXP YSEXP, SEXP J_vecSEXP, SEXP s_0SEXP) {
+RcppExport SEXP _gedi2_compute_Yp(SEXP YSEXP, SEXP J_vecSEXP, SEXP s_0SEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -341,7 +341,7 @@ END_RCPP
 }
 // compute_o_0_dense
 Eigen::VectorXd compute_o_0_dense(const Eigen::Map<Eigen::MatrixXd>& Yp, const Eigen::Map<Eigen::VectorXd>& N_vec, double N);
-RcppExport SEXP _gedi_compute_o_0_dense(SEXP YpSEXP, SEXP N_vecSEXP, SEXP NSEXP) {
+RcppExport SEXP _gedi2_compute_o_0_dense(SEXP YpSEXP, SEXP N_vecSEXP, SEXP NSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -354,7 +354,7 @@ END_RCPP
 }
 // compute_Yp_dense
 Eigen::MatrixXd compute_Yp_dense(const Eigen::Map<Eigen::MatrixXd>& Y, const Eigen::Map<Eigen::VectorXd>& J_vec, const Eigen::Map<Eigen::VectorXd>& s_0);
-RcppExport SEXP _gedi_compute_Yp_dense(SEXP YSEXP, SEXP J_vecSEXP, SEXP s_0SEXP) {
+RcppExport SEXP _gedi2_compute_Yp_dense(SEXP YSEXP, SEXP J_vecSEXP, SEXP s_0SEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -367,7 +367,7 @@ END_RCPP
 }
 // VecVecProduct
 Eigen::MatrixXd VecVecProduct(const Eigen::Map<Eigen::VectorXd>& a, const Eigen::Map<Eigen::VectorXd>& b);
-RcppExport SEXP _gedi_VecVecProduct(SEXP aSEXP, SEXP bSEXP) {
+RcppExport SEXP _gedi2_VecVecProduct(SEXP aSEXP, SEXP bSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -379,7 +379,7 @@ END_RCPP
 }
 // MatVecProduct
 Eigen::VectorXd MatVecProduct(const Eigen::Map<Eigen::MatrixXd>& A, const Eigen::Map<Eigen::VectorXd>& b);
-RcppExport SEXP _gedi_MatVecProduct(SEXP ASEXP, SEXP bSEXP) {
+RcppExport SEXP _gedi2_MatVecProduct(SEXP ASEXP, SEXP bSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -391,7 +391,7 @@ END_RCPP
 }
 // eigenSparseMatVecProduct
 Eigen::VectorXd eigenSparseMatVecProduct(const Eigen::MappedSparseMatrix<double>& A, const Eigen::Map<Eigen::VectorXd>& b);
-RcppExport SEXP _gedi_eigenSparseMatVecProduct(SEXP ASEXP, SEXP bSEXP) {
+RcppExport SEXP _gedi2_eigenSparseMatVecProduct(SEXP ASEXP, SEXP bSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -403,7 +403,7 @@ END_RCPP
 }
 // compute_Mp
 Eigen::SparseMatrix<double> compute_Mp(const Eigen::MappedSparseMatrix<double> M, const Eigen::Map<Eigen::VectorXd> J_vec, const Eigen::Map<Eigen::VectorXd> s_0);
-RcppExport SEXP _gedi_compute_Mp(SEXP MSEXP, SEXP J_vecSEXP, SEXP s_0SEXP) {
+RcppExport SEXP _gedi2_compute_Mp(SEXP MSEXP, SEXP J_vecSEXP, SEXP s_0SEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -416,7 +416,7 @@ END_RCPP
 }
 // compute_s_0
 Eigen::VectorXd compute_s_0(const Eigen::Map<Eigen::VectorXd> J_vec, const Eigen::MappedSparseMatrix<double> M, double J);
-RcppExport SEXP _gedi_compute_s_0(SEXP J_vecSEXP, SEXP MSEXP, SEXP JSEXP) {
+RcppExport SEXP _gedi2_compute_s_0(SEXP J_vecSEXP, SEXP MSEXP, SEXP JSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -429,7 +429,7 @@ END_RCPP
 }
 // compute_o_0
 Eigen::VectorXd compute_o_0(const Eigen::MappedSparseMatrix<double> Mp, const Eigen::Map<Eigen::VectorXd> N_vec, double N);
-RcppExport SEXP _gedi_compute_o_0(SEXP MpSEXP, SEXP N_vecSEXP, SEXP NSEXP) {
+RcppExport SEXP _gedi2_compute_o_0(SEXP MpSEXP, SEXP N_vecSEXP, SEXP NSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -442,41 +442,41 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_gedi_GEDI_new", (DL_FUNC) &_gedi_GEDI_new, 6},
-    {"_gedi_GEDI_initialize", (DL_FUNC) &_gedi_GEDI_initialize, 2},
-    {"_gedi_GEDI_optimize", (DL_FUNC) &_gedi_GEDI_optimize, 3},
-    {"_gedi_GEDI_train", (DL_FUNC) &_gedi_GEDI_train, 4},
-    {"_gedi_getDiffO_cpp", (DL_FUNC) &_gedi_getDiffO_cpp, 4},
-    {"_gedi_getDiffQ_cpp", (DL_FUNC) &_gedi_getDiffQ_cpp, 4},
-    {"_gedi_getDiffExp_cpp", (DL_FUNC) &_gedi_getDiffExp_cpp, 6},
-    {"_gedi_compute_svd_factorized_cpp", (DL_FUNC) &_gedi_compute_svd_factorized_cpp, 4},
-    {"_gedi_run_factorized_svd_cpp", (DL_FUNC) &_gedi_run_factorized_svd_cpp, 3},
-    {"_gedi_Yi_resZ", (DL_FUNC) &_gedi_Yi_resZ, 5},
-    {"_gedi_predict_Yhat", (DL_FUNC) &_gedi_predict_Yhat, 5},
-    {"_gedi_Yi_var_M", (DL_FUNC) &_gedi_Yi_var_M, 2},
-    {"_gedi_Yi_var_M_paired", (DL_FUNC) &_gedi_Yi_var_M_paired, 4},
-    {"_gedi_compute_dispersion_sparse", (DL_FUNC) &_gedi_compute_dispersion_sparse, 3},
-    {"_gedi_Yi_SSE_M_paired", (DL_FUNC) &_gedi_Yi_SSE_M_paired, 9},
-    {"_gedi_compute_feature_projection", (DL_FUNC) &_gedi_compute_feature_projection, 4},
-    {"_gedi_compute_multi_feature_projection", (DL_FUNC) &_gedi_compute_multi_feature_projection, 4},
-    {"_gedi_aggregate_vectors", (DL_FUNC) &_gedi_aggregate_vectors, 8},
-    {"_gedi_compute_ZDB_cpp", (DL_FUNC) &_gedi_compute_ZDB_cpp, 4},
-    {"_gedi_compute_DB_cpp", (DL_FUNC) &_gedi_compute_DB_cpp, 3},
-    {"_gedi_compute_ADB_cpp", (DL_FUNC) &_gedi_compute_ADB_cpp, 5},
-    {"_gedi_compute_s_0_dense", (DL_FUNC) &_gedi_compute_s_0_dense, 3},
-    {"_gedi_compute_Yp", (DL_FUNC) &_gedi_compute_Yp, 3},
-    {"_gedi_compute_o_0_dense", (DL_FUNC) &_gedi_compute_o_0_dense, 3},
-    {"_gedi_compute_Yp_dense", (DL_FUNC) &_gedi_compute_Yp_dense, 3},
-    {"_gedi_VecVecProduct", (DL_FUNC) &_gedi_VecVecProduct, 2},
-    {"_gedi_MatVecProduct", (DL_FUNC) &_gedi_MatVecProduct, 2},
-    {"_gedi_eigenSparseMatVecProduct", (DL_FUNC) &_gedi_eigenSparseMatVecProduct, 2},
-    {"_gedi_compute_Mp", (DL_FUNC) &_gedi_compute_Mp, 3},
-    {"_gedi_compute_s_0", (DL_FUNC) &_gedi_compute_s_0, 3},
-    {"_gedi_compute_o_0", (DL_FUNC) &_gedi_compute_o_0, 3},
+    {"_gedi2_GEDI_new", (DL_FUNC) &_gedi2_GEDI_new, 6},
+    {"_gedi2_GEDI_initialize", (DL_FUNC) &_gedi2_GEDI_initialize, 2},
+    {"_gedi2_GEDI_optimize", (DL_FUNC) &_gedi2_GEDI_optimize, 3},
+    {"_gedi2_GEDI_train", (DL_FUNC) &_gedi2_GEDI_train, 4},
+    {"_gedi2_getDiffO_cpp", (DL_FUNC) &_gedi2_getDiffO_cpp, 4},
+    {"_gedi2_getDiffQ_cpp", (DL_FUNC) &_gedi2_getDiffQ_cpp, 4},
+    {"_gedi2_getDiffExp_cpp", (DL_FUNC) &_gedi2_getDiffExp_cpp, 6},
+    {"_gedi2_compute_svd_factorized_cpp", (DL_FUNC) &_gedi2_compute_svd_factorized_cpp, 4},
+    {"_gedi2_run_factorized_svd_cpp", (DL_FUNC) &_gedi2_run_factorized_svd_cpp, 3},
+    {"_gedi2_Yi_resZ", (DL_FUNC) &_gedi2_Yi_resZ, 5},
+    {"_gedi2_predict_Yhat", (DL_FUNC) &_gedi2_predict_Yhat, 5},
+    {"_gedi2_Yi_var_M", (DL_FUNC) &_gedi2_Yi_var_M, 2},
+    {"_gedi2_Yi_var_M_paired", (DL_FUNC) &_gedi2_Yi_var_M_paired, 4},
+    {"_gedi2_compute_dispersion_sparse", (DL_FUNC) &_gedi2_compute_dispersion_sparse, 3},
+    {"_gedi2_Yi_SSE_M_paired", (DL_FUNC) &_gedi2_Yi_SSE_M_paired, 9},
+    {"_gedi2_compute_feature_projection", (DL_FUNC) &_gedi2_compute_feature_projection, 4},
+    {"_gedi2_compute_multi_feature_projection", (DL_FUNC) &_gedi2_compute_multi_feature_projection, 4},
+    {"_gedi2_aggregate_vectors", (DL_FUNC) &_gedi2_aggregate_vectors, 8},
+    {"_gedi2_compute_ZDB_cpp", (DL_FUNC) &_gedi2_compute_ZDB_cpp, 4},
+    {"_gedi2_compute_DB_cpp", (DL_FUNC) &_gedi2_compute_DB_cpp, 3},
+    {"_gedi2_compute_ADB_cpp", (DL_FUNC) &_gedi2_compute_ADB_cpp, 5},
+    {"_gedi2_compute_s_0_dense", (DL_FUNC) &_gedi2_compute_s_0_dense, 3},
+    {"_gedi2_compute_Yp", (DL_FUNC) &_gedi2_compute_Yp, 3},
+    {"_gedi2_compute_o_0_dense", (DL_FUNC) &_gedi2_compute_o_0_dense, 3},
+    {"_gedi2_compute_Yp_dense", (DL_FUNC) &_gedi2_compute_Yp_dense, 3},
+    {"_gedi2_VecVecProduct", (DL_FUNC) &_gedi2_VecVecProduct, 2},
+    {"_gedi2_MatVecProduct", (DL_FUNC) &_gedi2_MatVecProduct, 2},
+    {"_gedi2_eigenSparseMatVecProduct", (DL_FUNC) &_gedi2_eigenSparseMatVecProduct, 2},
+    {"_gedi2_compute_Mp", (DL_FUNC) &_gedi2_compute_Mp, 3},
+    {"_gedi2_compute_s_0", (DL_FUNC) &_gedi2_compute_s_0, 3},
+    {"_gedi2_compute_o_0", (DL_FUNC) &_gedi2_compute_o_0, 3},
     {NULL, NULL, 0}
 };
 
-RcppExport void R_init_gedi(DllInfo *dll) {
+RcppExport void R_init_gedi2(DllInfo *dll) {
     R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
     R_useDynamicSymbols(dll, FALSE);
 }

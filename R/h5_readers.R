@@ -69,7 +69,7 @@ read_h5ad <- function(file_path,
   if (!requireNamespace("hdf5r", quietly = TRUE)) {
     stop("[read_h5ad] ERROR: Package 'hdf5r' is required but not installed.\n",
          "  Install with: install.packages('hdf5r')\n",
-         "  Or use: gedi::install_h5_dependencies()")
+         "  Or use: gedi2::install_h5_dependencies()")
   }
 
   if (!requireNamespace("Matrix", quietly = TRUE)) {

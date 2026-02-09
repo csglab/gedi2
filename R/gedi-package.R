@@ -16,7 +16,7 @@
 #' * **Multiple data modalities**: Count matrices (M), paired data (CITE-seq),
 #'   binary indicators (X), or pre-processed expression (Y)
 #' * **Latent variable model**: Dimensionality reduction with batch effect correction
-#' * **High performance**: OpenMP parallelization with C++14 optimization
+#' * **High performance**: OpenMP parallelization with optimized C++ backend
 #' * **Sparse matrix support**: Efficiently handles sparse single-cell data
 #'
 #' ## Main Function:
@@ -41,7 +41,7 @@
 #' @section Computational Requirements:
 #' \itemize{
 #'   \item \strong{R}: >= 4.0.0
-#'   \item \strong{C++ Compiler}: C++14 support required
+#'   \item \strong{C++ Compiler}: C++14 or later (default in R >= 4.0)
 #'   \item \strong{Eigen}: >= 3.3.0 (linear algebra library)
 #'   \item \strong{OpenMP}: Optional, for parallelization
 #' }
@@ -80,7 +80,7 @@
 #' print(model)
 #' }
 #'
-#' @useDynLib gedi, .registration = TRUE
+#' @useDynLib gedi2, .registration = TRUE
 #' @importFrom Rcpp sourceCpp
 #' @import R6
 #' @import Matrix
