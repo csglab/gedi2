@@ -12,3 +12,5 @@
 ^\.claude$
 ^Logo\.svg$
 ^check_output\.txt$
+^check_run\.log$
+^nohup\.out$
