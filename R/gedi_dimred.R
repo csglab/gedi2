@@ -63,7 +63,7 @@ EmbeddingsAccessor <- R6Class(
 #' Compute Factorized SVD with Caching
 #'
 #' @description
-#' Computes factorized SVD preserving GEDI structure: SVD(Z) × SVD(middle) × SVD(DB).
+#' Computes factorized SVD preserving GEDI structure: SVD(Z) x SVD(middle) x SVD(DB).
 #' This approach maintains biological interpretability by respecting the decomposition
 #' structure. Results are cached automatically for subsequent access.
 #'
@@ -74,8 +74,8 @@ EmbeddingsAccessor <- R6Class(
 #' @return List with three components:
 #'   \itemize{
 #'     \item d: Singular values (length K vector)
-#'     \item u: Left singular vectors (J × K matrix) with gene names
-#'     \item v: Right singular vectors (N × K matrix) with cell names
+#'     \item u: Left singular vectors (J x K matrix) with gene names
+#'     \item v: Right singular vectors (N x K matrix) with cell names
 #'   }
 #'
 #' @keywords internal
@@ -129,14 +129,14 @@ compute_svd_factorized <- function(self, private, force_recompute = FALSE) {
 #' Compute PCA Coordinates with Caching
 #'
 #' @description
-#' Computes PCA coordinates as V × diag(d) from the factorized SVD.
+#' Computes PCA coordinates as V x diag(d) from the factorized SVD.
 #' Uses cached SVD result if available.
 #'
 #' @param self Reference to GEDI R6 object
 #' @param private Reference to private environment
 #' @param force_recompute Logical, if TRUE bypasses cache and recomputes
 #'
-#' @return Matrix (N × K) with PCA coordinates, rows = cells, columns = PCs
+#' @return Matrix (N x K) with PCA coordinates, rows = cells, columns = PCs
 #'
 #' @keywords internal
 #' @noRd
@@ -158,7 +158,7 @@ compute_pca <- function(self, private, force_recompute = FALSE) {
   # Get SVD (uses cache if available)
   svd_result <- compute_svd_factorized(self, private)
 
-  # PCA = V × diag(d)
+  # PCA = V x diag(d)
   pca_coords <- svd_result$v %*% diag(svd_result$d, nrow = length(svd_result$d))
 
   # Set dimension names
@@ -188,7 +188,7 @@ compute_pca <- function(self, private, force_recompute = FALSE) {
 #' @param private Reference to private environment
 #' @param force_recompute Logical, if TRUE bypasses cache and recomputes
 #'
-#' @return Matrix (N × 2) with UMAP coordinates, rows = cells
+#' @return Matrix (N x 2) with UMAP coordinates, rows = cells
 #'
 #' @keywords internal
 #' @noRd
@@ -236,7 +236,7 @@ compute_umap_cached <- function(self, private, force_recompute = FALSE) {
 #' @param n_threads Integer, number of threads (default: 0 = auto)
 #' @param ... Additional arguments passed to uwot::umap()
 #'
-#' @return Matrix (N × n_components) with UMAP coordinates, rows = cells
+#' @return Matrix (N x n_components) with UMAP coordinates, rows = cells
 #'
 #' @keywords internal
 #' @noRd

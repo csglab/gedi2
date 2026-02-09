@@ -49,9 +49,9 @@ Seurat object with:
 \item imputed assay: GEDI imputed expression (if use_imputed = TRUE)
 \item ZDB/DB/ADB assays: GEDI projections (if add_projections = TRUE)
 \itemize{
-\item ZDB: Batch-corrected gene expression (genes × cells)
-\item DB: Cell embeddings in latent factor space (K × cells)
-\item ADB: Pathway activities (pathways × cells) - only if C matrix provided
+\item ZDB: Batch-corrected gene expression (genes x cells)
+\item DB: Cell embeddings in latent factor space (K x cells)
+\item ADB: Pathway activities (pathways x cells) - only if C matrix provided
 }
 \item umap/pca reductions: Embeddings (if add_embeddings = TRUE and cached)
 \item meta.data: Sample labels and colData from GEDI model

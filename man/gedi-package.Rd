@@ -97,7 +97,6 @@ Useful links:
 
 \itemize{
 \item \code{\link{CreateGEDIObject}}: Create a GEDI model
-\item \code{\link{GEDI}}: R6 class documentation
 }
 }
 \author{

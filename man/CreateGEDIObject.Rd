@@ -42,9 +42,9 @@ C++ will compute Yi = log(M+1) internally - no Yi copy stored in R!}
 
 \item{colData}{Optional data.frame with cell metadata}
 
-\item{C}{Gene-level prior matrix (genes × pathways)}
+\item{C}{Gene-level prior matrix (genes x pathways)}
 
-\item{H}{Sample-level covariate matrix (covariates × samples)}
+\item{H}{Sample-level covariate matrix (covariates x samples)}
 
 \item{K}{Number of latent factors (default: 10)}
 

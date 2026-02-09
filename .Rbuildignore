@@ -9,3 +9,5 @@
 ^Benchmark$
 ^gedi\.Rcheck$
 ^cran-comments\.md$
+^\.claude$
+^Logo\.svg$

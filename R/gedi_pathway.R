@@ -13,7 +13,7 @@
 #' @param self Reference to GEDI R6 object
 #' @param private Reference to private environment
 #'
-#' @return Dense matrix (num_pathways × K) where rows correspond to original
+#' @return Dense matrix (num_pathways x K) where rows correspond to original
 #'   pathways and columns to latent factors. Positive values indicate pathways
 #'   that are enriched in a factor, negative values indicate depletion.
 #'
@@ -59,9 +59,9 @@ compute_dense_A <- function(self, private) {
   }
   
   # Compute A in original pathway space: C.rotation %*% A
-  # C.rotation is num_pathways × P
-  # A is P × K
-  # Result is num_pathways × K
+  # C.rotation is num_pathways x P
+  # A is P x K
+  # Result is num_pathways x K
   A_full <- private$.aux_static$C.rotation %*% self$params$A
   
   # Add row and column names
@@ -87,11 +87,11 @@ compute_dense_A <- function(self, private) {
 #'
 #' @param self Reference to GEDI R6 object
 #' @param private Reference to private environment
-#' @param C Optional gene × pathway matrix. If NULL (default), uses the original
+#' @param C Optional gene x pathway matrix. If NULL (default), uses the original
 #'   C matrix provided during model setup. Can provide a different pathway
 #'   database for post-hoc interpretation.
 #'
-#' @return Sparse matrix (num_pathways × K) with many zero entries. Non-zero
+#' @return Sparse matrix (num_pathways x K) with many zero entries. Non-zero
 #'   values indicate pathways that are strongly associated with each factor.
 #'
 #' @details
@@ -288,6 +288,7 @@ create_pathway_associations_accessor <- function(self, private) {
 #' @param ... Additional arguments (ignored)
 #'
 #' @return Invisibly returns \code{x}.
+#' @method print gedi_pathway_associations
 #' @keywords internal
 #' @export
 print.gedi_pathway_associations <- function(x, ...) {

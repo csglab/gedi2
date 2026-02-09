@@ -26,7 +26,7 @@ plot_embedding(
 \arguments{
 \item{model}{GEDI model object (or embedding matrix for backwards compatibility)}
 
-\item{embedding}{Character ("umap", "pca") or N×2 matrix}
+\item{embedding}{Character ("umap", "pca") or Nx2 matrix}
 
 \item{color_by}{Character: "sample", metadata column, gene name, or NULL}
 

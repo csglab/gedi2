@@ -215,7 +215,7 @@ validate_M_single <- function(M, fp, label) {
 #' @param private Reference to private environment
 #' @param sample_idx Integer, which sample to compute (1 to numSamples)
 #'
-#' @return Dense matrix (J × Ni) - fitted Yi for sample i
+#' @return Dense matrix (J x Ni) - fitted Yi for sample i
 #'
 #' @keywords internal
 #' @noRd
@@ -263,12 +263,12 @@ compute_Y_fitted <- function(self, private, sample_idx) {
 #' Removes sample-specific effects from Yi_fitted to get shared biological signal.
 #' This is the "imputed" expression that can be compared across samples.
 #'
-#' @param Yi_fitted Dense matrix (J × Ni) - fitted Yi for sample i
+#' @param Yi_fitted Dense matrix (J x Ni) - fitted Yi for sample i
 #' @param params List with model parameters
 #' @param sample_idx Integer, which sample this is
 #' @param rowCentre Logical, if TRUE removes global gene offset o
 #'
-#' @return Dense matrix (J × Ni) - imputed Y with sample effects removed
+#' @return Dense matrix (J x Ni) - imputed Y with sample effects removed
 #'
 #' @keywords internal
 #' @noRd
@@ -319,7 +319,7 @@ compute_Y_imputed <- function(Yi_fitted, params, sample_idx, rowCentre) {
 #' @param private Reference to private environment
 #' @param M Count matrix (must match original), or list for M_paired
 #'
-#' @return Dense matrix (J × N) - variance of imputed Y
+#' @return Dense matrix (J x N) - variance of imputed Y
 #'
 #' @keywords internal
 #' @noRd

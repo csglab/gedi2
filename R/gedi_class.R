@@ -358,7 +358,7 @@ GEDI <- R6Class(
       # ===================================================================
       
       aux <- list(
-        # DBi optimization: Store smaller K × Ni instead of J × Ni matrices
+        # DBi optimization: Store smaller K x Ni instead of J x Ni matrices
         DBi = lapply(Ni, function(n) matrix(0, nrow = K, ncol = n)),
         Qi_hat = if (L > 0) lapply(1:num_samples, function(i) matrix(0, nrow = J, ncol = K)) else list(),
         oi_hat = if (L > 0) lapply(1:num_samples, function(i) rep(0, J)) else list(),
@@ -793,7 +793,7 @@ GEDI <- R6Class(
       
       if (!is.null(private$.lastResult)) {
         aux <- private$.lastResult$aux
-        cat(sprintf("Dimensions: %d genes × %d cells\n", aux$J, aux$N))
+        cat(sprintf("Dimensions: %d genes x %d cells\n", aux$J, aux$N))
         cat(sprintf("Samples: %d (%s)\n", 
                     aux$numSamples, 
                     paste(head(private$.sampleNames, 3), collapse = ", ")))
@@ -998,8 +998,8 @@ GEDI <- R6Class(
 #' @param Y Log-transformed expression matrix (optional if M provided)
 #' @param X Binary indicator matrix (optional if M or Y provided)
 #' @param colData Optional data.frame with cell metadata
-#' @param C Gene-level prior matrix (genes × pathways)
-#' @param H Sample-level covariate matrix (covariates × samples)
+#' @param C Gene-level prior matrix (genes x pathways)
+#' @param H Sample-level covariate matrix (covariates x samples)
 #' @param K Number of latent factors (default: 10)
 #' @param mode Normalization mode: "Bl2" or "Bsphere" (default: "Bl2")
 #' @param adjustD Whether to adjust D based on B row norms (default: TRUE)

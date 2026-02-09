@@ -20,8 +20,8 @@
 #' @param subset_samples Character vector, subset to specific samples (default: NULL = all)
 #' @param K Integer, number of latent factors (default: 10)
 #' @param mode Character, normalization mode: "Bl2" or "Bsphere" (default: "Bl2")
-#' @param C Gene-level prior matrix (genes × pathways) (default: NULL)
-#' @param H Sample-level covariate matrix (covariates × samples) (default: NULL)
+#' @param C Gene-level prior matrix (genes x pathways) (default: NULL)
+#' @param H Sample-level covariate matrix (covariates x samples) (default: NULL)
 #' @param validate_counts Logical, whether to validate data appears to be counts
 #'   (default: TRUE)
 #' @param use_variable_features Logical, whether to subset to highly variable features
@@ -293,9 +293,9 @@ seurat_to_gedi <- function(seurat_object,
 #'     \item imputed assay: GEDI imputed expression (if use_imputed = TRUE)
 #'     \item ZDB/DB/ADB assays: GEDI projections (if add_projections = TRUE)
 #'       \itemize{
-#'         \item ZDB: Batch-corrected gene expression (genes × cells)
-#'         \item DB: Cell embeddings in latent factor space (K × cells)
-#'         \item ADB: Pathway activities (pathways × cells) - only if C matrix provided
+#'         \item ZDB: Batch-corrected gene expression (genes x cells)
+#'         \item DB: Cell embeddings in latent factor space (K x cells)
+#'         \item ADB: Pathway activities (pathways x cells) - only if C matrix provided
 #'       }
 #'     \item umap/pca reductions: Embeddings (if add_embeddings = TRUE and cached)
 #'     \item meta.data: Sample labels and colData from GEDI model
@@ -363,7 +363,7 @@ gedi_to_seurat <- function(model,
     # Ensure M has correct dimensions and ordering
     if (!identical(dim(M), c(length(gene_ids), length(cell_ids)))) {
       stop("M dimensions don't match model (expected ", length(gene_ids),
-           " × ", length(cell_ids), ")", call. = FALSE)
+           " x ", length(cell_ids), ")", call. = FALSE)
     }
   }
 
@@ -422,7 +422,7 @@ gedi_to_seurat <- function(model,
   if (add_projections) {
     if (verbose) message("  Adding projection assays...")
 
-    # ZDB projection (J genes × N cells)
+    # ZDB projection (J genes x N cells)
     ZDB <- model$projections$ZDB
     rownames(ZDB) <- gene_ids
     colnames(ZDB) <- cell_ids
@@ -434,7 +434,7 @@ gedi_to_seurat <- function(model,
     )
     seurat_obj[["ZDB"]] <- zdb_assay
 
-    # DB projection (K factors × N cells)
+    # DB projection (K factors x N cells)
     DB <- model$projections$DB
     K <- nrow(DB)
     rownames(DB) <- paste0("LV", 1:K)
@@ -446,7 +446,7 @@ gedi_to_seurat <- function(model,
     )
     seurat_obj[["DB"]] <- db_assay
 
-    # ADB projection (P pathways × N cells) - only if model has C matrix
+    # ADB projection (P pathways x N cells) - only if model has C matrix
     if (model$aux$P > 0) {
       ADB <- model$projections$ADB
       P <- nrow(ADB)

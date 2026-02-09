@@ -38,9 +38,9 @@ this will automatically detect and combine all matching layers.}
 
 \item{mode}{Character, normalization mode: "Bl2" or "Bsphere" (default: "Bl2")}
 
-\item{C}{Gene-level prior matrix (genes × pathways) (default: NULL)}
+\item{C}{Gene-level prior matrix (genes x pathways) (default: NULL)}
 
-\item{H}{Sample-level covariate matrix (covariates × samples) (default: NULL)}
+\item{H}{Sample-level covariate matrix (covariates x samples) (default: NULL)}
 
 \item{validate_counts}{Logical, whether to validate data appears to be counts
 (default: TRUE)}

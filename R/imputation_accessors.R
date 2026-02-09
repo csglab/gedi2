@@ -49,7 +49,7 @@ create_imputation_accessor <- function(self, private) {
 #' @param logScale Logical, if TRUE returns log-scale values (default)
 #' @param rowCentre Logical, if TRUE removes global gene offset o (default)
 #'
-#' @return Dense matrix (J × N) with imputed expression values
+#' @return Dense matrix (J x N) with imputed expression values
 #'
 #' @keywords internal
 #' @noRd
@@ -178,7 +178,7 @@ get_imputed_Y <- function(self, private, M = NULL, logScale = TRUE, rowCentre = 
 #' @param private Reference to private environment
 #' @param M Count matrix (required - must match original)
 #'
-#' @return Dense matrix (J × N) with variance values, or NULL if not applicable
+#' @return Dense matrix (J x N) with variance values, or NULL if not applicable
 #'
 #' @keywords internal
 #' @noRd
@@ -261,6 +261,7 @@ get_dispersion <- function(self, private, M, subsample = 1e6) {
 #' @param ... Additional arguments (ignored)
 #'
 #' @return Invisibly returns \code{x}.
+#' @method print gedi_imputation
 #' @keywords internal
 #' @export
 print.gedi_imputation <- function(x, ...) {

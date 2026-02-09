@@ -4,7 +4,7 @@
 \alias{print.gedi_dynamics_svd}
 \title{Print Method for Dynamics SVD Results}
 \usage{
-print.gedi_dynamics_svd(x, ...)
+\method{print}{gedi_dynamics_svd}(x, ...)
 }
 \arguments{
 \item{x}{Object of class gedi_dynamics_svd}
