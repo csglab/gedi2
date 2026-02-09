@@ -2,7 +2,7 @@
 
 # Suppress R CMD check NOTEs for ggplot2 NSE variables
 utils::globalVariables(c(
-  "Dim1", "Dim2", "Color", "Value", "Feature",
+  "Dim1", "Dim2", "Color", "Value", "Feature", "Alpha",
   "To1", "To2", "VF_Color",
   "Expected_Var", "Observed_Var", "Sample",
   "Iteration", "RMSD", "Parameter", "Factor", "Group", "sigma2"
