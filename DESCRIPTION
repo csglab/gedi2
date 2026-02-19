@@ -13,7 +13,8 @@ Description: A memory-efficient implementation for integrating gene expression d
     package supports multiple data modalities including count matrices, paired
     data (splicing, RNA velocity, CITE-seq), and binary indicators. It implements
     a latent variable model with block coordinate descent optimization for
-    dimensionality reduction and batch effect correction.
+    dimensionality reduction and batch effect correction. Core algorithms are described in Madrigal et al. (2024)
+<doi:10.1038/s41467-024-50963-0>.
 License: MIT + file LICENSE
 URL: https://github.com/csglab/gedi2
 BugReports: https://github.com/csglab/gedi2/issues
