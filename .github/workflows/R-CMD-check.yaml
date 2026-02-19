@@ -61,7 +61,7 @@ jobs:
         with:
           upload-snapshots: true
           error-on: '"error"'
-          args: 'c("--no-manual", "--as-cran")'
+          args: 'c("--no-manual", "--as-cran", "--run-dontrun")'
 
       - name: Show testthat output
         if: always()
