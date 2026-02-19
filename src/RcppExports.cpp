@@ -27,6 +27,17 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// GEDI_set_verbose
+void GEDI_set_verbose(SEXP model_ptr, int verbose);
+RcppExport SEXP _gedi2_GEDI_set_verbose(SEXP model_ptrSEXP, SEXP verboseSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type model_ptr(model_ptrSEXP);
+    Rcpp::traits::input_parameter< int >::type verbose(verboseSEXP);
+    GEDI_set_verbose(model_ptr, verbose);
+    return R_NilValue;
+END_RCPP
+}
 // GEDI_initialize
 List GEDI_initialize(SEXP model_ptr, bool multimodal);
 RcppExport SEXP _gedi2_GEDI_initialize(SEXP model_ptrSEXP, SEXP multimodalSEXP) {
@@ -443,6 +454,7 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_gedi2_GEDI_new", (DL_FUNC) &_gedi2_GEDI_new, 6},
+    {"_gedi2_GEDI_set_verbose", (DL_FUNC) &_gedi2_GEDI_set_verbose, 2},
     {"_gedi2_GEDI_initialize", (DL_FUNC) &_gedi2_GEDI_initialize, 2},
     {"_gedi2_GEDI_optimize", (DL_FUNC) &_gedi2_GEDI_optimize, 3},
     {"_gedi2_GEDI_train", (DL_FUNC) &_gedi2_GEDI_train, 4},

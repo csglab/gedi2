@@ -55,7 +55,7 @@ Visualizes vector fields showing cell state transitions. Uses binned
 aggregation for cleaner visualization without overplotting.
 }
 \examples{
-\dontrun{
+\donttest{
 # Compute vector field
 vf <- model$dynamics$vector_field(
   start.cond = c(0, 0),

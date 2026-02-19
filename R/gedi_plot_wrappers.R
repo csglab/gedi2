@@ -139,7 +139,7 @@
 #' @return ggplot2 object
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Simple usage with smart caching
 #' plot_embedding(model, embedding = "umap", color_by = "sample")
 #' plot_embedding(model, embedding = "pca", color_by = "CD3D")

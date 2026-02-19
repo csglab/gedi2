@@ -61,7 +61,7 @@ Automatically validates that the data contains raw counts (not normalized).
 Handles both Seurat v4 and v5, including split layers in v5.
 }
 \examples{
-\dontrun{
+\donttest{
 library(Seurat)
 
 # Basic usage

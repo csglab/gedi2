@@ -29,13 +29,6 @@ utils::globalVariables(c(
 #'
 #' @return ggplot2 object
 #'
-#' @examples
-#' \dontrun{
-#' umap_coords <- model$embeddings$umap()
-#' feature_values <- model$projections$ZDB[1, ]  # First gene
-#' .plot_embedding_base(umap_coords, color = feature_values)
-#' }
-#'
 #' @keywords internal
 .plot_embedding_base <- function(embedding,
                           color = NULL,
@@ -169,7 +162,7 @@ utils::globalVariables(c(
 #' @return ggplot2 object with faceted features
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' plot_features(model, c("CD3D", "CD79A", "LYZ"), embedding = "umap")
 #' plot_features(model, c(1, 2, 3), color_limits = "individual")
 #' }
@@ -382,7 +375,7 @@ plot_features <- function(model,
 #' Positive values indicate gene1 > gene2, negative indicates gene2 > gene1.
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Compare CD3D vs CD79A expression
 #' plot_feature_ratio(model, "CD3D", "CD79A", comparison = "difference")
 #' }
@@ -517,7 +510,7 @@ plot_feature_ratio <- function(model,
 #' @return ggplot2 object
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Compute vector field
 #' vf <- model$dynamics$vector_field(
 #'   start.cond = c(0, 0),
@@ -692,7 +685,7 @@ plot_vector_field <- function(dynamics_svd,
 #' @return ggplot2 object
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' disp <- model$imputed$dispersion(M)
 #' plot_dispersion(disp)
 #' }
@@ -760,7 +753,7 @@ plot_dispersion <- function(dispersion_df,
 #' @return ggplot2 object (for "faceted" or "compact") or list of ggplot2 objects (for "separate")
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Faceted view (default)
 #' plot_convergence(model)
 #' 
@@ -996,7 +989,8 @@ plot_convergence <- function(model,
     if (!is.null(plot_list$global)) {
       global_data <- plot_list$global$data
       global_data$Type <- "Global"
-      combined_df <- rbind(combined_df, global_data)
+      global_data$Group <- global_data$Parameter
+      combined_df <- rbind(combined_df, global_data[, c("Iteration", "RMSD", "Parameter", "Type", "Group")])
     }
     
     # Add sample-specific params
@@ -1006,7 +1000,7 @@ plot_convergence <- function(model,
         param_data$Parameter <- param
         param_data$Type <- param
         names(param_data)[names(param_data) == "Sample"] <- "Group"
-        combined_df <- rbind(combined_df, param_data)
+        combined_df <- rbind(combined_df, param_data[, c("Iteration", "RMSD", "Parameter", "Type", "Group")])
       }
     }
     
@@ -1016,7 +1010,7 @@ plot_convergence <- function(model,
       Rk_data$Parameter <- "Rk"
       Rk_data$Type <- "Rk"
       names(Rk_data)[names(Rk_data) == "Factor"] <- "Group"
-      combined_df <- rbind(combined_df, Rk_data)
+      combined_df <- rbind(combined_df, Rk_data[, c("Iteration", "RMSD", "Parameter", "Type", "Group")])
     }
     
     # Add sigma2

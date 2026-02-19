@@ -466,6 +466,10 @@ public:
     }
   }
   
+  void set_verbose(int level) {
+    verbose = level;
+  }
+  
   List initialize(bool multimodal = false) {
     
     if (verbose >= 1 && !multimodal) {
@@ -1658,6 +1662,22 @@ SEXP GEDI_new(List params, List aux, List target, List hyperparams,
   GEDI* model = new GEDI(params, aux, target, hyperparams, verbose, num_threads);
   XPtr<GEDI> ptr(model, true);
   return ptr;
+}
+
+//' Set Verbose Level on Existing GEDI Object (Internal)
+//'
+//' Updates the verbosity level of an already-created GEDI C++ object.
+//' This allows R to suppress C++ output when using an R-side progress bar.
+//'
+//' @param model_ptr External pointer to C++ GEDI object (from GEDI_new)
+//' @param verbose Integer verbosity level: 0 (silent), 1 (info), 2+ (debug)
+//'
+//' @keywords internal
+//' @noRd
+// [[Rcpp::export]]
+void GEDI_set_verbose(SEXP model_ptr, int verbose) {
+  XPtr<GEDI> ptr(model_ptr);
+  ptr->set_verbose(verbose);
 }
 
 //' Initialize Latent Variables (Internal)

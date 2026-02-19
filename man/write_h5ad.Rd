@@ -68,7 +68,7 @@ The function handles the technical details of HDF5/AnnData compatibility:
 }
 }
 \examples{
-\dontrun{
+\donttest{
 # Train a GEDI model
 model <- CreateGEDIObject(Samples = samples, M = counts, K = 15)
 model$train(iterations = 50)

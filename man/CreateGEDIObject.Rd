@@ -76,7 +76,7 @@ This implementation uses Option 2 memory optimization: C++ computes Yi from M,
 eliminating duplicate Yi storage in R.
 }
 \examples{
-\dontrun{
+\donttest{
 # Basic usage - memory efficient!
 model <- CreateGEDIObject(
   Samples = sample_labels,

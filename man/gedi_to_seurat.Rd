@@ -62,7 +62,7 @@ Creates a Seurat object from a trained GEDI model, including imputed data,
 projections, and embeddings.
 }
 \examples{
-\dontrun{
+\donttest{
 # Train GEDI model
 gedi_model <- seurat_to_gedi(pbmc, K = 15)
 gedi_model$train(iterations = 50)

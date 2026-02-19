@@ -13,9 +13,6 @@ Named logical vector indicating which optional packages are installed
 Check which optional dependencies are installed and display their status.
 }
 \examples{
-\dontrun{
-# Check dependency status
 check_optional_dependencies()
-}
 
 }

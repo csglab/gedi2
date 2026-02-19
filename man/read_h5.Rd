@@ -29,7 +29,7 @@ Reads a 10X Genomics HDF5 file (CellRanger v2/v3 format) and converts
 it to a sparse dgCMatrix suitable for use with gedi R6 object.
 }
 \examples{
-\dontrun{
+\donttest{
 # Read 10X Genomics H5 file with gene names (default)
 expr_matrix <- read_h5("filtered_feature_bc_matrix.h5")
 

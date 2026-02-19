@@ -43,7 +43,7 @@
 #' }
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Train a GEDI model
 #' model <- CreateGEDIObject(Samples = samples, M = counts, K = 15)
 #' model$train(iterations = 50)

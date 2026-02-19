@@ -58,7 +58,7 @@
 #' }
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Load example data
 #' data("pbmc_small", package = "Seurat")
 #'

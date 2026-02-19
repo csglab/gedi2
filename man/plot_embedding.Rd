@@ -64,7 +64,7 @@ Simplified interface for plotting embeddings with automatic caching.
 Model is the first argument, and color_by handles metadata/genes automatically.
 }
 \examples{
-\dontrun{
+\donttest{
 # Simple usage with smart caching
 plot_embedding(model, embedding = "umap", color_by = "sample")
 plot_embedding(model, embedding = "pca", color_by = "CD3D")

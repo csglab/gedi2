@@ -32,7 +32,7 @@
 #' @return GEDI R6 object
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' library(Seurat)
 #'
 #' # Basic usage
@@ -302,7 +302,7 @@ seurat_to_gedi <- function(seurat_object,
 #'   }
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Train GEDI model
 #' gedi_model <- seurat_to_gedi(pbmc, K = 15)
 #' gedi_model$train(iterations = 50)

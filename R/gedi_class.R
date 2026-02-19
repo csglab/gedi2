@@ -586,6 +586,11 @@ GEDI <- R6Class(
         stop("Model not initialized. Call $initialize_lvs() first.", call. = FALSE)
       }
 
+      if (private$.verbose == 1) {
+        GEDI_set_verbose(private$.cppPtr, 0L)
+        on.exit(GEDI_set_verbose(private$.cppPtr, 1L), add = TRUE)
+      }
+
       private$.logger$info(sprintf("Running optimization (%d iterations)...", iterations))
 
       private$.lastResult <- GEDI_optimize(
@@ -609,45 +614,20 @@ GEDI <- R6Class(
         stop("Model not setup. Call CreateGEDIObject() first.", call. = FALSE)
       }
 
-      # Add progress bar for verbose=1 only
       if (private$.verbose == 1) {
-        message(sprintf("GEDI Optimization (%d iterations)", iterations))
-
-        # Use txtProgressBar which writes to stderr (suppressible)
-        pb <- txtProgressBar(min = 0, max = iterations, style = 3,
-                             width = 50, file = stderr())
-        on.exit(close(pb), add = TRUE)
-
-        # Initialize with first iteration (includes initialization)
-        private$.lastResult <- GEDI_train(
-          model_ptr = private$.cppPtr,
-          iterations = 1,
-          track_interval = track_interval,
-          multimodal = multimodal
-        )
-        setTxtProgressBar(pb, 1)
-
-        # Run remaining iterations
-        if (iterations > 1) {
-          # MEMORY FIX: Call GEDI_optimize once for all remaining iterations
-          # This avoids copying GBs of data from C++ to R on every iteration
-          private$.lastResult <- GEDI_optimize(
-            model_ptr = private$.cppPtr,
-            iterations = iterations - 1,
-            track_interval = track_interval
-          )
-          setTxtProgressBar(pb, iterations)
-        }
-
-      } else {
-        # For verbose=0 or verbose=2, run normally without R progress bar
-        private$.lastResult <- GEDI_train(
-          model_ptr = private$.cppPtr,
-          iterations = iterations,
-          track_interval = track_interval,
-          multimodal = multimodal
-        )
+        # Suppress C++ per-iteration output; show a single R-side message instead
+        GEDI_set_verbose(private$.cppPtr, 0L)
+        on.exit(GEDI_set_verbose(private$.cppPtr, 1L), add = TRUE)
+        message(sprintf("Training GEDI model (%d iterations)...", iterations))
       }
+
+      # Single call — no split, no double data transfer
+      private$.lastResult <- GEDI_train(
+        model_ptr = private$.cppPtr,
+        iterations = iterations,
+        track_interval = track_interval,
+        multimodal = multimodal
+      )
 
       private$.isInitialized <- TRUE
 
@@ -1016,7 +996,7 @@ GEDI <- R6Class(
 #' @return GEDI R6 object with memory-efficient architecture
 #' 
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Basic usage - memory efficient!
 #' model <- CreateGEDIObject(
 #'   Samples = sample_labels,

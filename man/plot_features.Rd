@@ -48,7 +48,7 @@ Efficiently plots multiple gene features on a 2D embedding using faceting.
 Computes projections on-the-fly without storing full ZDB matrix.
 }
 \examples{
-\dontrun{
+\donttest{
 plot_features(model, c("CD3D", "CD79A", "LYZ"), embedding = "umap")
 plot_features(model, c(1, 2, 3), color_limits = "individual")
 }
