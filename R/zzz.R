@@ -39,7 +39,8 @@
     packageStartupMessage(
       "\nOptional dependencies not installed:\n",
       paste0("  - ", missing_pkgs, collapse = "\n"), "\n",
-      "\nInstall with: gedi2::install_optional_dependencies()\n"
+      "\nInstall them manually if needed, e.g.:\n",
+      "  install.packages(c('hdf5r', 'uwot', 'digest'))\n"
     )
   }
 }
@@ -54,43 +55,32 @@
 }
 
 
-#' Install Optional GEDI Dependencies
+#' List Optional GEDI Dependencies
 #'
-#' Convenience function to install optional dependencies for extended GEDI functionality.
-#' This includes packages for H5 file reading, UMAP embeddings, and strict validation.
+#' Reports which optional packages are needed and provides install commands.
+#' Does **not** install anything automatically.
 #'
-#' @param which Character vector specifying which dependencies to install.
+#' @param which Character vector specifying which dependency groups to query.
 #'   Options: "h5" (hdf5r), "umap" (uwot), "validation" (digest), or "all" (default).
-#' @param repos Character vector. The CRAN repository to use for installation.
-#'   Default is the user's configured repository.
-#' @param verbose Logical, whether to print progress messages (default: TRUE)
+#' @param verbose Logical, whether to print messages (default: TRUE)
 #'
-#' @return NULL (invisibly)
+#' @return A named logical vector indicating which packages are installed (invisibly).
 #'
 #' @examples
-#' \dontrun{
-#' # Install all optional dependencies
+#' # Show which optional packages are missing
 #' install_optional_dependencies()
 #'
-#' # Install only H5 support
-#' install_optional_dependencies(which = "h5")
-#'
-#' # Install UMAP and validation support
-#' install_optional_dependencies(which = c("umap", "validation"))
-#' }
-#'
 #' @export
-install_optional_dependencies <- function(which = "all", repos = getOption("repos"),
-                                          verbose = TRUE) {
-  
+install_optional_dependencies <- function(which = "all", verbose = TRUE) {
+
   # Define package groups
   pkg_groups <- list(
     h5 = c("hdf5r"),
     umap = c("uwot"),
     validation = c("digest")
   )
-  
-  # Determine which packages to install
+
+  # Determine which packages to check
   if ("all" %in% which) {
     packages <- unlist(pkg_groups, use.names = FALSE)
   } else {
@@ -102,35 +92,24 @@ install_optional_dependencies <- function(which = "all", repos = getOption("repo
     }
     packages <- unlist(pkg_groups[which], use.names = FALSE)
   }
-  
-  if (verbose) message("Checking optional GEDI dependencies...")
-  
-  # Check which packages are not installed
+
   installed <- vapply(packages, function(pkg) {
     requireNamespace(pkg, quietly = TRUE)
   }, logical(1))
   to_install <- packages[!installed]
-  
+
   if (length(to_install) > 0) {
-    if (verbose) message("Installing: ", paste(to_install, collapse = ", "))
-    utils::install.packages(to_install, repos = repos)
-    if (verbose) message("\n=== Installation complete! ===")
-    
-    # Verify installation
-    newly_installed <- vapply(to_install, function(pkg) {
-      requireNamespace(pkg, quietly = TRUE)
-    }, logical(1))
-    if (all(newly_installed)) {
-      if (verbose) message("All packages successfully installed.")
-    } else {
-      failed <- to_install[!newly_installed]
-      warning("Failed to install: ", paste(failed, collapse = ", "), call. = FALSE)
+    if (verbose) {
+      message("The following optional packages are not installed:")
+      message("  ", paste(to_install, collapse = ", "))
+      message("\nTo install them, run:")
+      message("  install.packages(c(", paste0("'", to_install, "'", collapse = ", "), "))")
     }
   } else {
-    if (verbose) message("All requested packages are already installed.")
+    if (verbose) message("All requested optional packages are already installed.")
   }
-  
-  invisible(NULL)
+
+  invisible(installed)
 }
 
 
@@ -141,10 +120,7 @@ install_optional_dependencies <- function(which = "all", repos = getOption("repo
 #' @return Named logical vector indicating which optional packages are installed
 #'
 #' @examples
-#' \dontrun{
-#' # Check dependency status
 #' check_optional_dependencies()
-#' }
 #'
 #' @export
 check_optional_dependencies <- function() {

@@ -68,22 +68,33 @@ The function handles the technical details of HDF5/AnnData compatibility:
 }
 }
 \examples{
-\dontrun{
+\donttest{
+# Load example data
+pbmc_small <- SeuratObject::pbmc_small
+
 # Train a GEDI model
-model <- CreateGEDIObject(Samples = samples, M = counts, K = 15)
-model$train(iterations = 50)
+model <- CreateGEDIObject(
+  Samples = pbmc_small@meta.data$orig.ident,
+  M = pbmc_small@assays$RNA@counts,
+  K = 10,
+  verbose = 0
+)
+model$train(iterations = 10)
 
 # Save to H5AD with imputed expression
 write_h5ad(model, "results.h5ad")
 
 # Save with original counts in raw slot
-write_h5ad(model, "results.h5ad", M = counts, include_raw = TRUE)
+write_h5ad(model, "results.h5ad", M = pbmc_small@assays$RNA@counts, include_raw = TRUE)
 
 # Save original M matrix as main X slot
-write_h5ad(model, "results.h5ad", X_slot = "original", M = counts)
+write_h5ad(model, "results.h5ad", X_slot = "original", M = pbmc_small@assays$RNA@counts)
 
 # Save projection instead of imputed values
 write_h5ad(model, "results.h5ad", X_slot = "projection")
+
+# Cleanup
+file.remove("results.h5ad")
 
 # Read in Python:
 # import scanpy as sc

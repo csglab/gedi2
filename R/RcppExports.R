@@ -64,6 +64,20 @@ GEDI_new <- function(params, aux, target, hyperparams, verbose = 1L, num_threads
     .Call(`_gedi2_GEDI_new`, params, aux, target, hyperparams, verbose, num_threads)
 }
 
+#' Set Verbose Level on Existing GEDI Object (Internal)
+#'
+#' Updates the verbosity level of an already-created GEDI C++ object.
+#' This allows R to suppress C++ output when using an R-side progress bar.
+#'
+#' @param model_ptr External pointer to C++ GEDI object (from GEDI_new)
+#' @param verbose Integer verbosity level: 0 (silent), 1 (info), 2+ (debug)
+#'
+#' @keywords internal
+#' @noRd
+GEDI_set_verbose <- function(model_ptr, verbose) {
+    invisible(.Call(`_gedi2_GEDI_set_verbose`, model_ptr, verbose))
+}
+
 #' Initialize Latent Variables (Internal)
 #'
 #' Initializes latent variables Z, Qi, and Bi using randomized SVD on residual

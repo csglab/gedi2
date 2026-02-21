@@ -2,40 +2,25 @@
 % Please edit documentation in R/zzz.R
 \name{install_optional_dependencies}
 \alias{install_optional_dependencies}
-\title{Install Optional GEDI Dependencies}
+\title{List Optional GEDI Dependencies}
 \usage{
-install_optional_dependencies(
-  which = "all",
-  repos = getOption("repos"),
-  verbose = TRUE
-)
+install_optional_dependencies(which = "all", verbose = TRUE)
 }
 \arguments{
-\item{which}{Character vector specifying which dependencies to install.
+\item{which}{Character vector specifying which dependency groups to query.
 Options: "h5" (hdf5r), "umap" (uwot), "validation" (digest), or "all" (default).}
 
-\item{repos}{Character vector. The CRAN repository to use for installation.
-Default is the user's configured repository.}
-
-\item{verbose}{Logical, whether to print progress messages (default: TRUE)}
+\item{verbose}{Logical, whether to print messages (default: TRUE)}
 }
 \value{
-NULL (invisibly)
+A named logical vector indicating which packages are installed (invisibly).
 }
 \description{
-Convenience function to install optional dependencies for extended GEDI functionality.
-This includes packages for H5 file reading, UMAP embeddings, and strict validation.
+Reports which optional packages are needed and provides install commands.
+Does \strong{not} install anything automatically.
 }
 \examples{
-\dontrun{
-# Install all optional dependencies
+# Show which optional packages are missing
 install_optional_dependencies()
-
-# Install only H5 support
-install_optional_dependencies(which = "h5")
-
-# Install UMAP and validation support
-install_optional_dependencies(which = c("umap", "validation"))
-}
 
 }
