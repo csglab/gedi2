@@ -64,9 +64,9 @@ expr_matrix <- read_h5ad("data.h5ad")
 expr_matrix <- read_h5ad("data.h5ad", feature_format = "gene_ids")
 
 # Use with gedi R6 object
-library(gedi)
+library(gedi2)
 expr_matrix <- read_h5ad("data.h5ad")
-samples <- factor(rep(c("sample1", "sample2"), each = ncol(expr_matrix)/2))
+samples <- factor(rep(c("sample1", "sample2"), each = ncol(expr_matrix) / 2))
 gedi_obj <- gedi$new(n_sample = 2)
 gedi_obj$setup(Y = expr_matrix, sample_id = samples, K = 10)
 }

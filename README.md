@@ -1,5 +1,5 @@
 # GEDI-2
-<img src="/Logo.svg" align="right" height="240"/>
+<img src="man/figures/Logo.svg" align="right" height="240"/>
 
 [![R-CMD-check](https://github.com/csglab/gedi2/workflows/R-CMD-check/badge.svg)](https://github.com/csglab/gedi2/actions)
 [![test-coverage](https://github.com/csglab/gedi2/workflows/test-coverage/badge.svg)](https://github.com/csglab/gedi2/actions)

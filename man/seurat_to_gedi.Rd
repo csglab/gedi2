@@ -61,8 +61,11 @@ Automatically validates that the data contains raw counts (not normalized).
 Handles both Seurat v4 and v5, including split layers in v5.
 }
 \examples{
-\dontrun{
+\donttest{
 library(Seurat)
+
+# Load example data
+pbmc <- SeuratObject::pbmc_small
 
 # Basic usage
 gedi_model <- seurat_to_gedi(
@@ -72,25 +75,7 @@ gedi_model <- seurat_to_gedi(
 )
 
 # Train the model
-gedi_model$train(iterations = 50)
-
-# With gene-level priors
-gedi_model <- seurat_to_gedi(
-  seurat_object = pbmc,
-  sample_column = "sample_id",
-  K = 15,
-  C = pathway_matrix
-)
-
-# Seurat v5 with split layers (counts.CTRL, counts.STIM, etc.)
-# Automatically detects and combines split layers
-gedi_model <- seurat_to_gedi(
-  seurat_object = ifnb,  # Has counts.CTRL and counts.STIM
-  assay = "RNA",
-  slot = "counts",  # Will find and join counts.CTRL + counts.STIM
-  sample_column = "stim",
-  K = 15
-)
+gedi_model$train(iterations = 10)
 }
 
 }

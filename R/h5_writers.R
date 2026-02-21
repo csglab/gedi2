@@ -43,22 +43,33 @@
 #' }
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
+#' # Load example data
+#' pbmc_small <- SeuratObject::pbmc_small
+#'
 #' # Train a GEDI model
-#' model <- CreateGEDIObject(Samples = samples, M = counts, K = 15)
-#' model$train(iterations = 50)
+#' model <- CreateGEDIObject(
+#'   Samples = pbmc_small@meta.data$orig.ident,
+#'   M = pbmc_small@assays$RNA@counts,
+#'   K = 10,
+#'   verbose = 0
+#' )
+#' model$train(iterations = 10)
 #'
 #' # Save to H5AD with imputed expression
 #' write_h5ad(model, "results.h5ad")
 #'
 #' # Save with original counts in raw slot
-#' write_h5ad(model, "results.h5ad", M = counts, include_raw = TRUE)
+#' write_h5ad(model, "results.h5ad", M = pbmc_small@assays$RNA@counts, include_raw = TRUE)
 #'
 #' # Save original M matrix as main X slot
-#' write_h5ad(model, "results.h5ad", X_slot = "original", M = counts)
+#' write_h5ad(model, "results.h5ad", X_slot = "original", M = pbmc_small@assays$RNA@counts)
 #'
 #' # Save projection instead of imputed values
 #' write_h5ad(model, "results.h5ad", X_slot = "projection")
+#'
+#' # Cleanup
+#' file.remove("results.h5ad")
 #'
 #' # Read in Python:
 #' # import scanpy as sc
@@ -76,18 +87,21 @@ write_h5ad <- function(model,
                        include_raw = FALSE,
                        compression = 6,
                        verbose = TRUE) {
-
   if (verbose) message("[write_h5ad] Starting H5AD file writing process...")
 
   # Validate dependencies
   if (!requireNamespace("hdf5r", quietly = TRUE)) {
-    stop("[write_h5ad] ERROR: Package 'hdf5r' is required but not installed.\n",
-         "  Install with: install.packages('hdf5r')")
+    stop(
+      "[write_h5ad] ERROR: Package 'hdf5r' is required but not installed.\n",
+      "  Install with: install.packages('hdf5r')"
+    )
   }
 
   if (!requireNamespace("Matrix", quietly = TRUE)) {
-    stop("[write_h5ad] ERROR: Package 'Matrix' is required but not installed.\n",
-         "  Install with: install.packages('Matrix')")
+    stop(
+      "[write_h5ad] ERROR: Package 'Matrix' is required but not installed.\n",
+      "  Install with: install.packages('Matrix')"
+    )
   }
 
   # Validate model
@@ -130,20 +144,28 @@ write_h5ad <- function(model,
 
   # Create H5 file
   if (verbose) message("[write_h5ad] Creating H5AD file: ", file_path)
-  h5file <- tryCatch({
-    hdf5r::H5File$new(file_path, mode = "w")
-  }, error = function(e) {
-    stop("[write_h5ad] ERROR: Failed to create H5AD file.\n",
-         "  File: ", file_path, "\n",
-         "  Error: ", conditionMessage(e))
-  })
-
-  on.exit({
-    if (!is.null(h5file)) {
-      h5file$close_all()
-      if (verbose) message("[write_h5ad] H5 file closed successfully")
+  h5file <- tryCatch(
+    {
+      hdf5r::H5File$new(file_path, mode = "w")
+    },
+    error = function(e) {
+      stop(
+        "[write_h5ad] ERROR: Failed to create H5AD file.\n",
+        "  File: ", file_path, "\n",
+        "  Error: ", conditionMessage(e)
+      )
     }
-  }, add = TRUE)
+  )
+
+  on.exit(
+    {
+      if (!is.null(h5file)) {
+        h5file$close_all()
+        if (verbose) message("[write_h5ad] H5 file closed successfully")
+      }
+    },
+    add = TRUE
+  )
 
   # Get model components
   metadata <- model$metadata
@@ -185,8 +207,10 @@ write_h5ad <- function(model,
     X_description <- "GEDI projection (ZDB)"
   } else if (X_slot == "original") {
     if (is.null(M)) {
-      stop("[write_h5ad] ERROR: X_slot='original' requires M parameter.\n",
-           "  Usage: write_h5ad(model, file, X_slot='original', M=count_matrix)")
+      stop(
+        "[write_h5ad] ERROR: X_slot='original' requires M parameter.\n",
+        "  Usage: write_h5ad(model, file, X_slot='original', M=count_matrix)"
+      )
     }
 
     if (verbose) message("[write_h5ad]   Using original M matrix...")
@@ -203,8 +227,10 @@ write_h5ad <- function(model,
 
     # Validate dimensions
     if (nrow(X_matrix) != J || ncol(X_matrix) != N) {
-      stop("[write_h5ad] ERROR: M dimensions (", nrow(X_matrix), " x ", ncol(X_matrix),
-           ") don't match model dimensions (", J, " x ", N, ")")
+      stop(
+        "[write_h5ad] ERROR: M dimensions (", nrow(X_matrix), " x ", ncol(X_matrix),
+        ") don't match model dimensions (", J, " x ", N, ")"
+      )
     }
   }
 
@@ -259,7 +285,7 @@ write_h5ad <- function(model,
   # DB is K x N, need cells x K for AnnData
   # HDF5 stores in column-major (R), Python reads row-major (C)
   # Write transposed so Python reads correct dimensions
-  DB <- Matrix::t(model$projections$DB)  # K x N -> N x K
+  DB <- Matrix::t(model$projections$DB) # K x N -> N x K
   .write_h5ad_dense_matrix(obsm_group, "X_gedi", t(as.matrix(DB)), verbose)
 
   # Include PCA and UMAP if cached and requested
@@ -361,8 +387,10 @@ write_h5ad <- function(model,
 
   if (include_raw) {
     if (is.null(M)) {
-      warning("[write_h5ad] include_raw=TRUE requires M parameter. Skipping raw.X.\n",
-              "  Usage: write_h5ad(model, file, include_raw=TRUE, M=count_matrix)")
+      warning(
+        "[write_h5ad] include_raw=TRUE requires M parameter. Skipping raw.X.\n",
+        "  Usage: write_h5ad(model, file, include_raw=TRUE, M=count_matrix)"
+      )
     } else {
       if (verbose) message("[write_h5ad] Writing raw counts (raw.X)...")
 
@@ -411,7 +439,6 @@ write_h5ad <- function(model,
 #' @keywords internal
 #' @noRd
 .write_h5ad_sparse_matrix <- function(h5file, name, matrix, compression = 6, verbose = TRUE) {
-
   # Convert to dgCMatrix if not already
   if (!inherits(matrix, "dgCMatrix")) {
     matrix <- Matrix::Matrix(matrix, sparse = TRUE)
@@ -428,8 +455,8 @@ write_h5ad <- function(model,
   # Get CSR components
   # In R's dgRMatrix: x = data, j = column indices, p = row pointers
   data <- matrix_csr@x
-  indices <- matrix_csr@j  # 0-based in R sparse matrices
-  indptr <- matrix_csr@p   # 0-based
+  indices <- matrix_csr@j # 0-based in R sparse matrices
+  indptr <- matrix_csr@p # 0-based
 
   # Write components
   mat_group$create_dataset(
@@ -465,9 +492,11 @@ write_h5ad <- function(model,
 
   if (verbose) {
     sparsity <- 100 * (1 - length(data) / (nrow(matrix) * ncol(matrix)))
-    message("[write_h5ad]     Sparse matrix '", name, "': ",
-            nrow(matrix), " x ", ncol(matrix),
-            " (", round(sparsity, 1), "% sparse)")
+    message(
+      "[write_h5ad]     Sparse matrix '", name, "': ",
+      nrow(matrix), " x ", ncol(matrix),
+      " (", round(sparsity, 1), "% sparse)"
+    )
   }
 }
 
@@ -476,7 +505,6 @@ write_h5ad <- function(model,
 #' @keywords internal
 #' @noRd
 .write_h5ad_dense_matrix <- function(h5group, name, matrix, verbose = TRUE) {
-
   # Convert to regular matrix if sparse
   if (inherits(matrix, "sparseMatrix")) {
     matrix <- as.matrix(matrix)
@@ -497,8 +525,10 @@ write_h5ad <- function(model,
   # Note: encoding attributes removed for AnnData compatibility
 
   if (verbose) {
-    message("[write_h5ad]     Dense matrix '", name, "': ",
-            nrow(matrix), " x ", ncol(matrix))
+    message(
+      "[write_h5ad]     Dense matrix '", name, "': ",
+      nrow(matrix), " x ", ncol(matrix)
+    )
   }
 }
 
@@ -507,7 +537,6 @@ write_h5ad <- function(model,
 #' @keywords internal
 #' @noRd
 .write_h5ad_dataframe <- function(h5file, name, df, verbose = TRUE) {
-
   df_group <- h5file$create_group(name)
 
   # Write _index (row names)
@@ -524,7 +553,7 @@ write_h5ad <- function(model,
       col_group <- df_group$create_group(col_name)
 
       categories <- levels(col_data)
-      codes <- as.integer(col_data) - 1L  # 0-based indexing
+      codes <- as.integer(col_data) - 1L # 0-based indexing
 
       .write_h5ad_string_array(col_group, "categories", categories)
 
@@ -536,10 +565,8 @@ write_h5ad <- function(model,
 
       # Note: encoding attributes removed for AnnData compatibility
       hdf5r::h5attr(col_group, "ordered") <- FALSE
-
     } else if (is.character(col_data)) {
       .write_h5ad_string_array(df_group, col_name, col_data)
-
     } else if (is.numeric(col_data)) {
       df_group$create_dataset(
         col_name,
@@ -547,10 +574,11 @@ write_h5ad <- function(model,
         dtype = hdf5r::h5types$H5T_NATIVE_DOUBLE
       )
       # Note: encoding attributes removed for AnnData compatibility
-
     } else {
-      warning("[write_h5ad] Skipping column '", col_name,
-              "' with unsupported type: ", class(col_data)[1])
+      warning(
+        "[write_h5ad] Skipping column '", col_name,
+        "' with unsupported type: ", class(col_data)[1]
+      )
     }
   }
 
@@ -574,8 +602,10 @@ write_h5ad <- function(model,
   }
 
   if (verbose) {
-    message("[write_h5ad]   DataFrame '", name, "': ",
-            nrow(df), " rows, ", ncol(df), " columns")
+    message(
+      "[write_h5ad]   DataFrame '", name, "': ",
+      nrow(df), " rows, ", ncol(df), " columns"
+    )
   }
 }
 
@@ -584,7 +614,6 @@ write_h5ad <- function(model,
 #' @keywords internal
 #' @noRd
 .write_h5ad_string_array <- function(h5group, name, strings) {
-
   # Convert to character
   strings <- as.character(strings)
 
@@ -607,7 +636,6 @@ write_h5ad <- function(model,
 #' @keywords internal
 #' @noRd
 .write_h5ad_vector <- function(h5group, name, vec) {
-
   h5group$create_dataset(
     name,
     robj = as.numeric(vec),
@@ -626,7 +654,6 @@ write_h5ad <- function(model,
 #' @keywords internal
 #' @noRd
 .write_h5ad_scalar_string_attr <- function(h5obj, attr_name, attr_value) {
-
   # Create variable-length string datatype
   str_type <- hdf5r::H5T_STRING$new(size = Inf)
   str_type$set_cset(hdf5r::h5const$H5T_CSET_UTF8)

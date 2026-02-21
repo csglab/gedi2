@@ -66,7 +66,7 @@ vf <- model$dynamics$vector_field(
 plot_vector_field(vf)
 
 # Color by feature
-feature_vals <- model$projections$ZDB[1, ]  # First gene
+feature_vals <- model$projections$ZDB[1, ] # First gene
 plot_vector_field(vf, color = feature_vals)
 }
 

@@ -6,7 +6,7 @@
 \alias{gedi2-package}
 \title{gedi2: Gene Expression Decomposition and Integration}
 \description{
-A memory-efficient implementation for integrating gene expression data from single-cell RNA sequencing experiments. Uses a C++ backend with thin R wrappers to enable analysis of large-scale single-cell datasets. The package supports multiple data modalities including count matrices, paired data (splicing, RNA velocity, CITE-seq), and binary indicators. It implements a latent variable model with block coordinate descent optimization for dimensionality reduction and batch effect correction.
+A memory-efficient implementation for integrating gene expression data from single-cell RNA sequencing experiments. Uses a C++ backend with thin R wrappers to enable analysis of large-scale single-cell datasets. The package supports multiple data modalities including count matrices, paired data (splicing, RNA velocity, CITE-seq), and binary indicators. It implements a latent variable model with block coordinate descent optimization for dimensionality reduction and batch effect correction. Core algorithms are described in 'Madrigal et al.' (2024) \doi{10.1038/s41467-024-50963-0}.
 }
 \seealso{
 Useful links:

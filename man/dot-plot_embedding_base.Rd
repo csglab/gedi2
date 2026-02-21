@@ -52,12 +52,4 @@ ggplot2 object
 Base function for plotting 2D embeddings with customizable coloring.
 Supports both continuous and discrete color variables.
 }
-\examples{
-\dontrun{
-umap_coords <- model$embeddings$umap()
-feature_values <- model$projections$ZDB[1, ]  # First gene
-.plot_embedding_base(umap_coords, color = feature_values)
-}
-
-}
 \keyword{internal}

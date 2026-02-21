@@ -109,7 +109,7 @@ compute_dense_A <- function(self, private) {
 #' Requires the \code{glmnet} package to be installed.
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Use original pathways (sparse version)
 #' A_sparse <- model$pathway_associations$sparse()
 #' 
