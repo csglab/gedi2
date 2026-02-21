@@ -41,9 +41,9 @@
 #' expr_matrix <- read_h5ad("data.h5ad", feature_format = "gene_ids")
 #'
 #' # Use with gedi R6 object
-#' library(gedi)
+#' library(gedi2)
 #' expr_matrix <- read_h5ad("data.h5ad")
-#' samples <- factor(rep(c("sample1", "sample2"), each = ncol(expr_matrix)/2))
+#' samples <- factor(rep(c("sample1", "sample2"), each = ncol(expr_matrix) / 2))
 #' gedi_obj <- gedi$new(n_sample = 2)
 #' gedi_obj$setup(Y = expr_matrix, sample_id = samples, K = 10)
 #' }
@@ -57,7 +57,6 @@ read_h5ad <- function(file_path,
                       return_metadata = FALSE,
                       feature_format = "gene_name",
                       verbose = FALSE) {
-
   # Validate feature_format early
   if (!feature_format %in% c("gene_name", "gene_ids")) {
     stop("[read_h5ad] ERROR: feature_format must be either 'gene_name' or 'gene_ids'")
@@ -67,14 +66,18 @@ read_h5ad <- function(file_path,
 
   # Check dependencies
   if (!requireNamespace("hdf5r", quietly = TRUE)) {
-    stop("[read_h5ad] ERROR: Package 'hdf5r' is required but not installed.\n",
-         "  Install with: install.packages('hdf5r')\n",
-         "  Or use: gedi2::install_h5_dependencies()")
+    stop(
+      "[read_h5ad] ERROR: Package 'hdf5r' is required but not installed.\n",
+      "  Install with: install.packages('hdf5r')\n",
+      "  Or use: gedi2::install_h5_dependencies()"
+    )
   }
 
   if (!requireNamespace("Matrix", quietly = TRUE)) {
-    stop("[read_h5ad] ERROR: Package 'Matrix' is required but not installed.\n",
-         "  Install with: install.packages('Matrix')")
+    stop(
+      "[read_h5ad] ERROR: Package 'Matrix' is required but not installed.\n",
+      "  Install with: install.packages('Matrix')"
+    )
   }
 
   # Validate file path
@@ -87,21 +90,29 @@ read_h5ad <- function(file_path,
 
   # Open H5AD file with error handling
   if (verbose) message("[read_h5ad] Opening H5AD file...")
-  h5file <- tryCatch({
-    hdf5r::H5File$new(file_path, mode = "r")
-  }, error = function(e) {
-    stop("[read_h5ad] ERROR: Failed to open H5AD file.\n",
-         "  File: ", file_path, "\n",
-         "  Error: ", conditionMessage(e))
-  })
+  h5file <- tryCatch(
+    {
+      hdf5r::H5File$new(file_path, mode = "r")
+    },
+    error = function(e) {
+      stop(
+        "[read_h5ad] ERROR: Failed to open H5AD file.\n",
+        "  File: ", file_path, "\n",
+        "  Error: ", conditionMessage(e)
+      )
+    }
+  )
 
   # Ensure file is closed on exit
-  on.exit({
-    if (!is.null(h5file)) {
-      h5file$close()
-      if (verbose) message("[read_h5ad] H5 file closed successfully")
-    }
-  }, add = TRUE)
+  on.exit(
+    {
+      if (!is.null(h5file)) {
+        h5file$close()
+        if (verbose) message("[read_h5ad] H5 file closed successfully")
+      }
+    },
+    add = TRUE
+  )
 
   # Determine matrix path
   if (use_raw) {
@@ -120,32 +131,46 @@ read_h5ad <- function(file_path,
 
   # Check if matrix path exists
   if (!h5file$exists(matrix_path)) {
-    available_paths <- tryCatch({
-      h5file$ls(recursive = TRUE)$name
-    }, error = function(e) {
-      character(0)
-    })
-    stop("[read_h5ad] ERROR: Matrix path '", matrix_path, "' not found in H5AD file.\n",
-         "  Available paths (first 20): ", paste(head(available_paths, 20), collapse = ", "), "\n",
-         "  Use list_h5_structure('", file_path, "') to explore the file structure.")
+    available_paths <- tryCatch(
+      {
+        h5file$ls(recursive = TRUE)$name
+      },
+      error = function(e) {
+        character(0)
+      }
+    )
+    stop(
+      "[read_h5ad] ERROR: Matrix path '", matrix_path, "' not found in H5AD file.\n",
+      "  Available paths (first 20): ", paste(head(available_paths, 20), collapse = ", "), "\n",
+      "  Use list_h5_structure('", file_path, "') to explore the file structure."
+    )
   }
 
   # Read expression matrix
   if (verbose) message("[read_h5ad] Reading expression matrix from: ", matrix_path)
-  expr_matrix <- tryCatch({
-    .read_h5ad_matrix(h5file, matrix_path, verbose)
-  }, error = function(e) {
-    stop("[read_h5ad] ERROR: Failed to read expression matrix.\n",
-         "  Matrix path: ", matrix_path, "\n",
-         "  Error: ", conditionMessage(e))
-  })
+  expr_matrix <- tryCatch(
+    {
+      .read_h5ad_matrix(h5file, matrix_path, verbose)
+    },
+    error = function(e) {
+      stop(
+        "[read_h5ad] ERROR: Failed to read expression matrix.\n",
+        "  Matrix path: ", matrix_path, "\n",
+        "  Error: ", conditionMessage(e)
+      )
+    }
+  )
 
   if (verbose) {
-    message("[read_h5ad] Matrix dimensions (before transpose): ",
-            nrow(expr_matrix), " x ", ncol(expr_matrix))
+    message(
+      "[read_h5ad] Matrix dimensions (before transpose): ",
+      nrow(expr_matrix), " x ", ncol(expr_matrix)
+    )
     message("[read_h5ad] Matrix class: ", class(expr_matrix)[1])
-    message("[read_h5ad] Sparsity: ",
-            round(100 * (1 - Matrix::nnzero(expr_matrix) / (nrow(expr_matrix) * ncol(expr_matrix))), 2), "%")
+    message(
+      "[read_h5ad] Sparsity: ",
+      round(100 * (1 - Matrix::nnzero(expr_matrix) / (nrow(expr_matrix) * ncol(expr_matrix))), 2), "%"
+    )
   }
 
   # Transpose if needed (H5AD stores as cells x genes, gedi needs genes x cells)
@@ -163,12 +188,15 @@ read_h5ad <- function(file_path,
     obs <- NULL
     if (h5file$exists("obs")) {
       if (verbose) message("[read_h5ad]   Reading cell metadata (obs)...")
-      obs <- tryCatch({
-        .read_h5ad_dataframe(h5file, "obs", verbose)
-      }, error = function(e) {
-        warning("[read_h5ad] WARNING: Failed to read obs metadata: ", conditionMessage(e))
-        NULL
-      })
+      obs <- tryCatch(
+        {
+          .read_h5ad_dataframe(h5file, "obs", verbose)
+        },
+        error = function(e) {
+          warning("[read_h5ad] WARNING: Failed to read obs metadata: ", conditionMessage(e))
+          NULL
+        }
+      )
       if (!is.null(obs) && verbose) {
         message("[read_h5ad]   Cell metadata: ", nrow(obs), " cells, ", ncol(obs), " columns")
       }
@@ -178,12 +206,15 @@ read_h5ad <- function(file_path,
     var <- NULL
     if (h5file$exists(var_path)) {
       if (verbose) message("[read_h5ad]   Reading gene metadata (var)...")
-      var <- tryCatch({
-        .read_h5ad_dataframe(h5file, var_path, verbose)
-      }, error = function(e) {
-        warning("[read_h5ad] WARNING: Failed to read var metadata: ", conditionMessage(e))
-        NULL
-      })
+      var <- tryCatch(
+        {
+          .read_h5ad_dataframe(h5file, var_path, verbose)
+        },
+        error = function(e) {
+          warning("[read_h5ad] WARNING: Failed to read var metadata: ", conditionMessage(e))
+          NULL
+        }
+      )
       if (!is.null(var) && verbose) {
         message("[read_h5ad]   Gene metadata: ", nrow(var), " genes, ", ncol(var), " columns")
       }
@@ -204,11 +235,14 @@ read_h5ad <- function(file_path,
     ))
   } else {
     # Read var to get gene names based on feature_format
-    var <- tryCatch({
-      .read_h5ad_dataframe(h5file, var_path, verbose = FALSE)
-    }, error = function(e) {
-      NULL
-    })
+    var <- tryCatch(
+      {
+        .read_h5ad_dataframe(h5file, var_path, verbose = FALSE)
+      },
+      error = function(e) {
+        NULL
+      }
+    )
 
     # Set gene names
     if (!is.null(var) && nrow(var) == nrow(expr_matrix)) {
@@ -222,11 +256,14 @@ read_h5ad <- function(file_path,
     }
 
     # Set cell names from obs
-    obs <- tryCatch({
-      .read_h5ad_dataframe(h5file, "obs", verbose = FALSE)
-    }, error = function(e) {
-      NULL
-    })
+    obs <- tryCatch(
+      {
+        .read_h5ad_dataframe(h5file, "obs", verbose = FALSE)
+      },
+      error = function(e) {
+        NULL
+      }
+    )
 
     if (!is.null(obs) && nrow(obs) == ncol(expr_matrix)) {
       colnames(expr_matrix) <- rownames(obs)
@@ -274,15 +311,13 @@ read_h5ad <- function(file_path,
 #' @keywords internal
 #' @noRd
 .read_h5ad_matrix <- function(h5file, matrix_path, verbose = TRUE) {
-
   matrix_group <- h5file[[matrix_path]]
 
   # Check if sparse matrix (CSR/CSC format)
   if (inherits(matrix_group, "H5Group")) {
     if (matrix_group$exists("data") &&
-        matrix_group$exists("indices") &&
-        matrix_group$exists("indptr")) {
-
+      matrix_group$exists("indices") &&
+      matrix_group$exists("indptr")) {
       if (verbose) message("[read_h5ad]   Matrix format: Sparse (CSR)")
 
       # Read sparse matrix components
@@ -326,19 +361,21 @@ read_h5ad <- function(file_path,
       }
 
       # Create sparse matrix
-      sparse_mat <- tryCatch({
-        Matrix::sparseMatrix(
-          i = i_indices,
-          j = indices,
-          x = as.numeric(data),
-          dims = c(nrows, ncols)
-        )
-      }, error = function(e) {
-        stop("Failed to construct sparse matrix: ", conditionMessage(e))
-      })
+      sparse_mat <- tryCatch(
+        {
+          Matrix::sparseMatrix(
+            i = i_indices,
+            j = indices,
+            x = as.numeric(data),
+            dims = c(nrows, ncols)
+          )
+        },
+        error = function(e) {
+          stop("Failed to construct sparse matrix: ", conditionMessage(e))
+        }
+      )
 
       return(sparse_mat)
-
     } else {
       stop("Unknown sparse matrix format. Expected data/indices/indptr components.")
     }
@@ -359,7 +396,6 @@ read_h5ad <- function(file_path,
 #' @keywords internal
 #' @noRd
 .read_h5ad_dataframe <- function(h5file, df_path, verbose = TRUE) {
-
   if (!h5file$exists(df_path)) {
     if (verbose) message("[read_h5ad]   Path '", df_path, "' not found, skipping")
     return(NULL)
@@ -370,12 +406,15 @@ read_h5ad <- function(file_path,
   # Read _index (row names)
   row_names <- NULL
   if (df_group$exists("_index")) {
-    row_names <- tryCatch({
-      as.character(df_group[["_index"]]$read())
-    }, error = function(e) {
-      if (verbose) warning("[read_h5ad]   Could not read _index: ", conditionMessage(e))
-      NULL
-    })
+    row_names <- tryCatch(
+      {
+        as.character(df_group[["_index"]]$read())
+      },
+      error = function(e) {
+        if (verbose) warning("[read_h5ad]   Could not read _index: ", conditionMessage(e))
+        NULL
+      }
+    )
   }
 
   # Get column names
@@ -390,21 +429,24 @@ read_h5ad <- function(file_path,
   # Read columns
   df_list <- list()
   for (col_name in col_names) {
-    tryCatch({
-      col_group <- df_group[[col_name]]
+    tryCatch(
+      {
+        col_group <- df_group[[col_name]]
 
-      # Handle categorical data
-      if (inherits(col_group, "H5Group") && col_group$exists("categories")) {
-        categories <- as.character(col_group[["categories"]]$read())
-        codes <- as.integer(col_group[["codes"]]$read())
-        df_list[[col_name]] <- factor(categories[codes + 1], levels = categories)
-      } else {
-        col_data <- col_group$read()
-        df_list[[col_name]] <- col_data
+        # Handle categorical data
+        if (inherits(col_group, "H5Group") && col_group$exists("categories")) {
+          categories <- as.character(col_group[["categories"]]$read())
+          codes <- as.integer(col_group[["codes"]]$read())
+          df_list[[col_name]] <- factor(categories[codes + 1], levels = categories)
+        } else {
+          col_data <- col_group$read()
+          df_list[[col_name]] <- col_data
+        }
+      },
+      error = function(e) {
+        if (verbose) warning("[read_h5ad]   Could not read column '", col_name, "': ", conditionMessage(e))
       }
-    }, error = function(e) {
-      if (verbose) warning("[read_h5ad]   Could not read column '", col_name, "': ", conditionMessage(e))
-    })
+    )
   }
 
   # Create data frame
@@ -412,12 +454,15 @@ read_h5ad <- function(file_path,
     return(data.frame())
   }
 
-  df <- tryCatch({
-    as.data.frame(df_list, stringsAsFactors = FALSE)
-  }, error = function(e) {
-    if (verbose) warning("[read_h5ad]   Error creating data frame: ", conditionMessage(e))
-    return(data.frame())
-  })
+  df <- tryCatch(
+    {
+      as.data.frame(df_list, stringsAsFactors = FALSE)
+    },
+    error = function(e) {
+      if (verbose) warning("[read_h5ad]   Error creating data frame: ", conditionMessage(e))
+      return(data.frame())
+    }
+  )
 
   # Set row names
   if (!is.null(row_names) && nrow(df) == length(row_names)) {
@@ -460,8 +505,7 @@ read_h5 <- function(file_path,
                     feature_format = "gene_name",
                     unique.features = TRUE,
                     verbose = FALSE) {
-
-  if (isFALSE(requireNamespace('hdf5r', quietly = TRUE))) {
+  if (isFALSE(requireNamespace("hdf5r", quietly = TRUE))) {
     stop("[read_h5] ERROR: Package 'hdf5r' required. Install with: install.packages('hdf5r')")
   }
 
@@ -475,39 +519,39 @@ read_h5 <- function(file_path,
   }
 
   if (verbose) message("[read_h5] Opening H5 file...")
-  h5file <- hdf5r::H5File$new(filename = file_path, mode = 'r')
+  h5file <- hdf5r::H5File$new(filename = file_path, mode = "r")
   on.exit(h5file$close_all(), add = TRUE)
 
   genomes <- names(h5file)
 
   # Determine feature slot based on version
-  if (hdf5r::existsGroup(h5file, 'matrix')) {
+  if (hdf5r::existsGroup(h5file, "matrix")) {
     # CellRanger v3+
-    genome <- 'matrix'
+    genome <- "matrix"
     if (feature_format == "gene_name") {
-      feature_slot <- 'features/name'
+      feature_slot <- "features/name"
     } else {
-      feature_slot <- 'features/id'
+      feature_slot <- "features/id"
     }
   } else {
     # CellRanger v2
     genome <- genomes[1]
     if (feature_format == "gene_name") {
-      feature_slot <- 'gene_names'
+      feature_slot <- "gene_names"
     } else {
-      feature_slot <- 'genes'
+      feature_slot <- "genes"
     }
   }
 
   if (verbose) message("[read_h5] Reading sparse matrix components...")
 
   # Read sparse matrix components
-  counts <- h5file[[paste0(genome, '/data')]][]
-  indices <- h5file[[paste0(genome, '/indices')]][]
-  indptr <- h5file[[paste0(genome, '/indptr')]][]
-  shp <- h5file[[paste0(genome, '/shape')]][]
-  features <- h5file[[paste0(genome, '/', feature_slot)]][]
-  barcodes <- h5file[[paste0(genome, '/barcodes')]][]
+  counts <- h5file[[paste0(genome, "/data")]][]
+  indices <- h5file[[paste0(genome, "/indices")]][]
+  indptr <- h5file[[paste0(genome, "/indptr")]][]
+  shp <- h5file[[paste0(genome, "/shape")]][]
+  features <- h5file[[paste0(genome, "/", feature_slot)]][]
+  barcodes <- h5file[[paste0(genome, "/barcodes")]][]
 
   if (verbose) {
     message("[read_h5] Matrix shape: ", shp[1], " x ", shp[2])
@@ -543,7 +587,6 @@ read_h5 <- function(file_path,
 #' @keywords internal
 #' @noRd
 .detect_h5_paths <- function(h5file, verbose = FALSE) {
-
   # Common paths for gene names in 10X files
   gene_paths <- c(
     "matrix/features/name",
@@ -595,15 +638,13 @@ read_h5 <- function(file_path,
 #' @keywords internal
 #' @noRd
 .read_h5_matrix <- function(h5file, matrix_path, as_sparse = TRUE, verbose = TRUE) {
-
   matrix_group <- h5file[[matrix_path]]
 
   # Check for 10X sparse matrix format
   if (inherits(matrix_group, "H5Group")) {
     if (matrix_group$exists("data") &&
-        matrix_group$exists("indices") &&
-        matrix_group$exists("indptr")) {
-
+      matrix_group$exists("indices") &&
+      matrix_group$exists("indptr")) {
       if (verbose) message("[read_h5]   Matrix format: 10X Sparse (CSC)")
 
       # Read components
@@ -646,19 +687,21 @@ read_h5 <- function(file_path,
       }
 
       # Create sparse matrix
-      sparse_mat <- tryCatch({
-        Matrix::sparseMatrix(
-          i = indices,
-          j = j_indices,
-          x = as.numeric(data),
-          dims = c(nrows, ncols)
-        )
-      }, error = function(e) {
-        stop("Failed to construct sparse matrix: ", conditionMessage(e))
-      })
+      sparse_mat <- tryCatch(
+        {
+          Matrix::sparseMatrix(
+            i = indices,
+            j = j_indices,
+            x = as.numeric(data),
+            dims = c(nrows, ncols)
+          )
+        },
+        error = function(e) {
+          stop("Failed to construct sparse matrix: ", conditionMessage(e))
+        }
+      )
 
       return(sparse_mat)
-
     } else {
       stop("Unknown H5 matrix format. Expected data/indices/indptr for sparse matrix.")
     }
@@ -696,32 +739,43 @@ read_h5 <- function(file_path,
 #'
 #' @export
 list_h5_structure <- function(file_path, recursive = TRUE) {
-
   if (!requireNamespace("hdf5r", quietly = TRUE)) {
-    stop("[list_h5_structure] ERROR: Package 'hdf5r' required.\n",
-         "  Install with: install.packages('hdf5r')")
+    stop(
+      "[list_h5_structure] ERROR: Package 'hdf5r' required.\n",
+      "  Install with: install.packages('hdf5r')"
+    )
   }
 
   if (!file.exists(file_path)) {
     stop("[list_h5_structure] ERROR: File not found: ", file_path)
   }
 
-  h5file <- tryCatch({
-    hdf5r::H5File$new(file_path, mode = "r")
-  }, error = function(e) {
-    stop("[list_h5_structure] ERROR: Failed to open file.\n",
-         "  File: ", file_path, "\n",
-         "  Error: ", conditionMessage(e))
-  })
+  h5file <- tryCatch(
+    {
+      hdf5r::H5File$new(file_path, mode = "r")
+    },
+    error = function(e) {
+      stop(
+        "[list_h5_structure] ERROR: Failed to open file.\n",
+        "  File: ", file_path, "\n",
+        "  Error: ", conditionMessage(e)
+      )
+    }
+  )
 
   on.exit(h5file$close(), add = TRUE)
 
-  structure_info <- tryCatch({
-    h5file$ls(recursive = recursive)
-  }, error = function(e) {
-    stop("[list_h5_structure] ERROR: Failed to list file contents.\n",
-         "  Error: ", conditionMessage(e))
-  })
+  structure_info <- tryCatch(
+    {
+      h5file$ls(recursive = recursive)
+    },
+    error = function(e) {
+      stop(
+        "[list_h5_structure] ERROR: Failed to list file contents.\n",
+        "  Error: ", conditionMessage(e)
+      )
+    }
+  )
 
   message("")
   message("Structure of: ", basename(file_path))
