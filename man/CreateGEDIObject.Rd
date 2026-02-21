@@ -77,12 +77,15 @@ eliminating duplicate Yi storage in R.
 }
 \examples{
 \donttest{
+# Load example data
+pbmc_small <- SeuratObject::pbmc_small
+
 # Basic usage - memory efficient!
 model <- CreateGEDIObject(
-  Samples = sample_labels,
-  M = count_matrix,  # Only M stored in R; Yi computed in C++
-  K = 15,
-  num_threads = 32
+  Samples = pbmc_small@meta.data$orig.ident,
+  M = pbmc_small@assays$RNA@counts, # Only M stored in R; Yi computed in C++
+  K = 10,
+  num_threads = 1
 )
 
 # Train the model
@@ -97,8 +100,8 @@ zdb <- model$projections$ZDB
 db <- model$projections$DB
 
 # Access imputed expression
-Y_imputed <- model$imputed$Y()  # No M needed!
-Y_var <- model$imputed$variance(M)  # M required
+Y_imputed <- model$imputed$Y() # No M needed!
+Y_var <- model$imputed$variance(pbmc_small@assays$RNA@counts) # M required
 }
 
 }

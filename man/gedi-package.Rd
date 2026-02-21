@@ -59,14 +59,14 @@ GEDI v2 implements a three-layer architecture:
 \examples{
 \donttest{
 # Load example data
-data("pbmc_small", package = "Seurat")
+pbmc_small <- SeuratObject::pbmc_small
 
 # Create GEDI model
 model <- CreateGEDIObject(
-  Samples = pbmc_small@meta.data$orig.ident,
-  M = pbmc_small@assays$RNA@counts,
-  K = 10,
-  verbose = 1
+    Samples = pbmc_small@meta.data$orig.ident,
+    M = pbmc_small@assays$RNA@counts,
+    K = 10,
+    verbose = 1
 )
 
 # Train model
