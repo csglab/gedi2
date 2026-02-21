@@ -55,7 +55,7 @@ Visualizes vector fields showing cell state transitions. Uses binned
 aggregation for cleaner visualization without overplotting.
 }
 \examples{
-\donttest{
+\dontrun{
 # Compute vector field
 vf <- model$dynamics$vector_field(
   start.cond = c(0, 0),
@@ -66,7 +66,7 @@ vf <- model$dynamics$vector_field(
 plot_vector_field(vf)
 
 # Color by feature
-feature_vals <- model$projections$ZDB[1, ]  # First gene
+feature_vals <- model$projections$ZDB[1, ] # First gene
 plot_vector_field(vf, color = feature_vals)
 }
 

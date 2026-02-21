@@ -31,29 +31,28 @@ utils::globalVariables(c(
 #'
 #' @keywords internal
 .plot_embedding_base <- function(embedding,
-                          color = NULL,
-                          color_limits = NULL,
-                          palette = c("blue", "lightgrey", "red"),
-                          randomize = TRUE,
-                          point_size = 0.3,
-                          alpha = 0.9,
-                          raster = FALSE,
-                          xlab = "Dim 1",
-                          ylab = "Dim 2",
-                          title = NULL,
-                          legend_title = NULL) {
-  
+                                 color = NULL,
+                                 color_limits = NULL,
+                                 palette = c("blue", "lightgrey", "red"),
+                                 randomize = TRUE,
+                                 point_size = 0.3,
+                                 alpha = 0.9,
+                                 raster = FALSE,
+                                 xlab = "Dim 1",
+                                 ylab = "Dim 2",
+                                 title = NULL,
+                                 legend_title = NULL) {
   # Validate inputs
   if (!is.matrix(embedding) && !is.data.frame(embedding)) {
     stop("embedding must be a matrix or data.frame", call. = FALSE)
   }
-  
+
   if (ncol(embedding) != 2) {
     stop("embedding must have exactly 2 columns", call. = FALSE)
   }
-  
+
   N <- nrow(embedding)
-  
+
   # Handle color
   if (is.null(color)) {
     color <- rep(1, N)
@@ -64,45 +63,48 @@ utils::globalVariables(c(
     }
     use_color <- TRUE
   }
-  
+
   # Create data frame
   df <- data.frame(
     Dim1 = embedding[, 1],
     Dim2 = embedding[, 2],
     Color = color
   )
-  
+
   # Randomize ONCE before any processing
   if (randomize) {
     rand_idx <- sample(N)
     df <- df[rand_idx, ]
   }
-  
+
   # Detect if color is numeric or discrete
   is_numeric <- is.numeric(color) && length(unique(color)) > 10
-  
+
   # Start plot
   p <- ggplot2::ggplot(df, ggplot2::aes(x = Dim1, y = Dim2))
-  
+
   # Add points (raster or regular)
   if (raster && N > 100000) {
     if (!use_color) {
       p <- p + ggplot2::geom_point(size = point_size, alpha = alpha)
     } else {
-      p <- p + ggplot2::geom_point(ggplot2::aes(color = Color), 
-                                   size = point_size, alpha = alpha)
+      p <- p + ggplot2::geom_point(ggplot2::aes(color = Color),
+        size = point_size, alpha = alpha
+      )
     }
     warning("Rasterization not implemented yet. Using regular points.",
-            call. = FALSE)
+      call. = FALSE
+    )
   } else {
     if (!use_color) {
       p <- p + ggplot2::geom_point(size = point_size, alpha = alpha)
     } else {
-      p <- p + ggplot2::geom_point(ggplot2::aes(color = Color), 
-                                   size = point_size, alpha = alpha)
+      p <- p + ggplot2::geom_point(ggplot2::aes(color = Color),
+        size = point_size, alpha = alpha
+      )
     }
   }
-  
+
   # Add color scale
   if (use_color) {
     if (is_numeric) {
@@ -110,11 +112,11 @@ utils::globalVariables(c(
       if (is.null(color_limits)) {
         color_limits <- compute_color_limits(color, symmetric = TRUE, quantile = 0.99)
       }
-      
+
       if (is.null(legend_title)) {
         legend_title <- "Value"
       }
-      
+
       p <- p + scale_color_gedi_diverging(
         limits = color_limits,
         name = legend_title
@@ -124,19 +126,19 @@ utils::globalVariables(c(
       if (is.null(legend_title)) {
         legend_title <- "Group"
       }
-      
+
       p <- p + scale_color_gedi_discrete(name = legend_title) +
         ggplot2::guides(color = ggplot2::guide_legend(
           override.aes = list(size = 3, alpha = 1)
         ))
     }
   }
-  
+
   # Add labels and theme
   p <- p +
     ggplot2::labs(x = xlab, y = ylab, title = title) +
     theme_gedi()
-  
+
   return(p)
 }
 
@@ -162,28 +164,27 @@ utils::globalVariables(c(
 #' @return ggplot2 object with faceted features
 #'
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' plot_features(model, c("CD3D", "CD79A", "LYZ"), embedding = "umap")
 #' plot_features(model, c(1, 2, 3), color_limits = "individual")
 #' }
 #'
 #' @export
 plot_features <- function(model,
-                         features,
-                         embedding = "umap",
-                         projection = "zdb",
-                         color_limits = "global",
-                         ncol = NULL,
-                         randomize = TRUE,
-                         point_size = 0.2,
-                         alpha = 0.9,
-                         title = NULL) {
-  
+                          features,
+                          embedding = "umap",
+                          projection = "zdb",
+                          color_limits = "global",
+                          ncol = NULL,
+                          randomize = TRUE,
+                          point_size = 0.2,
+                          alpha = 0.9,
+                          title = NULL) {
   # Validate model
   if (is.null(model$params)) {
     stop("Model not trained. Run $train() first.", call. = FALSE)
   }
-  
+
   # Get embedding coordinates
   if (is.character(embedding)) {
     if (embedding == "umap") {
@@ -202,9 +203,9 @@ plot_features <- function(model,
   } else {
     stop("embedding must be a character or matrix", call. = FALSE)
   }
-  
+
   N <- nrow(emb_mat)
-  
+
   # Convert feature names to indices
   geneIDs <- model$metadata$geneIDs
   if (is.character(features)) {
@@ -221,14 +222,14 @@ plot_features <- function(model,
     }
     feature_names <- geneIDs[feature_idx]
   }
-  
+
   F <- length(feature_idx)
-  
+
   # Extract feature weights from Z
   Z <- model$params$Z
-  feature_weights <- Z[feature_idx, , drop = FALSE]  # F x K
-  feature_weights <- t(feature_weights)  # K x F for C++
-  
+  feature_weights <- Z[feature_idx, , drop = FALSE] # F x K
+  feature_weights <- t(feature_weights) # K x F for C++
+
   # Compute projections using C++
   if (projection == "zdb") {
     projections <- compute_multi_feature_projection(
@@ -236,11 +237,11 @@ plot_features <- function(model,
       D = model$params$D,
       Bi_list = model$params$Bi,
       verbose = 0
-    )  # Returns N x F matrix
+    ) # Returns N x F matrix
   } else if (projection == "db") {
     # For DB: just use factor weights directly
-    DB <- model$projections$DB  # K x N
-    projections <- t(DB) %*% feature_weights  # N x F
+    DB <- model$projections$DB # K x N
+    projections <- t(DB) %*% feature_weights # N x F
   } else if (projection == "adb") {
     # For ADB: need to check if model has C/H matrices
     if (model$aux$P == 0) {
@@ -249,7 +250,7 @@ plot_features <- function(model,
 
     # Get the full ADB projection: C.rotation * A * D * B (P x N)
     # This gives us pathway activities across all cells
-    ADB <- model$projections$ADB  # P x N
+    ADB <- model$projections$ADB # P x N
 
     # We need to project gene features through the pathway space
     # feature_weights is K x F (latent factor loadings for selected genes from Z)
@@ -261,16 +262,15 @@ plot_features <- function(model,
     #    sum over pathways: C.rotation[gene, pathway] * ADB[pathway, cells]
 
     # Get C.rotation and extract rows for selected genes
-    C_rotation <- model$.__enclos_env__$private$.aux_static$C.rotation  # J x P
-    C_feature <- C_rotation[feature_idx, , drop = FALSE]  # F x P
+    C_rotation <- model$.__enclos_env__$private$.aux_static$C.rotation # J x P
+    C_feature <- C_rotation[feature_idx, , drop = FALSE] # F x P
 
     # Project through pathway space: (F x P) %*% (P x N) = F x N
-    projections <- t(C_feature %*% ADB)  # N x F
-
+    projections <- t(C_feature %*% ADB) # N x F
   } else {
     stop("projection must be 'zdb', 'db', or 'adb'", call. = FALSE)
   }
-  
+
   # Build long-format data frame
   df_list <- vector("list", F)
   for (f in 1:F) {
@@ -283,12 +283,12 @@ plot_features <- function(model,
   }
   df <- do.call(rbind, df_list)
   df$Feature <- factor(df$Feature, levels = feature_names)
-  
+
   # Randomize ONCE before plotting
   if (randomize) {
     df <- df[sample(nrow(df)), ]
   }
-  
+
   # Compute color limits
   if (is.character(color_limits)) {
     if (color_limits == "global") {
@@ -310,7 +310,7 @@ plot_features <- function(model,
     "zdb" = "Expression",
     "db" = "Factor Activity",
     "adb" = "Pathway Activity",
-    "Expression"  # default fallback
+    "Expression" # default fallback
   )
 
   # Determine default title based on projection type
@@ -318,13 +318,13 @@ plot_features <- function(model,
     "zdb" = "Gene Expression",
     "db" = "Latent Factor Activity",
     "adb" = "Pathway Activity",
-    "Feature Expression"  # default fallback
+    "Feature Expression" # default fallback
   )
 
   # Create plot
   p <- ggplot2::ggplot(df, ggplot2::aes(x = Dim1, y = Dim2, color = Value)) +
     ggplot2::geom_point(size = point_size, alpha = alpha) +
-    ggplot2::facet_wrap(~ Feature, ncol = ncol)
+    ggplot2::facet_wrap(~Feature, ncol = ncol)
 
   # Add color scale
   if (use_free_scale) {
@@ -343,7 +343,7 @@ plot_features <- function(model,
       title = if (is.null(title)) default_title else title
     ) +
     theme_gedi()
-  
+
   return(p)
 }
 
@@ -375,7 +375,7 @@ plot_features <- function(model,
 #' Positive values indicate gene1 > gene2, negative indicates gene2 > gene1.
 #'
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' # Compare CD3D vs CD79A expression
 #' plot_feature_ratio(model, "CD3D", "CD79A", comparison = "difference")
 #' }
@@ -392,17 +392,16 @@ plot_feature_ratio <- function(model,
                                point_size = 0.3,
                                alpha = 0.9,
                                title = NULL) {
-  
   # Validate model
   if (is.null(model$params)) {
     stop("Model not trained. Run $train() first.", call. = FALSE)
   }
-  
+
   # Validate comparison type
   if (!comparison %in% c("difference", "correlation")) {
     stop("comparison must be 'difference' or 'correlation'", call. = FALSE)
   }
-  
+
   # Get embedding coordinates
   if (is.character(embedding)) {
     if (embedding == "umap") {
@@ -415,10 +414,10 @@ plot_feature_ratio <- function(model,
   } else {
     emb_mat <- as.matrix(embedding[, 1:2])
   }
-  
+
   # Convert gene names to indices
   geneIDs <- model$metadata$geneIDs
-  
+
   if (is.character(gene1)) {
     gene1_idx <- match(gene1, geneIDs)
     if (is.na(gene1_idx)) stop("gene1 not found: ", gene1, call. = FALSE)
@@ -427,7 +426,7 @@ plot_feature_ratio <- function(model,
     gene1_idx <- as.integer(gene1)
     gene1_name <- geneIDs[gene1_idx]
   }
-  
+
   if (is.character(gene2)) {
     gene2_idx <- match(gene2, geneIDs)
     if (is.na(gene2_idx)) stop("gene2 not found: ", gene2, call. = FALSE)
@@ -436,39 +435,38 @@ plot_feature_ratio <- function(model,
     gene2_idx <- as.integer(gene2)
     gene2_name <- geneIDs[gene2_idx]
   }
-  
+
   # Compute comparison
   if (comparison == "difference") {
     # Compute (Z[gene1,] - Z[gene2,]) * D * B
     Z <- model$params$Z
-    weight_diff <- Z[gene1_idx, ] - Z[gene2_idx, ]  # K x 1
-    
+    weight_diff <- Z[gene1_idx, ] - Z[gene2_idx, ] # K x 1
+
     ratio_values <- compute_feature_projection(
       feature_weights = weight_diff,
       D = model$params$D,
       Bi_list = model$params$Bi,
       verbose = 0
     )
-    
+
     legend_title <- paste0(gene1_name, " - ", gene2_name)
-    
   } else if (comparison == "correlation") {
     # Future: 2D scatter or correlation coefficient per cell
     stop("correlation comparison not yet implemented", call. = FALSE)
   }
-  
+
   # Compute color limits
   if (is.null(color_limits)) {
     color_limits <- compute_color_limits(ratio_values, symmetric = TRUE, quantile = 0.99)
   }
-  
+
   # Create plot using plot_embedding
   emb_name <- if (is.character(embedding)) toupper(embedding) else "Embedding"
-  
+
   if (is.null(title)) {
     title <- paste("Feature Comparison:", gene1_name, "vs", gene2_name)
   }
-  
+
   p <- .plot_embedding_base(
     embedding = emb_mat,
     color = ratio_values,
@@ -481,7 +479,7 @@ plot_feature_ratio <- function(model,
     title = title,
     legend_title = legend_title
   )
-  
+
   return(p)
 }
 
@@ -510,18 +508,18 @@ plot_feature_ratio <- function(model,
 #' @return ggplot2 object
 #'
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' # Compute vector field
 #' vf <- model$dynamics$vector_field(
 #'   start.cond = c(0, 0),
 #'   end.cond = c(1, 0)
 #' )
-#' 
+#'
 #' # Plot with default settings
 #' plot_vector_field(vf)
-#' 
+#'
 #' # Color by feature
-#' feature_vals <- model$projections$ZDB[1, ]  # First gene
+#' feature_vals <- model$projections$ZDB[1, ] # First gene
 #' plot_vector_field(vf, color = feature_vals)
 #' }
 #'
@@ -539,27 +537,26 @@ plot_vector_field <- function(dynamics_svd,
                               xlab = NULL,
                               ylab = NULL,
                               title = NULL) {
-  
   # Validate input
   if (!inherits(dynamics_svd, "gedi_dynamics_svd")) {
     stop("dynamics_svd must be output from model$dynamics functions", call. = FALSE)
   }
-  
+
   if (length(dims) != 2 || !all(dims %in% 1:ncol(dynamics_svd$v))) {
     stop("dims must be a vector of 2 valid dimension indices", call. = FALSE)
   }
-  
+
   # Extract start and end points
   v_matrix <- dynamics_svd$v
   indices <- dynamics_svd$indices
-  
+
   N <- length(indices$embedding)
-  
+
   # Get start points (original embedding)
   start_idx <- indices$embedding
   Dim1 <- v_matrix[start_idx, dims[1]]
   Dim2 <- v_matrix[start_idx, dims[2]]
-  
+
   # Get end points (vector field)
   if ("vector_field" %in% names(indices)) {
     # Standard vector field: start at 1:N, end at (N+1):(2N)
@@ -569,7 +566,7 @@ plot_vector_field <- function(dynamics_svd,
   } else {
     stop("dynamics_svd does not contain vector_field information", call. = FALSE)
   }
-  
+
   # Handle color
   if (is.null(color)) {
     color <- rep(1, N)
@@ -580,14 +577,14 @@ plot_vector_field <- function(dynamics_svd,
     }
     use_color <- TRUE
   }
-  
+
   # Handle alpha
   if (length(alpha) == 1) {
     alpha <- rep(alpha, N)
   } else if (length(alpha) != N) {
     stop("alpha must be scalar or have length N", call. = FALSE)
   }
-  
+
   # Call C++ aggregation function
   agg_df <- aggregate_vectors(
     Dim1 = Dim1,
@@ -599,47 +596,51 @@ plot_vector_field <- function(dynamics_svd,
     n_bins = n_bins,
     min_per_bin = min_per_bin
   )
-  
+
   # Randomize if requested
   if (randomize && nrow(agg_df) > 0) {
     agg_df <- agg_df[sample(nrow(agg_df)), ]
   }
-  
+
   # Detect if color is numeric
   is_numeric <- use_color && is.numeric(color) && length(unique(color)) > 10
-  
+
   # Create base plot
   if (!use_color || length(unique(agg_df$Color)) == 1) {
     # Uniform color
-    p <- ggplot2::ggplot(agg_df, ggplot2::aes(x = Dim1, y = Dim2,
-                                               xend = To1, yend = To2,
-                                               alpha = Alpha)) +
+    p <- ggplot2::ggplot(agg_df, ggplot2::aes(
+      x = Dim1, y = Dim2,
+      xend = To1, yend = To2,
+      alpha = Alpha
+    )) +
       ggplot2::geom_segment(
         arrow = ggplot2::arrow(length = ggplot2::unit(arrow_length, "cm")),
         color = arrow_color,
         linewidth = arrow_size
       ) +
       ggplot2::scale_alpha_identity()
-    
   } else if (is_numeric) {
     # Continuous color
     lim <- compute_color_limits(agg_df$Color, symmetric = TRUE, quantile = 0.99)
-    
-    p <- ggplot2::ggplot(agg_df, ggplot2::aes(x = Dim1, y = Dim2,
-                                               xend = To1, yend = To2,
-                                               color = Color, alpha = Alpha)) +
+
+    p <- ggplot2::ggplot(agg_df, ggplot2::aes(
+      x = Dim1, y = Dim2,
+      xend = To1, yend = To2,
+      color = Color, alpha = Alpha
+    )) +
       ggplot2::geom_segment(
         arrow = ggplot2::arrow(length = ggplot2::unit(arrow_length, "cm")),
         linewidth = arrow_size
       ) +
       scale_color_gedi_diverging(limits = lim, name = "Value") +
       ggplot2::scale_alpha_identity()
-    
   } else {
     # Discrete color
-    p <- ggplot2::ggplot(agg_df, ggplot2::aes(x = Dim1, y = Dim2,
-                                               xend = To1, yend = To2,
-                                               color = factor(Color), alpha = Alpha)) +
+    p <- ggplot2::ggplot(agg_df, ggplot2::aes(
+      x = Dim1, y = Dim2,
+      xend = To1, yend = To2,
+      color = factor(Color), alpha = Alpha
+    )) +
       ggplot2::geom_segment(
         arrow = ggplot2::arrow(length = ggplot2::unit(arrow_length, "cm")),
         linewidth = arrow_size
@@ -647,7 +648,7 @@ plot_vector_field <- function(dynamics_svd,
       scale_color_gedi_discrete(name = "Group") +
       ggplot2::scale_alpha_identity()
   }
-  
+
   # Add labels
   if (is.null(xlab)) xlab <- paste("LV", dims[1])
   if (is.null(ylab)) ylab <- paste("LV", dims[2])
@@ -658,14 +659,13 @@ plot_vector_field <- function(dynamics_svd,
       title <- "Vector Field"
     }
   }
-  
+
   p <- p +
     ggplot2::labs(x = xlab, y = ylab, title = title) +
     theme_gedi()
-  
+
   return(p)
 }
-
 
 
 # R/gedi_plot_diagnostics.R
@@ -685,38 +685,43 @@ plot_vector_field <- function(dynamics_svd,
 #' @return ggplot2 object
 #'
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' disp <- model$imputed$dispersion(M)
 #' plot_dispersion(disp)
 #' }
 #'
 #' @export
 plot_dispersion <- function(dispersion_df,
-                           show_identity = TRUE,
-                           point_size = 0.1,
-                           alpha = 0.5,
-                           title = "Dispersion Analysis") {
-  
+                            show_identity = TRUE,
+                            point_size = 0.1,
+                            alpha = 0.5,
+                            title = "Dispersion Analysis") {
   # Validate input
   required_cols <- c("Expected_Var", "Observed_Var", "Sample")
   if (!all(required_cols %in% colnames(dispersion_df))) {
-    stop("dispersion_df must contain columns: ", 
-         paste(required_cols, collapse = ", "), call. = FALSE)
+    stop("dispersion_df must contain columns: ",
+      paste(required_cols, collapse = ", "),
+      call. = FALSE
+    )
   }
-  
+
   # Create plot
-  p <- ggplot2::ggplot(dispersion_df, 
-                       ggplot2::aes(x = Expected_Var, y = Observed_Var, color = Sample)) +
+  p <- ggplot2::ggplot(
+    dispersion_df,
+    ggplot2::aes(x = Expected_Var, y = Observed_Var, color = Sample)
+  ) +
     ggplot2::geom_point(size = point_size, alpha = alpha) +
     ggplot2::scale_x_log10() +
     ggplot2::scale_y_log10()
-  
+
   # Add identity line
   if (show_identity) {
-    p <- p + ggplot2::geom_abline(intercept = 0, slope = 1, 
-                                   linetype = "dashed", color = "gray30")
+    p <- p + ggplot2::geom_abline(
+      intercept = 0, slope = 1,
+      linetype = "dashed", color = "gray30"
+    )
   }
-  
+
   # Add labels and theme
   p <- p +
     scale_color_gedi_discrete(name = "Sample") +
@@ -726,7 +731,7 @@ plot_dispersion <- function(dispersion_df,
       title = title
     ) +
     theme_gedi()
-  
+
   return(p)
 }
 
@@ -753,37 +758,37 @@ plot_dispersion <- function(dispersion_df,
 #' @return ggplot2 object (for "faceted" or "compact") or list of ggplot2 objects (for "separate")
 #'
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' # Faceted view (default)
 #' plot_convergence(model)
-#' 
+#'
 #' # Separate plots for detailed inspection
 #' plots <- plot_convergence(model, layout = "separate")
 #' plots$sigma2
-#' 
+#'
 #' # Compact two-panel view
 #' plot_convergence(model, layout = "compact")
 #' }
 #'
 #' @export
 plot_convergence <- function(model,
-                            layout = c("faceted", "separate", "compact"),
-                            params = NULL,
-                            log_scale = TRUE,
-                            smooth = FALSE,
-                            title = "Training Convergence") {
-  
+                             layout = c("faceted", "separate", "compact"),
+                             params = NULL,
+                             log_scale = TRUE,
+                             smooth = FALSE,
+                             title = "Training Convergence") {
   layout <- match.arg(layout)
-  
+
   # Validate model
   if (is.null(model$tracking)) {
-    stop("No tracking data available. Model may not have been trained with tracking.", 
-         call. = FALSE)
+    stop("No tracking data available. Model may not have been trained with tracking.",
+      call. = FALSE
+    )
   }
-  
+
   tracking <- model$tracking
   aux <- model$aux
-  
+
   # Determine which parameters are available
   available_params <- c()
   if (!all(is.na(tracking$dZ))) available_params <- c(available_params, "Z")
@@ -791,39 +796,40 @@ plot_convergence <- function(model,
   if (!all(is.na(tracking$do))) available_params <- c(available_params, "o")
   if (!all(is.na(tracking$dRo))) available_params <- c(available_params, "Ro")
   if (!all(is.na(tracking$sigma2))) available_params <- c(available_params, "sigma2")
-  
+
   # Check sample-specific parameters
   has_Bi <- !all(sapply(tracking$dBi, function(x) all(is.na(x))))
   has_Qi <- !all(sapply(tracking$dQi, function(x) all(is.na(x))))
   has_oi <- !all(sapply(tracking$doi, function(x) all(is.na(x))))
   has_si <- !all(sapply(tracking$dsi, function(x) all(is.na(x))))
   has_Rk <- !all(sapply(tracking$dRk, function(x) all(is.na(x))))
-  
+
   if (has_Bi) available_params <- c(available_params, "Bi")
   if (has_Qi) available_params <- c(available_params, "Qi")
   if (has_oi) available_params <- c(available_params, "oi")
   if (has_si) available_params <- c(available_params, "si")
   if (has_Rk) available_params <- c(available_params, "Rk")
-  
+
   # Filter params if specified
   if (!is.null(params)) {
     params <- intersect(params, available_params)
     if (length(params) == 0) {
-      stop("None of the requested parameters are available in tracking data", 
-           call. = FALSE)
+      stop("None of the requested parameters are available in tracking data",
+        call. = FALSE
+      )
     }
   } else {
     params <- available_params
   }
-  
+
   # Build data frames for each parameter type
   plot_list <- list()
-  
+
   # Global parameters (Z, A, o, Ro, sigma2)
   if (any(c("Z", "A", "o", "Ro") %in% params)) {
     global_df <- data.frame()
     l <- length(tracking$dZ)
-    
+
     if ("Z" %in% params) {
       global_df <- rbind(global_df, data.frame(
         Iteration = 1:l,
@@ -852,37 +858,40 @@ plot_convergence <- function(model,
         Parameter = "Ro"
       ))
     }
-    
+
     # Remove NA rows
     global_df <- global_df[!is.na(global_df$RMSD), ]
-    
+
     if (nrow(global_df) > 0) {
-      p_global <- ggplot2::ggplot(global_df, 
-                                   ggplot2::aes(x = Iteration, y = RMSD, color = Parameter)) +
+      p_global <- ggplot2::ggplot(
+        global_df,
+        ggplot2::aes(x = Iteration, y = RMSD, color = Parameter)
+      ) +
         ggplot2::geom_line() +
         ggplot2::geom_point(size = 1)
-      
+
       if (log_scale) p_global <- p_global + ggplot2::scale_y_log10()
       if (smooth) p_global <- p_global + ggplot2::geom_smooth(se = FALSE, linewidth = 0.5)
-      
+
       p_global <- p_global +
         scale_color_gedi_discrete(name = "Parameter") +
-        ggplot2::labs(x = "Iteration", y = "RMSD", 
-                      title = "Global Parameters") +
+        ggplot2::labs(
+          x = "Iteration", y = "RMSD",
+          title = "Global Parameters"
+        ) +
         theme_gedi()
-      
+
       plot_list$global <- p_global
     }
   }
-  
+
   # Sample-specific parameters (Bi, Qi, oi, si)
   sample_params <- intersect(c("Bi", "Qi", "oi", "si"), params)
   if (length(sample_params) > 0) {
-    
     for (param in sample_params) {
       param_df <- data.frame()
       l <- length(tracking[[paste0("d", param)]][[1]])
-      
+
       for (i in 1:aux$numSamples) {
         param_df <- rbind(param_df, data.frame(
           Iteration = 1:l,
@@ -890,34 +899,38 @@ plot_convergence <- function(model,
           Sample = model$metadata$sampleIDs[i]
         ))
       }
-      
+
       param_df <- param_df[!is.na(param_df$RMSD), ]
-      
+
       if (nrow(param_df) > 0) {
-        p <- ggplot2::ggplot(param_df, 
-                            ggplot2::aes(x = Iteration, y = RMSD, color = Sample)) +
+        p <- ggplot2::ggplot(
+          param_df,
+          ggplot2::aes(x = Iteration, y = RMSD, color = Sample)
+        ) +
           ggplot2::geom_line() +
           ggplot2::geom_point(size = 1)
-        
+
         if (log_scale) p <- p + ggplot2::scale_y_log10()
         if (smooth) p <- p + ggplot2::geom_smooth(se = FALSE, linewidth = 0.5)
-        
+
         p <- p +
           scale_color_gedi_discrete(name = "Sample") +
-          ggplot2::labs(x = "Iteration", y = "RMSD",
-                       title = paste0("Parameter: ", param)) +
+          ggplot2::labs(
+            x = "Iteration", y = "RMSD",
+            title = paste0("Parameter: ", param)
+          ) +
           theme_gedi()
-        
+
         plot_list[[param]] <- p
       }
     }
   }
-  
+
   # Rk parameters (if L > 0)
   if ("Rk" %in% params && has_Rk) {
     Rk_df <- data.frame()
     l <- length(tracking$dRk[[1]])
-    
+
     for (k in 1:aux$K) {
       Rk_df <- rbind(Rk_df, data.frame(
         Iteration = 1:l,
@@ -925,66 +938,73 @@ plot_convergence <- function(model,
         Factor = paste0("LV", k)
       ))
     }
-    
+
     # Add Ro
     Rk_df <- rbind(Rk_df, data.frame(
       Iteration = 1:l,
       RMSD = tracking$dRo,
       Factor = "o"
     ))
-    
+
     Rk_df <- Rk_df[!is.na(Rk_df$RMSD), ]
-    
+
     if (nrow(Rk_df) > 0) {
-      p_Rk <- ggplot2::ggplot(Rk_df, 
-                              ggplot2::aes(x = Iteration, y = RMSD, color = Factor)) +
+      p_Rk <- ggplot2::ggplot(
+        Rk_df,
+        ggplot2::aes(x = Iteration, y = RMSD, color = Factor)
+      ) +
         ggplot2::geom_line() +
         ggplot2::geom_point(size = 1)
-      
+
       if (log_scale) p_Rk <- p_Rk + ggplot2::scale_y_log10()
       if (smooth) p_Rk <- p_Rk + ggplot2::geom_smooth(se = FALSE, linewidth = 0.5)
-      
+
       p_Rk <- p_Rk +
         scale_color_gedi_discrete(name = "Factor") +
-        ggplot2::labs(x = "Iteration", y = "RMSD",
-                     title = "Covariate Effects (Rk)") +
+        ggplot2::labs(
+          x = "Iteration", y = "RMSD",
+          title = "Covariate Effects (Rk)"
+        ) +
         theme_gedi()
-      
+
       plot_list$Rk <- p_Rk
     }
   }
-  
+
   # sigma2
   if ("sigma2" %in% params && !all(is.na(tracking$sigma2))) {
     sigma2_df <- data.frame(
       Iteration = 1:length(tracking$sigma2),
       sigma2 = tracking$sigma2
     )
-    
-    p_sigma2 <- ggplot2::ggplot(sigma2_df, 
-                                ggplot2::aes(x = Iteration, y = sigma2)) +
+
+    p_sigma2 <- ggplot2::ggplot(
+      sigma2_df,
+      ggplot2::aes(x = Iteration, y = sigma2)
+    ) +
       ggplot2::geom_line(color = "#377EB8") +
       ggplot2::geom_point(size = 1, color = "#377EB8")
-    
+
     if (log_scale) p_sigma2 <- p_sigma2 + ggplot2::scale_y_log10()
     if (smooth) p_sigma2 <- p_sigma2 + ggplot2::geom_smooth(se = FALSE, linewidth = 0.5)
-    
+
     p_sigma2 <- p_sigma2 +
-      ggplot2::labs(x = "Iteration", y = expression(sigma^2),
-                   title = "Model Variance") +
+      ggplot2::labs(
+        x = "Iteration", y = expression(sigma^2),
+        title = "Model Variance"
+      ) +
       theme_gedi()
-    
+
     plot_list$sigma2 <- p_sigma2
   }
-  
+
   # Return based on layout
   if (layout == "separate") {
     return(plot_list)
-    
   } else if (layout == "faceted") {
     # Combine all into single faceted plot
     combined_df <- data.frame()
-    
+
     # Add global params
     if (!is.null(plot_list$global)) {
       global_data <- plot_list$global$data
@@ -992,7 +1012,7 @@ plot_convergence <- function(model,
       global_data$Group <- global_data$Parameter
       combined_df <- rbind(combined_df, global_data[, c("Iteration", "RMSD", "Parameter", "Type", "Group")])
     }
-    
+
     # Add sample-specific params
     for (param in sample_params) {
       if (!is.null(plot_list[[param]])) {
@@ -1003,7 +1023,7 @@ plot_convergence <- function(model,
         combined_df <- rbind(combined_df, param_data[, c("Iteration", "RMSD", "Parameter", "Type", "Group")])
       }
     }
-    
+
     # Add Rk
     if (!is.null(plot_list$Rk)) {
       Rk_data <- plot_list$Rk$data
@@ -1012,7 +1032,7 @@ plot_convergence <- function(model,
       names(Rk_data)[names(Rk_data) == "Factor"] <- "Group"
       combined_df <- rbind(combined_df, Rk_data[, c("Iteration", "RMSD", "Parameter", "Type", "Group")])
     }
-    
+
     # Add sigma2
     if (!is.null(plot_list$sigma2)) {
       sigma2_data <- plot_list$sigma2$data
@@ -1022,36 +1042,35 @@ plot_convergence <- function(model,
       sigma2_data$Group <- "sigma2"
       combined_df <- rbind(combined_df, sigma2_data[, c("Iteration", "RMSD", "Parameter", "Type", "Group")])
     }
-    
+
     if (nrow(combined_df) == 0) {
       stop("No valid tracking data to plot", call. = FALSE)
     }
-    
-    p <- ggplot2::ggplot(combined_df, 
-                        ggplot2::aes(x = Iteration, y = RMSD, color = Group)) +
+
+    p <- ggplot2::ggplot(
+      combined_df,
+      ggplot2::aes(x = Iteration, y = RMSD, color = Group)
+    ) +
       ggplot2::geom_line() +
       ggplot2::geom_point(size = 0.5) +
-      ggplot2::facet_wrap(~ Type, scales = "free_y")
-    
+      ggplot2::facet_wrap(~Type, scales = "free_y")
+
     if (!log_scale) {
       p <- p + ggplot2::scale_y_continuous()
     } else {
       p <- p + ggplot2::scale_y_log10()
     }
-    
+
     p <- p +
       scale_color_gedi_discrete(name = "Group") +
       ggplot2::labs(x = "Iteration", y = "RMSD", title = title) +
       theme_gedi()
-    
+
     return(p)
-    
   } else if (layout == "compact") {
     # Two-panel: global + sample-specific
-    stop("Compact layout not yet implemented. Use 'faceted' or 'separate'.", 
-         call. = FALSE)
+    stop("Compact layout not yet implemented. Use 'faceted' or 'separate'.",
+      call. = FALSE
+    )
   }
 }
-
-
-

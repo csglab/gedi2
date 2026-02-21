@@ -33,7 +33,7 @@
 #' objects in Python. Compatible with gedi R6 class for seamless integration.
 #'
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' # Read H5AD file with default settings (uses gene names from var rownames)
 #' expr_matrix <- read_h5ad("data.h5ad")
 #'
@@ -487,7 +487,7 @@ read_h5ad <- function(file_path,
 #' @return Sparse matrix (dgCMatrix) with genes as rows and cells as columns.
 #'
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' # Read 10X Genomics H5 file with gene names (default)
 #' expr_matrix <- read_h5("filtered_feature_bc_matrix.h5")
 #'
@@ -732,7 +732,7 @@ read_h5 <- function(file_path,
 #' @return data.frame with file structure information
 #'
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' list_h5_structure("data.h5ad")
 #' list_h5_structure("filtered_feature_bc_matrix.h5")
 #' }

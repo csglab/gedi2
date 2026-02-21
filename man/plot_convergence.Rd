@@ -41,7 +41,7 @@ Visualizes convergence of model parameters during training.
 Supports multiple layout styles for different use cases.
 }
 \examples{
-\donttest{
+\dontrun{
 # Faceted view (default)
 plot_convergence(model)
 

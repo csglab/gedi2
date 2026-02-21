@@ -56,7 +56,7 @@ In log-space, this represents log(gene1/gene2) in the original count space.
 Positive values indicate gene1 > gene2, negative indicates gene2 > gene1.
 }
 \examples{
-\donttest{
+\dontrun{
 # Compare CD3D vs CD79A expression
 plot_feature_ratio(model, "CD3D", "CD79A", comparison = "difference")
 }

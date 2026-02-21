@@ -18,7 +18,7 @@ data.frame with file structure information
 Helper function to explore H5/H5AD file structure.
 }
 \examples{
-\donttest{
+\dontrun{
 list_h5_structure("data.h5ad")
 list_h5_structure("filtered_feature_bc_matrix.h5")
 }

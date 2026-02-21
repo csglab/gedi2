@@ -10,7 +10,6 @@
 #' @return Nx2 matrix of embedding coordinates
 #' @keywords internal
 .get_embedding <- function(model, embedding_type, dims = c(1, 2), verbose = TRUE) {
-
   # If it's already a matrix, return it
   if (is.matrix(embedding_type) || is.data.frame(embedding_type)) {
     emb <- as.matrix(embedding_type)
@@ -33,11 +32,9 @@
     # As method with no args: also uses cached default UMAP
     umap_emb <- model$embeddings$umap
     return(umap_emb[, dims])
-
   } else if (embedding_type == "pca") {
     # PCA returns cached value if available
     return(model$embeddings$pca[, dims])
-
   } else {
     stop("embedding must be 'umap', 'pca', or a matrix", call. = FALSE)
   }
@@ -52,14 +49,13 @@
 #' @return Vector of length N with color values
 #' @keywords internal
 .get_color_vector <- function(model, color_by, projection = "zdb") {
-
   if (is.null(color_by)) {
     return(NULL)
   }
 
   # If it's already a vector, return it
   if (is.vector(color_by) && length(color_by) > 1) {
-    N <- ncol(model$params$Bi[[1]])  # Number of cells
+    N <- ncol(model$params$Bi[[1]]) # Number of cells
     if (length(color_by) != N) {
       stop("color_by vector must have length N (number of cells)", call. = FALSE)
     }
@@ -90,7 +86,7 @@
 
     # Compute projection on-demand for this gene only
     Z <- model$params$Z
-    feature_weights <- Z[gene_idx, ]  # K x 1
+    feature_weights <- Z[gene_idx, ] # K x 1
 
     if (projection == "zdb") {
       expr_values <- compute_feature_projection(
@@ -100,8 +96,8 @@
         verbose = 0
       )
     } else if (projection == "db") {
-      DB <- model$projections$DB  # K x N
-      expr_values <- as.vector(t(DB) %*% feature_weights)  # N x 1
+      DB <- model$projections$DB # K x N
+      expr_values <- as.vector(t(DB) %*% feature_weights) # N x 1
     } else {
       stop("projection must be 'zdb' or 'db'", call. = FALSE)
     }
@@ -139,7 +135,7 @@
 #' @return ggplot2 object
 #'
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' # Simple usage with smart caching
 #' plot_embedding(model, embedding = "umap", color_by = "sample")
 #' plot_embedding(model, embedding = "pca", color_by = "CD3D")
@@ -151,22 +147,21 @@
 #'
 #' @export
 plot_embedding <- function(model,
-                          embedding = NULL,
-                          color_by = NULL,
-                          color = NULL,
-                          projection = "zdb",
-                          color_limits = NULL,
-                          palette = c("blue", "lightgrey", "red"),
-                          randomize = TRUE,
-                          point_size = 0.3,
-                          alpha = 0.9,
-                          raster = FALSE,
-                          xlab = "Dim 1",
-                          ylab = "Dim 2",
-                          title = NULL,
-                          legend_title = NULL,
-                          verbose = TRUE) {
-
+                           embedding = NULL,
+                           color_by = NULL,
+                           color = NULL,
+                           projection = "zdb",
+                           color_limits = NULL,
+                           palette = c("blue", "lightgrey", "red"),
+                           randomize = TRUE,
+                           point_size = 0.3,
+                           alpha = 0.9,
+                           raster = FALSE,
+                           xlab = "Dim 1",
+                           ylab = "Dim 2",
+                           title = NULL,
+                           legend_title = NULL,
+                           verbose = TRUE) {
   # Backwards compatibility: if model is a matrix, use old API
   if (is.matrix(model) || is.data.frame(model)) {
     # Old API: plot_embedding(embedding_matrix, color = values)
@@ -214,16 +209,19 @@ plot_embedding <- function(model,
         p <- p + ggplot2::geom_point(size = point_size, alpha = alpha)
       } else {
         p <- p + ggplot2::geom_point(ggplot2::aes(color = Color),
-                                     size = point_size, alpha = alpha)
+          size = point_size, alpha = alpha
+        )
       }
       warning("Rasterization not implemented yet. Using regular points.",
-              call. = FALSE)
+        call. = FALSE
+      )
     } else {
       if (!use_color) {
         p <- p + ggplot2::geom_point(size = point_size, alpha = alpha)
       } else {
         p <- p + ggplot2::geom_point(ggplot2::aes(color = Color),
-                                     size = point_size, alpha = alpha)
+          size = point_size, alpha = alpha
+        )
       }
     }
 

@@ -63,14 +63,16 @@ projections, and embeddings.
 }
 \examples{
 \donttest{
+# Load example data
+pbmc <- SeuratObject::pbmc_small
+
 # Train GEDI model
 gedi_model <- seurat_to_gedi(pbmc, K = 15)
-gedi_model$train(iterations = 50)
+gedi_model$train(iterations = 10)
 
-# Convert back to Seurat with all data
+# Convert back to Seurat
 seurat_obj <- gedi_to_seurat(
   gedi_model,
-  M = original_counts,
   use_imputed = TRUE,
   add_projections = TRUE,
   add_embeddings = TRUE
@@ -78,8 +80,8 @@ seurat_obj <- gedi_to_seurat(
 
 # Now can use Seurat functions
 library(Seurat)
-DimPlot(seurat_obj, reduction = "umap", group.by = "sample")
-FeaturePlot(seurat_obj, features = "CD3D", assay = "imputed")
+DefaultAssay(seurat_obj) <- "imputed"
+seurat_obj <- FindVariableFeatures(seurat_obj)
 }
 
 }

@@ -32,7 +32,7 @@ Visualizes the relationship between expected and observed variance
 for count data. Useful for assessing model fit quality.
 }
 \examples{
-\donttest{
+\dontrun{
 disp <- model$imputed$dispersion(M)
 plot_dispersion(disp)
 }

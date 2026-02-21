@@ -56,7 +56,7 @@ This function reads H5AD files, which are the standard format for AnnData
 objects in Python. Compatible with gedi R6 class for seamless integration.
 }
 \examples{
-\donttest{
+\dontrun{
 # Read H5AD file with default settings (uses gene names from var rownames)
 expr_matrix <- read_h5ad("data.h5ad")
 
