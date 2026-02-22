@@ -1,9 +1,5 @@
-#' @keywords internal
-"_PACKAGE"
-
 #' gedi: Gene Expression Data Integration
 #'
-#' @name gedi-package
 #' @description
 #' A memory-efficient implementation for integrating gene expression data from
 #' single-cell RNA sequencing experiments. GEDI v2 uses a high-performance C++
@@ -87,4 +83,5 @@
 #' @importFrom methods as is
 #' @importFrom stats coef median rnorm runif var
 #' @importFrom utils object.size setTxtProgressBar txtProgressBar
-NULL
+#' @keywords internal
+"_PACKAGE"

@@ -206,74 +206,92 @@ plot_features <- function(model,
 
   N <- nrow(emb_mat)
 
-  # Convert feature names to indices
-  geneIDs <- model$metadata$geneIDs
-  if (is.character(features)) {
-    feature_idx <- match(features, geneIDs)
-    if (any(is.na(feature_idx))) {
-      missing <- features[is.na(feature_idx)]
-      stop("Features not found: ", paste(missing, collapse = ", "), call. = FALSE)
-    }
-    feature_names <- features
-  } else {
-    feature_idx <- as.integer(features)
-    if (any(feature_idx < 1 | feature_idx > length(geneIDs))) {
-      stop("Feature indices out of range", call. = FALSE)
-    }
-    feature_names <- geneIDs[feature_idx]
+  # Check projection type
+  if (!projection %in% c("zdb", "db", "adb")) {
+    stop("projection must be 'zdb', 'db', or 'adb'", call. = FALSE)
   }
 
-  F <- length(feature_idx)
-
-  # Extract feature weights from Z
-  Z <- model$params$Z
-  feature_weights <- Z[feature_idx, , drop = FALSE] # F x K
-  feature_weights <- t(feature_weights) # K x F for C++
-
-  # Compute projections using C++
-  if (projection == "zdb") {
-    projections <- compute_multi_feature_projection(
-      feature_weights = feature_weights,
-      D = model$params$D,
-      Bi_list = model$params$Bi,
-      verbose = 0
-    ) # Returns N x F matrix
-  } else if (projection == "db") {
-    # For DB: just use factor weights directly
-    DB <- model$projections$DB # K x N
-    projections <- t(DB) %*% feature_weights # N x F
-  } else if (projection == "adb") {
-    # For ADB: need to check if model has C/H matrices
+  # For adb, feature names refer to pathway names, not genes
+  if (projection == "adb") {
     if (model$aux$P == 0) {
       stop("projection 'adb' requires a model with gene-level prior (C matrix). This model has P=0.", call. = FALSE)
     }
 
-    # Get the full ADB projection: C.rotation * A * D * B (P x N)
-    # This gives us pathway activities across all cells
+    # Get the pathway names
+    pathway_names <- colnames(model$.__enclos_env__$private$.aux_static$inputC)
+    if (is.null(pathway_names)) {
+      pathway_names <- paste0("Pathway", 1:model$aux$P)
+    }
+
+    if (is.character(features)) {
+      feature_idx <- match(features, pathway_names)
+      if (any(is.na(feature_idx))) {
+        missing <- features[is.na(feature_idx)]
+        stop("Features (pathways) not found: ", paste(missing, collapse = ", "), call. = FALSE)
+      }
+      feature_names <- features
+    } else {
+      feature_idx <- as.integer(features)
+      if (any(feature_idx < 1 | feature_idx > length(pathway_names))) {
+        stop("Feature indices out of range for pathways", call. = FALSE)
+      }
+      feature_names <- pathway_names[feature_idx]
+    }
+
+    F_count <- length(feature_idx)
+
+    # Evaluate ADB projection specifically for chosen pathways
     ADB <- model$projections$ADB # P x N
-
-    # We need to project gene features through the pathway space
-    # feature_weights is K x F (latent factor loadings for selected genes from Z)
-    #
-    # Mathematical logic:
-    # 1. Get C.rotation[feature_idx, ] which is J_selected x P
-    #    This tells us how each selected gene maps to pathways
-    # 2. For each gene, compute its projection as:
-    #    sum over pathways: C.rotation[gene, pathway] * ADB[pathway, cells]
-
-    # Get C.rotation and extract rows for selected genes
-    C_rotation <- model$.__enclos_env__$private$.aux_static$C.rotation # J x P
-    C_feature <- C_rotation[feature_idx, , drop = FALSE] # F x P
-
-    # Project through pathway space: (F x P) %*% (P x N) = F x N
-    projections <- t(C_feature %*% ADB) # N x F
+    if (!is.null(rownames(ADB))) {
+      # If ADB has row names (from C matrix columns), we can extract directly
+      projections <- t(ADB[feature_names, , drop = FALSE]) # N x F_count
+    } else {
+      # Otherwise fall back to integer indices
+      projections <- t(ADB[feature_idx, , drop = FALSE]) # N x F_count
+    }
   } else {
-    stop("projection must be 'zdb', 'db', or 'adb'", call. = FALSE)
+    # Convert feature names to indices (genes for zdb/db)
+    geneIDs <- model$metadata$geneIDs
+    if (is.character(features)) {
+      feature_idx <- match(features, geneIDs)
+      if (any(is.na(feature_idx))) {
+        missing <- features[is.na(feature_idx)]
+        stop("Features not found: ", paste(missing, collapse = ", "), call. = FALSE)
+      }
+      feature_names <- features
+    } else {
+      feature_idx <- as.integer(features)
+      if (any(feature_idx < 1 | feature_idx > length(geneIDs))) {
+        stop("Feature indices out of range", call. = FALSE)
+      }
+      feature_names <- geneIDs[feature_idx]
+    }
+
+    F_count <- length(feature_idx)
+
+    # Extract feature weights from Z
+    Z <- model$params$Z
+    feature_weights <- Z[feature_idx, , drop = FALSE] # F x K
+    feature_weights <- t(feature_weights) # K x F for C++
+
+    # Compute projections using C++
+    if (projection == "zdb") {
+      projections <- compute_multi_feature_projection(
+        feature_weights = feature_weights,
+        D = model$params$D,
+        Bi_list = model$params$Bi,
+        verbose = 0
+      ) # Returns N x F matrix
+    } else if (projection == "db") {
+      # For DB: just use factor weights directly
+      DB <- model$projections$DB # K x N
+      projections <- t(DB) %*% feature_weights # N x F
+    }
   }
 
   # Build long-format data frame
-  df_list <- vector("list", F)
-  for (f in 1:F) {
+  df_list <- vector("list", F_count)
+  for (f in 1:F_count) {
     df_list[[f]] <- data.frame(
       Dim1 = emb_mat[, 1],
       Dim2 = emb_mat[, 2],

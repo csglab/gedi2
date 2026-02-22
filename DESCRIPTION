@@ -1,8 +1,8 @@
 Package: gedi2
 Type: Package
 Title: Gene Expression Decomposition and Integration
-Version: 2.3.3
-Date: 2026-02-09
+Version: 2.3.4
+Date: 2026-02-22
 Authors@R: c(
     person("Arsham", "Mikaeili Namini", email = "arsham.mikaeilinamini@mail.mcgill.ca", role = c("aut", "cre")),
     person("Hamed", "S.Najafabadi", email = "hamed.najafabadi@mcgill.ca", role = c("aut"))
