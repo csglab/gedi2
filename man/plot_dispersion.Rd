@@ -32,9 +32,20 @@ Visualizes the relationship between expected and observed variance
 for count data. Useful for assessing model fit quality.
 }
 \examples{
-\dontrun{
-disp <- model$imputed$dispersion(M)
-plot_dispersion(disp)
+\donttest{
+if (requireNamespace("SeuratObject", quietly = TRUE)) {
+  pbmc_small <- SeuratObject::pbmc_small
+  M <- pbmc_small@assays$RNA@counts
+  model <- CreateGEDIObject(
+    Samples = pbmc_small@meta.data$orig.ident,
+    M       = M,
+    K       = 3,
+    verbose = 0
+  )
+  model$train(iterations = 5)
+  disp <- model$imputed$dispersion(M)
+  plot_dispersion(disp)
+}
 }
 
 }

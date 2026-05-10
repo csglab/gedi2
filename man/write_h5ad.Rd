@@ -69,37 +69,24 @@ The function handles the technical details of HDF5/AnnData compatibility:
 }
 \examples{
 \donttest{
-# Load example data
-pbmc_small <- SeuratObject::pbmc_small
+if (requireNamespace("hdf5r", quietly = TRUE) &&
+    requireNamespace("SeuratObject", quietly = TRUE)) {
+  pbmc_small <- SeuratObject::pbmc_small
+  model <- CreateGEDIObject(
+    Samples = pbmc_small@meta.data$orig.ident,
+    M       = pbmc_small@assays$RNA@counts,
+    K       = 3,
+    verbose = 0
+  )
+  model$train(iterations = 5)
 
-# Train a GEDI model
-model <- CreateGEDIObject(
-  Samples = pbmc_small@meta.data$orig.ident,
-  M = pbmc_small@assays$RNA@counts,
-  K = 10,
-  verbose = 0
-)
-model$train(iterations = 10)
-
-# Save to H5AD with imputed expression
-write_h5ad(model, "results.h5ad")
-
-# Save with original counts in raw slot
-write_h5ad(model, "results.h5ad", M = pbmc_small@assays$RNA@counts, include_raw = TRUE)
-
-# Save original M matrix as main X slot
-write_h5ad(model, "results.h5ad", X_slot = "original", M = pbmc_small@assays$RNA@counts)
-
-# Save projection instead of imputed values
-write_h5ad(model, "results.h5ad", X_slot = "projection")
-
-# Cleanup
-file.remove("results.h5ad")
-
-# Read in Python:
-# import scanpy as sc
-# adata = sc.read_h5ad("results.h5ad")
-# adata.obsm['X_gedi']  # GEDI embeddings
+  # Write to a temporary file (CRAN policy: never write to the user's
+  # working directory in examples).
+  tmp <- tempfile(fileext = ".h5ad")
+  write_h5ad(model, tmp)
+  write_h5ad(model, tmp, X_slot = "projection")
+  unlink(tmp)
+}
 }
 
 }

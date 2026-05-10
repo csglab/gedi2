@@ -56,9 +56,21 @@ In log-space, this represents log(gene1/gene2) in the original count space.
 Positive values indicate gene1 > gene2, negative indicates gene2 > gene1.
 }
 \examples{
-\dontrun{
-# Compare CD3D vs CD79A expression
-plot_feature_ratio(model, "CD3D", "CD79A", comparison = "difference")
+\donttest{
+if (requireNamespace("SeuratObject", quietly = TRUE)) {
+  pbmc_small <- SeuratObject::pbmc_small
+  model <- CreateGEDIObject(
+    Samples = pbmc_small@meta.data$orig.ident,
+    M       = pbmc_small@assays$RNA@counts,
+    K       = 3,
+    verbose = 0
+  )
+  model$train(iterations = 5)
+  gene1 <- rownames(pbmc_small)[1]
+  gene2 <- rownames(pbmc_small)[2]
+  plot_feature_ratio(model, gene1, gene2, comparison = "difference",
+                     embedding = "pca")
+}
 }
 
 }

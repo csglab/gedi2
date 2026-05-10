@@ -29,16 +29,16 @@ Reads a 10X Genomics HDF5 file (CellRanger v2/v3 format) and converts
 it to a sparse dgCMatrix suitable for use with gedi R6 object.
 }
 \examples{
-\dontrun{
-# Read 10X Genomics H5 file with gene names (default)
-expr_matrix <- read_h5("filtered_feature_bc_matrix.h5")
-
-# Use gene IDs instead of names
-expr_matrix <- read_h5("filtered_feature_bc_matrix.h5", feature_format = "gene_ids")
-
-# Use with gedi R6 object
-gedi_obj <- gedi$new()
-gedi_obj$setup(Y = expr_matrix, K = 10)
+\donttest{
+# read_h5() expects a 10x Genomics filtered_feature_bc_matrix.h5 file.
+# The example body runs only when such a file is on disk and hdf5r is
+# installed; otherwise it is silently skipped.
+h5_file <- "filtered_feature_bc_matrix.h5"
+if (file.exists(h5_file) &&
+    requireNamespace("hdf5r", quietly = TRUE)) {
+  expr_matrix <- read_h5(h5_file)
+  expr_matrix_ids <- read_h5(h5_file, feature_format = "gene_ids")
+}
 }
 
 }

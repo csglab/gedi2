@@ -56,19 +56,24 @@ This function reads H5AD files, which are the standard format for AnnData
 objects in Python. Compatible with gedi R6 class for seamless integration.
 }
 \examples{
-\dontrun{
-# Read H5AD file with default settings (uses gene names from var rownames)
-expr_matrix <- read_h5ad("data.h5ad")
+\donttest{
+# Round-trip: write a tiny H5AD via write_h5ad(), then read it back.
+if (requireNamespace("hdf5r", quietly = TRUE) &&
+    requireNamespace("SeuratObject", quietly = TRUE)) {
+  pbmc_small <- SeuratObject::pbmc_small
+  model <- CreateGEDIObject(
+    Samples = pbmc_small@meta.data$orig.ident,
+    M       = pbmc_small@assays$RNA@counts,
+    K       = 3,
+    verbose = 0
+  )
+  model$train(iterations = 5)
 
-# Use Ensembl IDs from var$gene_ids column
-expr_matrix <- read_h5ad("data.h5ad", feature_format = "gene_ids")
-
-# Use with gedi R6 object
-library(gedi2)
-expr_matrix <- read_h5ad("data.h5ad")
-samples <- factor(rep(c("sample1", "sample2"), each = ncol(expr_matrix) / 2))
-gedi_obj <- gedi$new(n_sample = 2)
-gedi_obj$setup(Y = expr_matrix, sample_id = samples, K = 10)
+  tmp <- tempfile(fileext = ".h5ad")
+  write_h5ad(model, tmp)
+  expr_matrix <- read_h5ad(tmp)
+  unlink(tmp)
+}
 }
 
 }

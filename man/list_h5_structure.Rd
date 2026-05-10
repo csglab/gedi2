@@ -18,9 +18,23 @@ data.frame with file structure information
 Helper function to explore H5/H5AD file structure.
 }
 \examples{
-\dontrun{
-list_h5_structure("data.h5ad")
-list_h5_structure("filtered_feature_bc_matrix.h5")
+\donttest{
+# Round-trip: write a tiny H5AD via write_h5ad() then list its structure.
+if (requireNamespace("hdf5r", quietly = TRUE) &&
+    requireNamespace("SeuratObject", quietly = TRUE)) {
+  pbmc_small <- SeuratObject::pbmc_small
+  model <- CreateGEDIObject(
+    Samples = pbmc_small@meta.data$orig.ident,
+    M       = pbmc_small@assays$RNA@counts,
+    K       = 3,
+    verbose = 0
+  )
+  model$train(iterations = 5)
+  tmp <- tempfile(fileext = ".h5ad")
+  write_h5ad(model, tmp)
+  list_h5_structure(tmp)
+  unlink(tmp)
+}
 }
 
 }

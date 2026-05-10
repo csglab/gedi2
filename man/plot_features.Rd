@@ -48,9 +48,19 @@ Efficiently plots multiple gene features on a 2D embedding using faceting.
 Computes projections on-the-fly without storing full ZDB matrix.
 }
 \examples{
-\dontrun{
-plot_features(model, c("CD3D", "CD79A", "LYZ"), embedding = "umap")
-plot_features(model, c(1, 2, 3), color_limits = "individual")
+\donttest{
+if (requireNamespace("SeuratObject", quietly = TRUE) &&
+    requireNamespace("uwot", quietly = TRUE)) {
+  pbmc_small <- SeuratObject::pbmc_small
+  model <- CreateGEDIObject(
+    Samples = pbmc_small@meta.data$orig.ident,
+    M       = pbmc_small@assays$RNA@counts,
+    K       = 3,
+    verbose = 0
+  )
+  model$train(iterations = 5)
+  plot_features(model, c(1, 2), embedding = "pca")
+}
 }
 
 }

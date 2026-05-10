@@ -41,16 +41,19 @@ Visualizes convergence of model parameters during training.
 Supports multiple layout styles for different use cases.
 }
 \examples{
-\dontrun{
-# Faceted view (default)
-plot_convergence(model)
-
-# Separate plots for detailed inspection
-plots <- plot_convergence(model, layout = "separate")
-plots$sigma2
-
-# Compact two-panel view
-plot_convergence(model, layout = "compact")
+\donttest{
+if (requireNamespace("SeuratObject", quietly = TRUE)) {
+  pbmc_small <- SeuratObject::pbmc_small
+  model <- CreateGEDIObject(
+    Samples = pbmc_small@meta.data$orig.ident,
+    M       = pbmc_small@assays$RNA@counts,
+    K       = 3,
+    verbose = 0
+  )
+  model$train(iterations = 10, track_interval = 2)
+  plot_convergence(model)
+  plots <- plot_convergence(model, layout = "separate")
+}
 }
 
 }

@@ -64,14 +64,18 @@ Simplified interface for plotting embeddings with automatic caching.
 Model is the first argument, and color_by handles metadata/genes automatically.
 }
 \examples{
-\dontrun{
-# Simple usage with smart caching
-plot_embedding(model, embedding = "umap", color_by = "sample")
-plot_embedding(model, embedding = "pca", color_by = "CD3D")
-
-# Backwards compatible - still works with matrix
-umap_coords <- model$embeddings$umap()
-plot_embedding(umap_coords, color = my_values)
+\donttest{
+if (requireNamespace("SeuratObject", quietly = TRUE)) {
+  pbmc_small <- SeuratObject::pbmc_small
+  model <- CreateGEDIObject(
+    Samples = pbmc_small@meta.data$orig.ident,
+    M       = pbmc_small@assays$RNA@counts,
+    K       = 3,
+    verbose = 0
+  )
+  model$train(iterations = 5)
+  plot_embedding(model, embedding = "pca", color_by = "sample")
+}
 }
 
 }

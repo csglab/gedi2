@@ -55,19 +55,29 @@ Visualizes vector fields showing cell state transitions. Uses binned
 aggregation for cleaner visualization without overplotting.
 }
 \examples{
-\dontrun{
-# Compute vector field
-vf <- model$dynamics$vector_field(
-  start.cond = c(0, 0),
-  end.cond = c(1, 0)
+\donttest{
+# Build a tiny multi-sample fixture with a sample-level prior H so that
+# model$dynamics$vector_field() is available.
+set.seed(1)
+n_genes <- 80; n_cells <- 60; n_samples <- 3
+M <- Matrix::Matrix(
+  matrix(stats::rpois(n_genes * n_cells, 5), n_genes, n_cells),
+  sparse = TRUE
 )
+rownames(M) <- paste0("G", seq_len(n_genes))
+colnames(M) <- paste0("C", seq_len(n_cells))
+samples <- factor(rep(paste0("S", seq_len(n_samples)),
+                      each = n_cells / n_samples))
+H <- matrix(c(1, 0, 0,  0, 1, 0), nrow = 2, byrow = TRUE)
+colnames(H) <- paste0("S", seq_len(n_samples))
+rownames(H) <- c("cond_a", "cond_b")
 
-# Plot with default settings
+model <- CreateGEDIObject(Samples = samples, M = M, K = 3, H = H,
+                          verbose = 0)
+model$train(iterations = 5)
+vf <- model$dynamics$vector_field(start.cond = c(1, 0),
+                                  end.cond   = c(0, 1))
 plot_vector_field(vf)
-
-# Color by feature
-feature_vals <- model$projections$ZDB[1, ] # First gene
-plot_vector_field(vf, color = feature_vals)
 }
 
 }
