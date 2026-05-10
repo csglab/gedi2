@@ -24,7 +24,8 @@ using namespace Eigen;
  *
  * @param Ro Matrix (J x L) representing effect of sample variables on gene offsets
  * @param H_rotation Rotation matrix (L x num_covariates)
- * @param contrast Vector of length L specifying the contrast
+ * @param contrast Vector of length num_covariates (= ncol(H_rotation))
+ *   specifying the contrast in the user-facing covariate space
  * @param verbose Integer verbosity level
  *
  * @return Vector of length J representing the differential offset effect
@@ -44,15 +45,18 @@ Eigen::VectorXd getDiffO_cpp(
   // Dimension validation
   int J = Ro.rows();
   int L = Ro.cols();
-  
+
   if (H_rotation.rows() != L) {
     stop("Dimension mismatch: H_rotation must have L rows");
   }
-  
-  if (contrast.size() != L) {
-    stop("Dimension mismatch: contrast must have length L");
+
+  // contrast lives in the original num_covariates space; H_rotation projects
+  // num_covariates -> L. So contrast length must equal H_rotation.cols().
+  if (contrast.size() != H_rotation.cols()) {
+    stop("Dimension mismatch: contrast must have length ncol(H_rotation) "
+         "(= number of original H covariates)");
   }
-  
+
   if (L == 0) {
     stop("Cannot compute diffO: no sample-level prior (H) was provided");
   }
@@ -85,7 +89,8 @@ Eigen::VectorXd getDiffO_cpp(
  * @param Rk_list List of K matrices (each J x L), representing the effect of
  * sample-level variables on each latent factor k
  * @param H_rotation Rotation matrix (L x num_covariates)
- * @param contrast Vector of length L specifying the contrast
+ * @param contrast Vector of length num_covariates (= ncol(H_rotation))
+ *   specifying the contrast in the user-facing covariate space
  * @param verbose Integer verbosity level
  *
  * @return Dense matrix diffQ of dimensions J x K representing the predicted
@@ -118,8 +123,11 @@ Eigen::MatrixXd getDiffQ_cpp(
      stop("Dimension mismatch: Rk[1] must have L columns");
   }
 
-  if (contrast.size() != L) {
-    stop("Dimension mismatch: contrast must have length L");
+  // contrast lives in the original num_covariates space; H_rotation projects
+  // num_covariates -> L. So contrast length must equal H_rotation.cols().
+  if (contrast.size() != H_rotation.cols()) {
+    stop("Dimension mismatch: contrast must have length ncol(H_rotation) "
+         "(= number of original H covariates)");
   }
 
   if (verbose >= 1) {
@@ -164,7 +172,8 @@ Eigen::MatrixXd getDiffQ_cpp(
  *
  * @param Rk_list List of K matrices (each J x L)
  * @param H_rotation Rotation matrix (L x num_covariates)
- * @param contrast Vector of length L specifying the contrast
+ * @param contrast Vector of length num_covariates (= ncol(H_rotation))
+ *   specifying the contrast in the user-facing covariate space
  * @param D Scaling vector (length K)
  * @param Bi_list List of sample-specific cell projection matrices (K x Ni each)
  * @param verbose Integer verbosity level
@@ -190,11 +199,14 @@ Eigen::MatrixXd getDiffExp_cpp(
   int L = H_rotation.rows();
   int J = -1; // Will be determined from first Rk
   int numSamples = Bi_list.size();
-  
-  if (contrast.size() != L) {
-    stop("Dimension mismatch: contrast must have length L");
+
+  // contrast lives in the original num_covariates space; H_rotation projects
+  // num_covariates -> L. So contrast length must equal H_rotation.cols().
+  if (contrast.size() != H_rotation.cols()) {
+    stop("Dimension mismatch: contrast must have length ncol(H_rotation) "
+         "(= number of original H covariates)");
   }
-  
+
   if (D.size() != K) {
     stop("Dimension mismatch: D must have length K");
   }

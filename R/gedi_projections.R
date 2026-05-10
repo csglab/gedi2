@@ -239,7 +239,10 @@ compute_ADB <- function(self, private, force_recompute = FALSE) {
 #'
 #' @param self Reference to GEDI R6 object
 #' @param private Reference to private environment
-#' @param contrast Numeric vector of length L specifying the contrast
+#' @param contrast Numeric vector of length \code{nrow(H)} (the number of
+#'   original covariates) specifying the contrast in the user-facing covariate
+#'   space; internally projected into the compressed L-space via
+#'   \code{H.rotation \%*\% contrast}.
 #' @param include_O Logical, if TRUE adds the global offset effect (diffO)
 #'
 #' @return Dense matrix (J x N) of differential expression values
@@ -255,22 +258,26 @@ compute_diffQ <- function(self, private, contrast, include_O = FALSE) {
   
   # Check if H prior was provided
   if (self$aux$L == 0) {
-    stop("Cannot compute diffQ: no sample-level prior (H) was provided during setup.", 
+    stop("Cannot compute diffQ: no sample-level prior (H) was provided during setup.",
          call. = FALSE)
   }
-  
-  # Validate contrast
-  if (!is.numeric(contrast) || length(contrast) != self$aux$L) {
-    stop("contrast must be a numeric vector of length L (", self$aux$L, ")", 
-         call. = FALSE)
-  }
-  
+
   # Check if aux_static exists
   if (is.null(private$.aux_static)) {
-    stop("Missing auxiliary data. Model may not be properly initialized.", 
+    stop("Missing auxiliary data. Model may not be properly initialized.",
          call. = FALSE)
   }
-  
+
+  # Validate contrast: must live in the original covariate space
+  # (= ncol(H.rotation) = number of rows of the user-supplied H matrix).
+  # H.rotation projects num_covariates -> L, so contrast is num_covariates-long.
+  num_cov <- ncol(private$.aux_static$H.rotation)
+  if (!is.numeric(contrast) || length(contrast) != num_cov) {
+    stop("contrast must be a numeric vector of length ", num_cov,
+         " (number of original H covariates)",
+         call. = FALSE)
+  }
+
   # Call C++ function (renamed to match old getDiffExp.gedi logic)
   diffExp <- getDiffExp_cpp(
     Rk_list = self$params$Rk,
@@ -305,7 +312,10 @@ compute_diffQ <- function(self, private, contrast, include_O = FALSE) {
 #'
 #' @param self Reference to GEDI R6 object
 #' @param private Reference to private environment
-#' @param contrast Numeric vector of length L specifying the contrast
+#' @param contrast Numeric vector of length \code{nrow(H)} (the number of
+#'   original covariates) specifying the contrast in the user-facing covariate
+#'   space; internally projected into the compressed L-space via
+#'   \code{H.rotation \%*\% contrast}.
 #'
 #' @return Numeric vector of length J
 #'
@@ -320,22 +330,25 @@ compute_diffO <- function(self, private, contrast) {
   
   # Check if H prior was provided
   if (self$aux$L == 0) {
-    stop("Cannot compute diffO: no sample-level prior (H) was provided during setup.", 
+    stop("Cannot compute diffO: no sample-level prior (H) was provided during setup.",
          call. = FALSE)
   }
-  
-  # Validate contrast
-  if (!is.numeric(contrast) || length(contrast) != self$aux$L) {
-    stop("contrast must be a numeric vector of length L (", self$aux$L, ")", 
-         call. = FALSE)
-  }
-  
+
   # Check if aux_static exists
   if (is.null(private$.aux_static)) {
-    stop("Missing auxiliary data. Model may not be properly initialized.", 
+    stop("Missing auxiliary data. Model may not be properly initialized.",
          call. = FALSE)
   }
-  
+
+  # Validate contrast: must live in the original covariate space
+  # (= ncol(H.rotation) = number of rows of the user-supplied H matrix).
+  num_cov <- ncol(private$.aux_static$H.rotation)
+  if (!is.numeric(contrast) || length(contrast) != num_cov) {
+    stop("contrast must be a numeric vector of length ", num_cov,
+         " (number of original H covariates)",
+         call. = FALSE)
+  }
+
   # Call C++ function
   diffO <- getDiffO_cpp(
     Ro = self$params$Ro,

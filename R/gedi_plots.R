@@ -164,9 +164,19 @@ utils::globalVariables(c(
 #' @return ggplot2 object with faceted features
 #'
 #' @examples
-#' \dontrun{
-#' plot_features(model, c("CD3D", "CD79A", "LYZ"), embedding = "umap")
-#' plot_features(model, c(1, 2, 3), color_limits = "individual")
+#' \donttest{
+#' if (requireNamespace("SeuratObject", quietly = TRUE) &&
+#'     requireNamespace("uwot", quietly = TRUE)) {
+#'   pbmc_small <- SeuratObject::pbmc_small
+#'   model <- CreateGEDIObject(
+#'     Samples = pbmc_small@meta.data$orig.ident,
+#'     M       = pbmc_small@assays$RNA@counts,
+#'     K       = 3,
+#'     verbose = 0
+#'   )
+#'   model$train(iterations = 5)
+#'   plot_features(model, c(1, 2), embedding = "pca")
+#' }
 #' }
 #'
 #' @export
@@ -393,9 +403,21 @@ plot_features <- function(model,
 #' Positive values indicate gene1 > gene2, negative indicates gene2 > gene1.
 #'
 #' @examples
-#' \dontrun{
-#' # Compare CD3D vs CD79A expression
-#' plot_feature_ratio(model, "CD3D", "CD79A", comparison = "difference")
+#' \donttest{
+#' if (requireNamespace("SeuratObject", quietly = TRUE)) {
+#'   pbmc_small <- SeuratObject::pbmc_small
+#'   model <- CreateGEDIObject(
+#'     Samples = pbmc_small@meta.data$orig.ident,
+#'     M       = pbmc_small@assays$RNA@counts,
+#'     K       = 3,
+#'     verbose = 0
+#'   )
+#'   model$train(iterations = 5)
+#'   gene1 <- rownames(pbmc_small)[1]
+#'   gene2 <- rownames(pbmc_small)[2]
+#'   plot_feature_ratio(model, gene1, gene2, comparison = "difference",
+#'                      embedding = "pca")
+#' }
 #' }
 #'
 #' @export
@@ -526,19 +548,29 @@ plot_feature_ratio <- function(model,
 #' @return ggplot2 object
 #'
 #' @examples
-#' \dontrun{
-#' # Compute vector field
-#' vf <- model$dynamics$vector_field(
-#'   start.cond = c(0, 0),
-#'   end.cond = c(1, 0)
+#' \donttest{
+#' # Build a tiny multi-sample fixture with a sample-level prior H so that
+#' # model$dynamics$vector_field() is available.
+#' set.seed(1)
+#' n_genes <- 80; n_cells <- 60; n_samples <- 3
+#' M <- Matrix::Matrix(
+#'   matrix(stats::rpois(n_genes * n_cells, 5), n_genes, n_cells),
+#'   sparse = TRUE
 #' )
+#' rownames(M) <- paste0("G", seq_len(n_genes))
+#' colnames(M) <- paste0("C", seq_len(n_cells))
+#' samples <- factor(rep(paste0("S", seq_len(n_samples)),
+#'                       each = n_cells / n_samples))
+#' H <- matrix(c(1, 0, 0,  0, 1, 0), nrow = 2, byrow = TRUE)
+#' colnames(H) <- paste0("S", seq_len(n_samples))
+#' rownames(H) <- c("cond_a", "cond_b")
 #'
-#' # Plot with default settings
+#' model <- CreateGEDIObject(Samples = samples, M = M, K = 3, H = H,
+#'                           verbose = 0)
+#' model$train(iterations = 5)
+#' vf <- model$dynamics$vector_field(start.cond = c(1, 0),
+#'                                   end.cond   = c(0, 1))
 #' plot_vector_field(vf)
-#'
-#' # Color by feature
-#' feature_vals <- model$projections$ZDB[1, ] # First gene
-#' plot_vector_field(vf, color = feature_vals)
 #' }
 #'
 #' @export
@@ -703,9 +735,20 @@ plot_vector_field <- function(dynamics_svd,
 #' @return ggplot2 object
 #'
 #' @examples
-#' \dontrun{
-#' disp <- model$imputed$dispersion(M)
-#' plot_dispersion(disp)
+#' \donttest{
+#' if (requireNamespace("SeuratObject", quietly = TRUE)) {
+#'   pbmc_small <- SeuratObject::pbmc_small
+#'   M <- pbmc_small@assays$RNA@counts
+#'   model <- CreateGEDIObject(
+#'     Samples = pbmc_small@meta.data$orig.ident,
+#'     M       = M,
+#'     K       = 3,
+#'     verbose = 0
+#'   )
+#'   model$train(iterations = 5)
+#'   disp <- model$imputed$dispersion(M)
+#'   plot_dispersion(disp)
+#' }
 #' }
 #'
 #' @export
@@ -776,16 +819,19 @@ plot_dispersion <- function(dispersion_df,
 #' @return ggplot2 object (for "faceted" or "compact") or list of ggplot2 objects (for "separate")
 #'
 #' @examples
-#' \dontrun{
-#' # Faceted view (default)
-#' plot_convergence(model)
-#'
-#' # Separate plots for detailed inspection
-#' plots <- plot_convergence(model, layout = "separate")
-#' plots$sigma2
-#'
-#' # Compact two-panel view
-#' plot_convergence(model, layout = "compact")
+#' \donttest{
+#' if (requireNamespace("SeuratObject", quietly = TRUE)) {
+#'   pbmc_small <- SeuratObject::pbmc_small
+#'   model <- CreateGEDIObject(
+#'     Samples = pbmc_small@meta.data$orig.ident,
+#'     M       = pbmc_small@assays$RNA@counts,
+#'     K       = 3,
+#'     verbose = 0
+#'   )
+#'   model$train(iterations = 10, track_interval = 2)
+#'   plot_convergence(model)
+#'   plots <- plot_convergence(model, layout = "separate")
+#' }
 #' }
 #'
 #' @export

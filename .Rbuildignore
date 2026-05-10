@@ -10,6 +10,8 @@
 ^gedi\.Rcheck$
 ^cran-comments\.md$
 ^\.claude$
+^CLAUDE\.md$
+^tests/manual$
 ^Logo\.svg$
 ^check_output\.txt$
 ^check_run\.log$

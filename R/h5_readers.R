@@ -33,19 +33,24 @@
 #' objects in Python. Compatible with gedi R6 class for seamless integration.
 #'
 #' @examples
-#' \dontrun{
-#' # Read H5AD file with default settings (uses gene names from var rownames)
-#' expr_matrix <- read_h5ad("data.h5ad")
+#' \donttest{
+#' # Round-trip: write a tiny H5AD via write_h5ad(), then read it back.
+#' if (requireNamespace("hdf5r", quietly = TRUE) &&
+#'     requireNamespace("SeuratObject", quietly = TRUE)) {
+#'   pbmc_small <- SeuratObject::pbmc_small
+#'   model <- CreateGEDIObject(
+#'     Samples = pbmc_small@meta.data$orig.ident,
+#'     M       = pbmc_small@assays$RNA@counts,
+#'     K       = 3,
+#'     verbose = 0
+#'   )
+#'   model$train(iterations = 5)
 #'
-#' # Use Ensembl IDs from var$gene_ids column
-#' expr_matrix <- read_h5ad("data.h5ad", feature_format = "gene_ids")
-#'
-#' # Use with gedi R6 object
-#' library(gedi2)
-#' expr_matrix <- read_h5ad("data.h5ad")
-#' samples <- factor(rep(c("sample1", "sample2"), each = ncol(expr_matrix) / 2))
-#' gedi_obj <- gedi$new(n_sample = 2)
-#' gedi_obj$setup(Y = expr_matrix, sample_id = samples, K = 10)
+#'   tmp <- tempfile(fileext = ".h5ad")
+#'   write_h5ad(model, tmp)
+#'   expr_matrix <- read_h5ad(tmp)
+#'   unlink(tmp)
+#' }
 #' }
 #'
 #' @importFrom Matrix sparseMatrix t Matrix
@@ -487,16 +492,16 @@ read_h5ad <- function(file_path,
 #' @return Sparse matrix (dgCMatrix) with genes as rows and cells as columns.
 #'
 #' @examples
-#' \dontrun{
-#' # Read 10X Genomics H5 file with gene names (default)
-#' expr_matrix <- read_h5("filtered_feature_bc_matrix.h5")
-#'
-#' # Use gene IDs instead of names
-#' expr_matrix <- read_h5("filtered_feature_bc_matrix.h5", feature_format = "gene_ids")
-#'
-#' # Use with gedi R6 object
-#' gedi_obj <- gedi$new()
-#' gedi_obj$setup(Y = expr_matrix, K = 10)
+#' \donttest{
+#' # read_h5() expects a 10x Genomics filtered_feature_bc_matrix.h5 file.
+#' # The example body runs only when such a file is on disk and hdf5r is
+#' # installed; otherwise it is silently skipped.
+#' h5_file <- "filtered_feature_bc_matrix.h5"
+#' if (file.exists(h5_file) &&
+#'     requireNamespace("hdf5r", quietly = TRUE)) {
+#'   expr_matrix <- read_h5(h5_file)
+#'   expr_matrix_ids <- read_h5(h5_file, feature_format = "gene_ids")
+#' }
 #' }
 #'
 #' @importFrom Matrix sparseMatrix
@@ -732,9 +737,23 @@ read_h5 <- function(file_path,
 #' @return data.frame with file structure information
 #'
 #' @examples
-#' \dontrun{
-#' list_h5_structure("data.h5ad")
-#' list_h5_structure("filtered_feature_bc_matrix.h5")
+#' \donttest{
+#' # Round-trip: write a tiny H5AD via write_h5ad() then list its structure.
+#' if (requireNamespace("hdf5r", quietly = TRUE) &&
+#'     requireNamespace("SeuratObject", quietly = TRUE)) {
+#'   pbmc_small <- SeuratObject::pbmc_small
+#'   model <- CreateGEDIObject(
+#'     Samples = pbmc_small@meta.data$orig.ident,
+#'     M       = pbmc_small@assays$RNA@counts,
+#'     K       = 3,
+#'     verbose = 0
+#'   )
+#'   model$train(iterations = 5)
+#'   tmp <- tempfile(fileext = ".h5ad")
+#'   write_h5ad(model, tmp)
+#'   list_h5_structure(tmp)
+#'   unlink(tmp)
+#' }
 #' }
 #'
 #' @export
