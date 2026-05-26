@@ -1,9 +1,9 @@
 # GEDI-2
 <img src="man/figures/Logo.svg" align="right" height="240"/>
 
+[![CRAN status](https://www.r-pkg.org/badges/version/gedi2)](https://CRAN.R-project.org/package=gedi2)
 [![R-CMD-check](https://github.com/csglab/gedi2/workflows/R-CMD-check/badge.svg)](https://github.com/csglab/gedi2/actions)
 [![test-coverage](https://github.com/csglab/gedi2/workflows/test-coverage/badge.svg)](https://github.com/csglab/gedi2/actions)
-[![CRAN status](https://www.r-pkg.org/badges/version/gedi2)](https://CRAN.R-project.org/package=gedi2)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/license/MIT)
 [![Documentation](https://img.shields.io/badge/Docs-Learn%20More-blue.svg)](https://github.com/csglab/gedi2/wiki)
 
