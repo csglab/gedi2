@@ -21,7 +21,19 @@ See the **full Documentation** in the [wiki page.](https://github.com/csglab/ged
 - **Eigen** >= 3.3.0 (linear algebra library)
 - **OpenMP** (optional, for parallelization)
 
-### Installing from GitHub
+### Installation
+
+#### From CRAN (latest stable version)
+
+The latest stable release is available on CRAN:
+
+```r
+install.packages("gedi2")
+```
+
+#### From GitHub (latest version with minor fixes)
+
+For the most up-to-date version, including minor fixes not yet on CRAN, install directly from GitHub:
 
 ```r
 # Install devtools if not already installed
@@ -30,6 +42,13 @@ install.packages("devtools")
 # Install gedi from GitHub
 devtools::install_github("csglab/gedi2")
 ```
+
+
+### Citation
+
+If you use GEDI 2.0 in your research, please cite the original paper:
+
+> Mikaeili Namini, A., Saberi, A., & Najafabadi, H. S. (2026). Atlas-level single-cell integration and clustering-free differential expression analysis with GEDI 2.0. *Bioinformatics*. https://doi.org/10.1093/bioinformatics/btag334
 
 
 ### Reproducible Code
