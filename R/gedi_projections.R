@@ -24,6 +24,12 @@ ProjectionsAccessor <- R6Class(
         cat("  $ADB  - Pathway activity projection (P x N)\n")
       }
       cat("\nAccess with: model$projections$ZDB\n")
+      cat("\nDifferential projections (require a contrast):\n")
+      cat("  model$diffExp(contrast)  - Differential expression (J x N)\n")
+      if (private$.gedi_self$aux$P > 0) {
+        cat("  model$diffADB(contrast)  - Differential pathway activity (P x N)\n")
+      }
+      cat("\nSee ?plot_features for contrast-based visualization.\n")
       invisible(self)
     }
   ),
@@ -374,6 +380,97 @@ compute_diffO <- function(self, private, contrast) {
 compute_diffExp <- function(self, private, contrast, include_O = FALSE) {
   # This is just an alias for compute_diffQ
   compute_diffQ(self, private, contrast, include_O)
+}
+
+
+#' Compute Differential Pathway Activity (num_pathways x N)
+#'
+#' @description
+#' Computes the cell-specific differential pathway activity effect
+#' (num_pathways x N).  This is the R wrapper for the C++ function
+#' \code{getDiffADB_cpp()}, which mirrors the ADB computation but uses the
+#' H-contrast-projected gene loadings instead of the posterior mean A.
+#'
+#' @param self Reference to GEDI R6 object
+#' @param private Reference to private environment
+#' @param contrast Numeric vector of length \code{ncol(H.rotation)} (the number
+#'   of original H covariates) specifying the contrast in the user-facing
+#'   covariate space; internally projected into the compressed L-space via
+#'   \code{H.rotation \%*\% contrast}.
+#'
+#' @return Dense matrix (num_pathways x N) with rownames = pathway names and
+#'   colnames = cellIDs.
+#'
+#' @keywords internal
+#' @noRd
+compute_diffADB <- function(self, private, contrast) {
+
+  # Validate model state
+  if (is.null(private$.lastResult)) {
+    stop("No results yet. Run $train() first.", call. = FALSE)
+  }
+
+  # Check if H prior was provided
+  if (self$aux$L == 0) {
+    stop("Cannot compute diffADB: no sample-level prior (H) was provided during setup.",
+         call. = FALSE)
+  }
+
+  # Check if C prior was provided
+  if (self$aux$P == 0) {
+    stop("Cannot compute diffADB: no gene-level prior (C) was provided during setup.",
+         call. = FALSE)
+  }
+
+  # Check if aux_static exists
+  if (is.null(private$.aux_static)) {
+    stop("Missing auxiliary data. Model may not be properly initialized.",
+         call. = FALSE)
+  }
+
+  # Validate contrast: must live in the original covariate space
+  # (= ncol(H.rotation) = number of rows of the user-supplied H matrix).
+  # H.rotation projects num_covariates -> L, so contrast is num_covariates-long.
+  num_cov <- ncol(private$.aux_static$H.rotation)
+  if (!is.numeric(contrast) || length(contrast) != num_cov) {
+    stop("contrast must be a numeric vector of length ", num_cov,
+         " (number of original H covariates)",
+         call. = FALSE)
+  }
+
+  # solve_A's pathway-loading shrinkage; passed through so diffADB applies the
+  # exact same operator as ADB and remains the true differential of ADB.
+  S_A <- private$.lastResult$hyperparams$S_A
+
+  # Coerce the prior matrices to dense double before mapping into Eigen.
+  # inputC in particular may be stored as an integer base matrix (e.g. a 0/1
+  # membership matrix) or a sparse Matrix, neither of which can bind to a
+  # C++ Eigen::Map<MatrixXd> ("Wrong R type for mapped matrix").
+  inputC <- as.matrix(private$.aux_static$inputC)
+  storage.mode(inputC) <- "double"
+  C_rotation <- as.matrix(private$.aux_static$C.rotation)
+  storage.mode(C_rotation) <- "double"
+  H_rotation <- as.matrix(private$.aux_static$H.rotation)
+  storage.mode(H_rotation) <- "double"
+
+  # Call C++ function — no caching because result depends on contrast
+  diffADB <- getDiffADB_cpp(
+    Rk_list    = self$params$Rk,
+    H_rotation = H_rotation,
+    contrast   = as.numeric(contrast),
+    C_rotation = C_rotation,
+    inputC     = inputC,
+    D          = as.numeric(self$params$D),
+    Bi_list    = self$params$Bi,
+    S_A        = as.numeric(S_A),
+    verbose    = private$.verbose
+  )
+
+  # Add row/column names
+  rownames(diffADB) <- colnames(private$.aux_static$inputC)   # pathway names
+  colnames(diffADB) <- private$.cellIDs
+
+  return(diffADB)
 }
 
 

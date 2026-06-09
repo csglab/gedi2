@@ -9,6 +9,8 @@ plot_features(
   features,
   embedding = "umap",
   projection = "zdb",
+  contrast = NULL,
+  include_O = FALSE,
   color_limits = "global",
   ncol = NULL,
   randomize = TRUE,
@@ -18,34 +20,57 @@ plot_features(
 )
 }
 \arguments{
-\item{model}{GEDI model object}
+\item{model}{GEDI model object (trained).}
 
-\item{features}{Character vector of gene names or integer indices}
+\item{features}{Character vector of gene/pathway names or integer indices.
+For \code{"zdb"}, \code{"db"}, and \code{"diffexp"} these are gene
+identifiers.  For \code{"adb"} and \code{"diffadb"} these are pathway
+names (column names of the C matrix supplied at setup).}
 
-\item{embedding}{Character specifying embedding type ("umap", "pca") or
-a custom N x 2 matrix}
+\item{embedding}{Character specifying embedding type (\code{"umap"},
+\code{"pca"}) or a custom N x 2 matrix.}
 
-\item{projection}{Character, type of projection to compute ("zdb" or "db")}
+\item{projection}{Character, type of projection to compute.  One of
+\code{"zdb"} (shared manifold), \code{"db"} (latent factor embedding),
+\code{"adb"} (pathway activity), \code{"diffexp"} (differential
+expression), or \code{"diffadb"} (differential pathway activity).
+\code{"diffexp"} and \code{"diffadb"} require \code{contrast} to be set.
+\code{"diffexp"} optionally accepts \code{include_O = TRUE}.}
 
-\item{color_limits}{Character ("global" for shared scale, "individual" for
-per-facet scale) or numeric vector c(low, high)}
+\item{contrast}{Numeric vector of length equal to the number of original H
+covariates (\code{ncol(model$priors$H.rotation)}).  Required when
+\code{projection} is \code{"diffexp"} or \code{"diffadb"}; ignored
+otherwise.  The vector encodes the linear contrast in the user-facing
+covariate space.}
 
-\item{ncol}{Integer, number of columns in facet layout}
+\item{include_O}{Logical (default \code{FALSE}).  When \code{projection =
+  "diffexp"}, adds the global offset differential effect (diffO) to each
+gene's projection value.  Ignored for all other projection types.}
 
-\item{randomize}{Logical, whether to randomize point order}
+\item{color_limits}{Character (\code{"global"} for shared scale,
+\code{"individual"} for per-facet scale) or numeric vector
+\code{c(low, high)}.}
 
-\item{point_size}{Numeric, size of points}
+\item{ncol}{Integer, number of columns in facet layout.}
 
-\item{alpha}{Numeric, transparency of points}
+\item{randomize}{Logical, whether to randomize point order before plotting.}
 
-\item{title}{Character, plot title}
+\item{point_size}{Numeric, size of points.}
+
+\item{alpha}{Numeric, transparency of points (0-1).}
+
+\item{title}{Character, plot title (auto-derived from projection type if
+\code{NULL}).}
 }
 \value{
-ggplot2 object with faceted features
+ggplot2 object with faceted features.
 }
 \description{
-Efficiently plots multiple gene features on a 2D embedding using faceting.
-Computes projections on-the-fly without storing full ZDB matrix.
+Efficiently plots multiple gene or pathway features on a 2D embedding using
+faceting.  For standard projections (\code{"zdb"}, \code{"db"},
+\code{"adb"}) the values are computed on-the-fly without materialising the
+full J x N matrix.  For differential projections (\code{"diffexp"},
+\code{"diffadb"}) a \code{contrast} vector must be supplied.
 }
 \examples{
 \donttest{
@@ -61,6 +86,22 @@ if (requireNamespace("SeuratObject", quietly = TRUE) &&
   model$train(iterations = 5)
   plot_features(model, c(1, 2), embedding = "pca")
 }
+# Differential expression projection (requires an H design matrix at setup)
+set.seed(42)
+J <- 40; N <- 60; n_samples <- 2
+M <- Matrix::Matrix(matrix(rpois(J * N, 5), J, N), sparse = TRUE)
+rownames(M) <- paste0("Gene_", seq_len(J))
+colnames(M) <- paste0("Cell_", seq_len(N))
+samples <- factor(rep(paste0("S", seq_len(n_samples)), each = N / n_samples))
+H <- matrix(c(0, 1), nrow = 1,
+            dimnames = list("condition", paste0("S", seq_len(n_samples))))
+model <- CreateGEDIObject(Samples = samples, M = M, K = 3, H = H, verbose = 0)
+model$train(iterations = 10)
+contrast <- c(condition = 1)   # length == ncol(model$priors$H.rotation) == 1
+p <- plot_features(model, c("Gene_1", "Gene_2"),
+                   embedding  = "pca",
+                   projection = "diffexp",
+                   contrast   = contrast)
 }
 
 }

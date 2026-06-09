@@ -145,23 +145,44 @@ utils::globalVariables(c(
 
 #' Plot Multiple Features on Embedding
 #'
-#' Efficiently plots multiple gene features on a 2D embedding using faceting.
-#' Computes projections on-the-fly without storing full ZDB matrix.
+#' Efficiently plots multiple gene or pathway features on a 2D embedding using
+#' faceting.  For standard projections (\code{"zdb"}, \code{"db"},
+#' \code{"adb"}) the values are computed on-the-fly without materialising the
+#' full J x N matrix.  For differential projections (\code{"diffexp"},
+#' \code{"diffadb"}) a \code{contrast} vector must be supplied.
 #'
-#' @param model GEDI model object
-#' @param features Character vector of gene names or integer indices
-#' @param embedding Character specifying embedding type ("umap", "pca") or
-#'   a custom N x 2 matrix
-#' @param projection Character, type of projection to compute ("zdb" or "db")
-#' @param color_limits Character ("global" for shared scale, "individual" for
-#'   per-facet scale) or numeric vector c(low, high)
-#' @param ncol Integer, number of columns in facet layout
-#' @param randomize Logical, whether to randomize point order
-#' @param point_size Numeric, size of points
-#' @param alpha Numeric, transparency of points
-#' @param title Character, plot title
+#' @param model GEDI model object (trained).
+#' @param features Character vector of gene/pathway names or integer indices.
+#'   For \code{"zdb"}, \code{"db"}, and \code{"diffexp"} these are gene
+#'   identifiers.  For \code{"adb"} and \code{"diffadb"} these are pathway
+#'   names (column names of the C matrix supplied at setup).
+#' @param embedding Character specifying embedding type (\code{"umap"},
+#'   \code{"pca"}) or a custom N x 2 matrix.
+#' @param projection Character, type of projection to compute.  One of
+#'   \code{"zdb"} (shared manifold), \code{"db"} (latent factor embedding),
+#'   \code{"adb"} (pathway activity), \code{"diffexp"} (differential
+#'   expression), or \code{"diffadb"} (differential pathway activity).
+#'   \code{"diffexp"} and \code{"diffadb"} require \code{contrast} to be set.
+#'   \code{"diffexp"} optionally accepts \code{include_O = TRUE}.
+#' @param contrast Numeric vector of length equal to the number of original H
+#'   covariates (\code{ncol(model$priors$H.rotation)}).  Required when
+#'   \code{projection} is \code{"diffexp"} or \code{"diffadb"}; ignored
+#'   otherwise.  The vector encodes the linear contrast in the user-facing
+#'   covariate space.
+#' @param include_O Logical (default \code{FALSE}).  When \code{projection =
+#'   "diffexp"}, adds the global offset differential effect (diffO) to each
+#'   gene's projection value.  Ignored for all other projection types.
+#' @param color_limits Character (\code{"global"} for shared scale,
+#'   \code{"individual"} for per-facet scale) or numeric vector
+#'   \code{c(low, high)}.
+#' @param ncol Integer, number of columns in facet layout.
+#' @param randomize Logical, whether to randomize point order before plotting.
+#' @param point_size Numeric, size of points.
+#' @param alpha Numeric, transparency of points (0-1).
+#' @param title Character, plot title (auto-derived from projection type if
+#'   \code{NULL}).
 #'
-#' @return ggplot2 object with faceted features
+#' @return ggplot2 object with faceted features.
 #'
 #' @examples
 #' \donttest{
@@ -177,6 +198,22 @@ utils::globalVariables(c(
 #'   model$train(iterations = 5)
 #'   plot_features(model, c(1, 2), embedding = "pca")
 #' }
+#' # Differential expression projection (requires an H design matrix at setup)
+#' set.seed(42)
+#' J <- 40; N <- 60; n_samples <- 2
+#' M <- Matrix::Matrix(matrix(rpois(J * N, 5), J, N), sparse = TRUE)
+#' rownames(M) <- paste0("Gene_", seq_len(J))
+#' colnames(M) <- paste0("Cell_", seq_len(N))
+#' samples <- factor(rep(paste0("S", seq_len(n_samples)), each = N / n_samples))
+#' H <- matrix(c(0, 1), nrow = 1,
+#'             dimnames = list("condition", paste0("S", seq_len(n_samples))))
+#' model <- CreateGEDIObject(Samples = samples, M = M, K = 3, H = H, verbose = 0)
+#' model$train(iterations = 10)
+#' contrast <- c(condition = 1)   # length == ncol(model$priors$H.rotation) == 1
+#' p <- plot_features(model, c("Gene_1", "Gene_2"),
+#'                    embedding  = "pca",
+#'                    projection = "diffexp",
+#'                    contrast   = contrast)
 #' }
 #'
 #' @export
@@ -184,12 +221,15 @@ plot_features <- function(model,
                           features,
                           embedding = "umap",
                           projection = "zdb",
+                          contrast = NULL,
+                          include_O = FALSE,
                           color_limits = "global",
                           ncol = NULL,
                           randomize = TRUE,
                           point_size = 0.2,
                           alpha = 0.9,
                           title = NULL) {
+
   # Validate model
   if (is.null(model$params)) {
     stop("Model not trained. Run $train() first.", call. = FALSE)
@@ -217,27 +257,59 @@ plot_features <- function(model,
   N <- nrow(emb_mat)
 
   # Check projection type
-  if (!projection %in% c("zdb", "db", "adb")) {
-    stop("projection must be 'zdb', 'db', or 'adb'", call. = FALSE)
+  valid_projections <- c("zdb", "db", "adb", "diffexp", "diffadb")
+  if (!projection %in% valid_projections) {
+    stop("projection must be one of: ",
+         paste(paste0("'", valid_projections, "'"), collapse = ", "),
+         call. = FALSE)
   }
 
-  # For adb, feature names refer to pathway names, not genes
-  if (projection == "adb") {
-    if (model$aux$P == 0) {
-      stop("projection 'adb' requires a model with gene-level prior (C matrix). This model has P=0.", call. = FALSE)
+  # ---- Differential projection pre-flight checks ----------------------------
+
+  if (projection %in% c("diffexp", "diffadb")) {
+    if (is.null(contrast)) {
+      stop("projection '", projection, "' requires a `contrast` vector. ",
+           "Supply a numeric vector of length ncol(model$priors$H.rotation).",
+           call. = FALSE)
+    }
+    if (model$aux$L == 0) {
+      stop("projection '", projection, "' requires a model with sample-level ",
+           "prior (H matrix). This model has L=0.", call. = FALSE)
+    }
+    num_cov <- ncol(model$priors$H.rotation)
+    if (!is.numeric(contrast) || length(contrast) != num_cov) {
+      stop("contrast must be a numeric vector of length ", num_cov,
+           " (ncol(model$priors$H.rotation))", call. = FALSE)
+    }
+  }
+
+  if (projection == "diffadb" && model$aux$P == 0) {
+    stop("projection 'diffadb' requires a model with gene-level prior (C matrix). ",
+         "This model has P=0.", call. = FALSE)
+  }
+
+  # ---- Feature resolution ---------------------------------------------------
+
+  # pathway-based projections: adb, diffadb
+  if (projection %in% c("adb", "diffadb")) {
+
+    if (projection == "adb" && model$aux$P == 0) {
+      stop("projection 'adb' requires a model with gene-level prior (C matrix). ",
+           "This model has P=0.", call. = FALSE)
     }
 
     # Get the pathway names
     pathway_names <- colnames(model$.__enclos_env__$private$.aux_static$inputC)
     if (is.null(pathway_names)) {
-      pathway_names <- paste0("Pathway", 1:model$aux$P)
+      pathway_names <- paste0("Pathway", seq_len(model$aux$P))
     }
 
     if (is.character(features)) {
       feature_idx <- match(features, pathway_names)
       if (any(is.na(feature_idx))) {
-        missing <- features[is.na(feature_idx)]
-        stop("Features (pathways) not found: ", paste(missing, collapse = ", "), call. = FALSE)
+        missing_feats <- features[is.na(feature_idx)]
+        stop("Features (pathways) not found: ",
+             paste(missing_feats, collapse = ", "), call. = FALSE)
       }
       feature_names <- features
     } else {
@@ -250,23 +322,33 @@ plot_features <- function(model,
 
     F_count <- length(feature_idx)
 
-    # Evaluate ADB projection specifically for chosen pathways
-    ADB <- model$projections$ADB # P x N
-    if (!is.null(rownames(ADB))) {
-      # If ADB has row names (from C matrix columns), we can extract directly
-      projections <- t(ADB[feature_names, , drop = FALSE]) # N x F_count
+    # Compute pathway projections
+    if (projection == "adb") {
+      ADB <- model$projections$ADB  # P x N
+      if (!is.null(rownames(ADB))) {
+        projections <- t(ADB[feature_names, , drop = FALSE])  # N x F_count
+      } else {
+        projections <- t(ADB[feature_idx, , drop = FALSE])    # N x F_count
+      }
     } else {
-      # Otherwise fall back to integer indices
-      projections <- t(ADB[feature_idx, , drop = FALSE]) # N x F_count
+      # diffadb: materialise full diffADB (num_pathways x N), subset rows
+      DIFFADB <- model$diffADB(contrast)   # num_pathways x N
+      if (!is.null(rownames(DIFFADB))) {
+        projections <- t(DIFFADB[feature_names, , drop = FALSE])  # N x F_count
+      } else {
+        projections <- t(DIFFADB[feature_idx, , drop = FALSE])    # N x F_count
+      }
     }
+
   } else {
-    # Convert feature names to indices (genes for zdb/db)
+    # gene-based projections: zdb, db, diffexp
     geneIDs <- model$metadata$geneIDs
     if (is.character(features)) {
       feature_idx <- match(features, geneIDs)
       if (any(is.na(feature_idx))) {
-        missing <- features[is.na(feature_idx)]
-        stop("Features not found: ", paste(missing, collapse = ", "), call. = FALSE)
+        missing_feats <- features[is.na(feature_idx)]
+        stop("Features not found: ",
+             paste(missing_feats, collapse = ", "), call. = FALSE)
       }
       feature_names <- features
     } else {
@@ -279,33 +361,68 @@ plot_features <- function(model,
 
     F_count <- length(feature_idx)
 
-    # Extract feature weights from Z
-    Z <- model$params$Z
-    feature_weights <- Z[feature_idx, , drop = FALSE] # F x K
-    feature_weights <- t(feature_weights) # K x F for C++
-
-    # Compute projections using C++
     if (projection == "zdb") {
+      # Extract gene loadings from Z; transpose for C++ (K x F)
+      Z <- model$params$Z
+      feature_weights <- t(Z[feature_idx, , drop = FALSE])  # K x F
+
+      # compute_multi_feature_projection is the efficient path: avoids full ZDB
       projections <- compute_multi_feature_projection(
         feature_weights = feature_weights,
-        D = model$params$D,
-        Bi_list = model$params$Bi,
-        verbose = 0
-      ) # Returns N x F matrix
+        D               = model$params$D,
+        Bi_list         = model$params$Bi,
+        verbose         = 0
+      )  # N x F
+
     } else if (projection == "db") {
-      # For DB: just use factor weights directly
-      DB <- model$projections$DB # K x N
-      projections <- t(DB) %*% feature_weights # N x F
+      Z <- model$params$Z
+      feature_weights <- t(Z[feature_idx, , drop = FALSE])  # K x F
+      DB <- model$projections$DB   # K x N
+      projections <- t(DB) %*% feature_weights  # N x F
+
+    } else {
+      # diffexp: efficient path — avoids materialising the full J x N diffExp
+      # matrix.  This is the differential analogue of the compute_multi_feature_projection
+      # path used by "zdb" above.
+      H_c <- as.vector(model$priors$H.rotation %*% contrast)   # length L
+
+      DB <- model$projections$DB  # K x N
+
+      # Compute F x K matrix of differential gene loadings for selected genes
+      # only.  vapply iterates over Rk (each K x J), slices to the F selected
+      # rows, and multiplies by H_c (length L -> scalar per gene per factor).
+      # Each call returns a numeric vector of length F, so vapply builds
+      # an F x K matrix directly (rows = features, cols = factors).
+      diffQ_Z_sub <- vapply(
+        model$params$Rk,
+        FUN = function(Rk) as.vector(Rk[feature_idx, , drop = FALSE] %*% H_c),
+        FUN.VALUE = numeric(F_count)
+      )  # F x K  (vapply stacks results as columns when FUN.VALUE has length F_count)
+
+      # Handle F=1 edge case: vapply with FUN.VALUE=numeric(1) gives a named
+      # vector of length K rather than a 1 x K matrix.  Ensure F x K shape.
+      if (!is.matrix(diffQ_Z_sub)) {
+        diffQ_Z_sub <- matrix(diffQ_Z_sub, nrow = F_count)  # 1 x K
+      }
+      # At this point diffQ_Z_sub is F x K; DB is K x N.
+      projections <- t(diffQ_Z_sub %*% DB)  # N x F
+
+      if (isTRUE(include_O)) {
+        Ro <- model$params$Ro  # J x L
+        diffO_sub <- as.vector(Ro[feature_idx, , drop = FALSE] %*% H_c)  # length F
+        projections <- sweep(projections, 2, diffO_sub, `+`)
+      }
     }
   }
 
-  # Build long-format data frame
+  # ---- Build long-format data frame -----------------------------------------
+
   df_list <- vector("list", F_count)
-  for (f in 1:F_count) {
+  for (f in seq_len(F_count)) {
     df_list[[f]] <- data.frame(
-      Dim1 = emb_mat[, 1],
-      Dim2 = emb_mat[, 2],
-      Value = projections[, f],
+      Dim1    = emb_mat[, 1],
+      Dim2    = emb_mat[, 2],
+      Value   = projections[, f],
       Feature = feature_names[f]
     )
   }
@@ -326,7 +443,8 @@ plot_features <- function(model,
       lim <- NULL
       use_free_scale <- TRUE
     } else {
-      stop("color_limits must be 'global', 'individual', or numeric vector", call. = FALSE)
+      stop("color_limits must be 'global', 'individual', or numeric vector",
+           call. = FALSE)
     }
   } else {
     lim <- color_limits
@@ -335,18 +453,22 @@ plot_features <- function(model,
 
   # Determine legend label based on projection type
   legend_label <- switch(projection,
-    "zdb" = "Expression",
-    "db" = "Factor Activity",
-    "adb" = "Pathway Activity",
-    "Expression" # default fallback
+    "zdb"     = "Expression",
+    "db"      = "Factor Activity",
+    "adb"     = "Pathway Activity",
+    "diffexp" = "Diff. Expression",
+    "diffadb" = "Diff. Pathway Activity",
+    "Expression"  # default fallback
   )
 
   # Determine default title based on projection type
   default_title <- switch(projection,
-    "zdb" = "Gene Expression",
-    "db" = "Latent Factor Activity",
-    "adb" = "Pathway Activity",
-    "Feature Expression" # default fallback
+    "zdb"     = "Gene Expression",
+    "db"      = "Latent Factor Activity",
+    "adb"     = "Pathway Activity",
+    "diffexp" = "Differential Expression",
+    "diffadb" = "Differential Pathway Activity",
+    "Feature Expression"  # default fallback
   )
 
   # Create plot
@@ -356,7 +478,6 @@ plot_features <- function(model,
 
   # Add color scale
   if (use_free_scale) {
-    # Per-facet limits - need to compute per feature
     p <- p + scale_color_gedi_diverging(name = legend_label)
   } else {
     p <- p + scale_color_gedi_diverging(limits = lim, name = legend_label)
@@ -366,8 +487,8 @@ plot_features <- function(model,
   emb_name <- if (is.character(embedding)) toupper(embedding) else "Embedding"
   p <- p +
     ggplot2::labs(
-      x = paste(emb_name, "1"),
-      y = paste(emb_name, "2"),
+      x     = paste(emb_name, "1"),
+      y     = paste(emb_name, "2"),
       title = if (is.null(title)) default_title else title
     ) +
     theme_gedi()

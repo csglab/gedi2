@@ -1,3 +1,18 @@
+# gedi (development version)
+
+## New features
+
+* `plot_features()` gains two differential projection types (#26):
+  * `projection = "diffexp"` plots the per-cell differential expression for
+    selected genes, given a `contrast` (optionally adding the global offset via
+    `include_O = TRUE`). The full J x N matrix is never materialised.
+  * `projection = "diffadb"` plots the per-cell differential pathway activity
+    for selected pathways (requires a gene-level prior `C`).
+* New method `model$diffADB(contrast)` returns the differential pathway
+  activity (num_pathways x N). It is the exact differential of `ADB`
+  (i.e. `ADB(Z + dQ) - ADB(Z)`), applying the same `solve_A` shrinkage so it
+  stays on the same scale as `model$projections$ADB`.
+
 # gedi 2.3.1
 
 ## CRAN Compliance
