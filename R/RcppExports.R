@@ -208,6 +208,10 @@ getDiffExp_cpp <- function(Rk_list, H_rotation, contrast, D, Bi_list, verbose = 
     .Call(`_gedi2_getDiffExp_cpp`, Rk_list, H_rotation, contrast, D, Bi_list, verbose)
 }
 
+getDiffADB_cpp <- function(Rk_list, H_rotation, contrast, C_rotation, inputC, D, Bi_list, S_A, verbose = 0L) {
+    .Call(`_gedi2_getDiffADB_cpp`, Rk_list, H_rotation, contrast, C_rotation, inputC, D, Bi_list, S_A, verbose)
+}
+
 compute_svd_factorized_cpp <- function(Z, D, Bi_list, verbose = 0L) {
     .Call(`_gedi2_compute_svd_factorized_cpp`, Z, D, Bi_list, verbose)
 }

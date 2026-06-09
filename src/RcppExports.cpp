@@ -121,6 +121,25 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// getDiffADB_cpp
+Eigen::MatrixXd getDiffADB_cpp(const Rcpp::List& Rk_list, const Eigen::Map<Eigen::MatrixXd>& H_rotation, const Eigen::Map<Eigen::VectorXd>& contrast, const Eigen::Map<Eigen::MatrixXd>& C_rotation, const Eigen::Map<Eigen::MatrixXd>& inputC, const Eigen::Map<Eigen::VectorXd>& D, const Rcpp::List& Bi_list, double S_A, int verbose);
+RcppExport SEXP _gedi2_getDiffADB_cpp(SEXP Rk_listSEXP, SEXP H_rotationSEXP, SEXP contrastSEXP, SEXP C_rotationSEXP, SEXP inputCSEXP, SEXP DSEXP, SEXP Bi_listSEXP, SEXP S_ASEXP, SEXP verboseSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type Rk_list(Rk_listSEXP);
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::MatrixXd>& >::type H_rotation(H_rotationSEXP);
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd>& >::type contrast(contrastSEXP);
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::MatrixXd>& >::type C_rotation(C_rotationSEXP);
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::MatrixXd>& >::type inputC(inputCSEXP);
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd>& >::type D(DSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type Bi_list(Bi_listSEXP);
+    Rcpp::traits::input_parameter< double >::type S_A(S_ASEXP);
+    Rcpp::traits::input_parameter< int >::type verbose(verboseSEXP);
+    rcpp_result_gen = Rcpp::wrap(getDiffADB_cpp(Rk_list, H_rotation, contrast, C_rotation, inputC, D, Bi_list, S_A, verbose));
+    return rcpp_result_gen;
+END_RCPP
+}
 // compute_svd_factorized_cpp
 Rcpp::List compute_svd_factorized_cpp(const Eigen::Map<Eigen::MatrixXd>& Z, const Eigen::Map<Eigen::VectorXd>& D, const Rcpp::List& Bi_list, int verbose);
 RcppExport SEXP _gedi2_compute_svd_factorized_cpp(SEXP ZSEXP, SEXP DSEXP, SEXP Bi_listSEXP, SEXP verboseSEXP) {
@@ -461,6 +480,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_gedi2_getDiffO_cpp", (DL_FUNC) &_gedi2_getDiffO_cpp, 4},
     {"_gedi2_getDiffQ_cpp", (DL_FUNC) &_gedi2_getDiffQ_cpp, 4},
     {"_gedi2_getDiffExp_cpp", (DL_FUNC) &_gedi2_getDiffExp_cpp, 6},
+    {"_gedi2_getDiffADB_cpp", (DL_FUNC) &_gedi2_getDiffADB_cpp, 9},
     {"_gedi2_compute_svd_factorized_cpp", (DL_FUNC) &_gedi2_compute_svd_factorized_cpp, 4},
     {"_gedi2_run_factorized_svd_cpp", (DL_FUNC) &_gedi2_run_factorized_svd_cpp, 3},
     {"_gedi2_Yi_resZ", (DL_FUNC) &_gedi2_Yi_resZ, 5},

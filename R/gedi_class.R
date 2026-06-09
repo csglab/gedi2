@@ -697,6 +697,9 @@ GEDI <- R6Class(
     diffExp = function(contrast, include_O = FALSE) {
       compute_diffExp(self, private, contrast, include_O)
     },
+    diffADB = function(contrast) {
+      compute_diffADB(self, private, contrast)
+    },
 
     # =========================================================================
     # Dimensionality Reduction Methods
