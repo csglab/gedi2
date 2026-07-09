@@ -6,6 +6,8 @@
 [![test-coverage](https://github.com/csglab/gedi2/workflows/test-coverage/badge.svg)](https://github.com/csglab/gedi2/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/license/MIT)
 [![Documentation](https://img.shields.io/badge/Docs-Learn%20More-blue.svg)](https://github.com/csglab/gedi2/wiki)
+[![CRAN downloads](https://cranlogs.r-pkg.org/badges/grand-total/gedi2)](https://cran.r-project.org/package=gedi2)
+
 
 A high-performance, memory-efficient R package for integrating gene expression data from single-cell RNA sequencing experiments. GEDI 2.0 implements a unified generative model for interpretable latent embedding of multi-sample, multi-condition single-cell data.
 
