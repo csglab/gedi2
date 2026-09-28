@@ -58,7 +58,7 @@ Eigen::VectorXd compute_s_0_dense(const Eigen::Map<Eigen::VectorXd>& J_vec,
 //' @keywords internal
 //' @noRd
 // [[Rcpp::export]]
-Eigen::SparseMatrix<double> compute_Yp(const Eigen::MappedSparseMatrix<double>& Y,
+Eigen::SparseMatrix<double> compute_Yp(const Eigen::Map<Eigen::SparseMatrix<double>>& Y,
                                        const Eigen::Map<Eigen::VectorXd>& J_vec,
                                        const Eigen::Map<Eigen::VectorXd>& s_0) {
   // Create result sparse matrix with same structure as Y
@@ -195,7 +195,7 @@ Eigen::VectorXd MatVecProduct(const Eigen::Map<Eigen::MatrixXd>& A,
 //' @keywords internal
 //' @noRd
 // [[Rcpp::export]]
-Eigen::VectorXd eigenSparseMatVecProduct(const Eigen::MappedSparseMatrix<double>& A,
+Eigen::VectorXd eigenSparseMatVecProduct(const Eigen::Map<Eigen::SparseMatrix<double>>& A,
                                          const Eigen::Map<Eigen::VectorXd>& b) {
   return A * b;
 }
@@ -220,7 +220,7 @@ Eigen::VectorXd eigenSparseMatVecProduct(const Eigen::MappedSparseMatrix<double>
 //' @keywords internal
 //' @noRd
 // [[Rcpp::export]]
-Eigen::SparseMatrix<double> compute_Mp(const Eigen::MappedSparseMatrix<double> M,
+Eigen::SparseMatrix<double> compute_Mp(const Eigen::Map<Eigen::SparseMatrix<double>> M,
                                        const Eigen::Map<Eigen::VectorXd> J_vec,
                                        const Eigen::Map<Eigen::VectorXd> s_0) {
   // Create result sparse matrix with same structure as M
@@ -265,7 +265,7 @@ Eigen::SparseMatrix<double> compute_Mp(const Eigen::MappedSparseMatrix<double> M
 //' @noRd
 // [[Rcpp::export]]
 Eigen::VectorXd compute_s_0(const Eigen::Map<Eigen::VectorXd> J_vec,
-                            const Eigen::MappedSparseMatrix<double> M,
+                            const Eigen::Map<Eigen::SparseMatrix<double>> M,
                             double J) {
   // Use BLAS-optimized sparse-dense multiplication
   // J_vec^T * M is equivalent to M.transpose() * J_vec
@@ -299,7 +299,7 @@ Eigen::VectorXd compute_s_0(const Eigen::Map<Eigen::VectorXd> J_vec,
 //' @keywords internal
 //' @noRd
 // [[Rcpp::export]]
-Eigen::VectorXd compute_o_0(const Eigen::MappedSparseMatrix<double> Mp,
+Eigen::VectorXd compute_o_0(const Eigen::Map<Eigen::SparseMatrix<double>> Mp,
                             const Eigen::Map<Eigen::VectorXd> N_vec,
                             double N) {
   // Use BLAS-optimized sparse matrix-vector multiplication
