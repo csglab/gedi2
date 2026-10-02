@@ -357,12 +357,12 @@ BEGIN_RCPP
 END_RCPP
 }
 // compute_Yp
-Eigen::SparseMatrix<double> compute_Yp(const Eigen::MappedSparseMatrix<double>& Y, const Eigen::Map<Eigen::VectorXd>& J_vec, const Eigen::Map<Eigen::VectorXd>& s_0);
+Eigen::SparseMatrix<double> compute_Yp(const Eigen::Map<Eigen::SparseMatrix<double>>& Y, const Eigen::Map<Eigen::VectorXd>& J_vec, const Eigen::Map<Eigen::VectorXd>& s_0);
 RcppExport SEXP _gedi2_compute_Yp(SEXP YSEXP, SEXP J_vecSEXP, SEXP s_0SEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const Eigen::MappedSparseMatrix<double>& >::type Y(YSEXP);
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::SparseMatrix<double>>& >::type Y(YSEXP);
     Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd>& >::type J_vec(J_vecSEXP);
     Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd>& >::type s_0(s_0SEXP);
     rcpp_result_gen = Rcpp::wrap(compute_Yp(Y, J_vec, s_0));
@@ -420,24 +420,24 @@ BEGIN_RCPP
 END_RCPP
 }
 // eigenSparseMatVecProduct
-Eigen::VectorXd eigenSparseMatVecProduct(const Eigen::MappedSparseMatrix<double>& A, const Eigen::Map<Eigen::VectorXd>& b);
+Eigen::VectorXd eigenSparseMatVecProduct(const Eigen::Map<Eigen::SparseMatrix<double>>& A, const Eigen::Map<Eigen::VectorXd>& b);
 RcppExport SEXP _gedi2_eigenSparseMatVecProduct(SEXP ASEXP, SEXP bSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const Eigen::MappedSparseMatrix<double>& >::type A(ASEXP);
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::SparseMatrix<double>>& >::type A(ASEXP);
     Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd>& >::type b(bSEXP);
     rcpp_result_gen = Rcpp::wrap(eigenSparseMatVecProduct(A, b));
     return rcpp_result_gen;
 END_RCPP
 }
 // compute_Mp
-Eigen::SparseMatrix<double> compute_Mp(const Eigen::MappedSparseMatrix<double> M, const Eigen::Map<Eigen::VectorXd> J_vec, const Eigen::Map<Eigen::VectorXd> s_0);
+Eigen::SparseMatrix<double> compute_Mp(const Eigen::Map<Eigen::SparseMatrix<double>> M, const Eigen::Map<Eigen::VectorXd> J_vec, const Eigen::Map<Eigen::VectorXd> s_0);
 RcppExport SEXP _gedi2_compute_Mp(SEXP MSEXP, SEXP J_vecSEXP, SEXP s_0SEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const Eigen::MappedSparseMatrix<double> >::type M(MSEXP);
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::SparseMatrix<double>> >::type M(MSEXP);
     Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd> >::type J_vec(J_vecSEXP);
     Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd> >::type s_0(s_0SEXP);
     rcpp_result_gen = Rcpp::wrap(compute_Mp(M, J_vec, s_0));
@@ -445,25 +445,25 @@ BEGIN_RCPP
 END_RCPP
 }
 // compute_s_0
-Eigen::VectorXd compute_s_0(const Eigen::Map<Eigen::VectorXd> J_vec, const Eigen::MappedSparseMatrix<double> M, double J);
+Eigen::VectorXd compute_s_0(const Eigen::Map<Eigen::VectorXd> J_vec, const Eigen::Map<Eigen::SparseMatrix<double>> M, double J);
 RcppExport SEXP _gedi2_compute_s_0(SEXP J_vecSEXP, SEXP MSEXP, SEXP JSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd> >::type J_vec(J_vecSEXP);
-    Rcpp::traits::input_parameter< const Eigen::MappedSparseMatrix<double> >::type M(MSEXP);
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::SparseMatrix<double>> >::type M(MSEXP);
     Rcpp::traits::input_parameter< double >::type J(JSEXP);
     rcpp_result_gen = Rcpp::wrap(compute_s_0(J_vec, M, J));
     return rcpp_result_gen;
 END_RCPP
 }
 // compute_o_0
-Eigen::VectorXd compute_o_0(const Eigen::MappedSparseMatrix<double> Mp, const Eigen::Map<Eigen::VectorXd> N_vec, double N);
+Eigen::VectorXd compute_o_0(const Eigen::Map<Eigen::SparseMatrix<double>> Mp, const Eigen::Map<Eigen::VectorXd> N_vec, double N);
 RcppExport SEXP _gedi2_compute_o_0(SEXP MpSEXP, SEXP N_vecSEXP, SEXP NSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const Eigen::MappedSparseMatrix<double> >::type Mp(MpSEXP);
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::SparseMatrix<double>> >::type Mp(MpSEXP);
     Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd> >::type N_vec(N_vecSEXP);
     Rcpp::traits::input_parameter< double >::type N(NSEXP);
     rcpp_result_gen = Rcpp::wrap(compute_o_0(Mp, N_vec, N));
