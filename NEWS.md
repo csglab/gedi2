@@ -1,3 +1,16 @@
+# gedi 2.3.6
+
+## Maintenance
+
+* Compatibility with Eigen 5.0 (upcoming RcppEigen 0.4.x). Eigen 5.0 removes
+  `Eigen::MappedSparseMatrix`, so the sparse-matrix helpers `compute_Yp()`,
+  `compute_Mp()`, `compute_s_0()`, `compute_o_0()` and
+  `eigenSparseMatVecProduct()` now take `Eigen::Map<Eigen::SparseMatrix<double>>`
+  instead. The package still builds against the current CRAN RcppEigen
+  (0.3.4.0.2) and the RcppEigen release candidate (0.4.9.9-2). No user-visible
+  changes. Contributed by Dirk Eddelbuettel (@eddelbuettel) in #28; see
+  RcppCore/RcppEigen#151 for the wider Eigen 5.0 migration.
+
 # gedi 2.3.5
 
 ## New features
