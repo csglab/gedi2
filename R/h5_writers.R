@@ -115,6 +115,7 @@ write_h5ad <- function(model,
 
       if (!is.null(private_env$.M_fingerprint)) {
         if (verbose) message("[write_h5ad] Validating M matrix identity...")
+        M <- as_dgCMatrix_M(M)
         validate_M_identity(M, private_env$.M_fingerprint)
         if (verbose) message("[write_h5ad]   M matrix validated successfully")
       } else {

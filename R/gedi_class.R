@@ -505,6 +505,8 @@ GEDI <- R6Class(
 
       private$.logger$info("Setting up GEDI model...")
 
+      M <- as_dgCMatrix_M(M)
+
       data <- private$prepareData(
         Samples = Samples, Y = Y, X = X, M = M,
         colData = colData, C = C, H = H, K = K,

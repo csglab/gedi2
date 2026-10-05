@@ -3,6 +3,33 @@
 # Lazy-computed imputation methods with caching and validation
 # ==============================================================================
 
+#' Coerce Count Matrix to dgCMatrix
+#'
+#' @description
+#' The C++ backend maps sparse inputs as \code{Eigen::Map<SparseMatrix<double>>},
+#' which only accepts \code{dgCMatrix}. Matrix >= 1.8 builds integer counts as
+#' \code{igCMatrix}, so normalise every count matrix (or M_paired list) here.
+#' \code{NULL} and non-matrix inputs are returned unchanged.
+#'
+#' @param M Count matrix (sparse or dense), list of two matrices, or NULL
+#'
+#' @return \code{M} with every matrix converted to \code{dgCMatrix}
+#'
+#' @keywords internal
+#' @noRd
+as_dgCMatrix_M <- function(M) {
+  if (is.null(M)) return(M)
+  if (is.list(M) && !is.data.frame(M)) return(lapply(M, as_dgCMatrix_M))
+  if (inherits(M, "dgCMatrix")) return(M)
+  if (!is.matrix(M) && !inherits(M, "Matrix")) return(M)
+  if (is.matrix(M)) storage.mode(M) <- "double"
+  M <- as(M, "CsparseMatrix")
+  if (!is(M, "generalMatrix")) M <- as(M, "generalMatrix")
+  if (!is(M, "dMatrix")) M <- as(M, "dMatrix")
+  M
+}
+
+
 #' Compute M Fingerprint for Validation
 #'
 #' @description
@@ -341,25 +368,9 @@ compute_Y_variance <- function(self, private, M) {
     return(NULL)
   }
   
-  # Validate M
+  # Validate M (as dgCMatrix, matching the fingerprint taken at setup)
+  M <- as_dgCMatrix_M(M)
   validate_M_identity(M, private$.M_fingerprint)
-  
-  # Convert to sparse if needed
-  if (obs_type == "M") {
-    if (!inherits(M, "sparseMatrix")) {
-      warning("Converting M to sparse format for memory efficiency")
-      M <- as(M, "dgCMatrix")
-    }
-  } else if (obs_type == "M_paired") {
-    if (!inherits(M[[1]], "sparseMatrix")) {
-      warning("Converting M[[1]] to sparse format for memory efficiency")
-      M[[1]] <- as(M[[1]], "dgCMatrix")
-    }
-    if (!inherits(M[[2]], "sparseMatrix")) {
-      warning("Converting M[[2]] to sparse format for memory efficiency")
-      M[[2]] <- as(M[[2]], "dgCMatrix")
-    }
-  }
   
   # Split M by sample
   numSamples <- self$aux$numSamples
@@ -459,14 +470,9 @@ compute_dispersion <- function(self, private, M, subsample = 1e6) {
          call. = FALSE)
   }
   
-  # Validate M
+  # Validate M (as dgCMatrix, matching the fingerprint taken at setup)
+  M <- as_dgCMatrix_M(M)
   validate_M_identity(M, private$.M_fingerprint)
-  
-  # Convert to sparse if needed
-  if (!inherits(M, "sparseMatrix")) {
-    warning("Converting M to sparse format for memory efficiency")
-    M <- as(M, "dgCMatrix")
-  }
   
   # Split M by sample
   numSamples <- self$aux$numSamples

@@ -82,6 +82,7 @@ get_imputed_Y <- function(self, private, M = NULL, logScale = TRUE, rowCentre = 
   
   # Validate M if provided
   if (!is.null(M)) {
+    M <- as_dgCMatrix_M(M)
     validate_M_identity(M, private$.M_fingerprint)
   }
   

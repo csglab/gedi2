@@ -11,6 +11,19 @@
   changes. Contributed by Dirk Eddelbuettel (@eddelbuettel) in #28; see
   RcppCore/RcppEigen#151 for the wider Eigen 5.0 migration.
 
+## Bug fixes
+
+* Count matrices are now coerced to `dgCMatrix` before reaching the C++
+  backend. Matrix >= 1.8 stores integer counts as `igCMatrix`, which caused
+  `CreateGEDIObject()` to fail with "Need S4 class dgCMatrix for a mapped
+  sparse matrix".
+
+## Documentation
+
+* DESCRIPTION now cites the GEDI 2.0 paper
+  (<doi:10.1093/bioinformatics/btag334>), and `LICENSE` is restored to the
+  CRAN `YEAR`/`COPYRIGHT HOLDER` stub (full MIT text in `LICENSE.md`).
+
 # gedi 2.3.5
 
 ## New features
